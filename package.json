@@ -42,7 +42,7 @@
     "eslint": "9.13.0",
     "jsdom": "16.7.0",
     "microbundle": "0.15.1",
-    "prettier": "2.8.8",
+    "prettier": "3.3.3",
     "typescript": "5.6.3",
     "vitest": "2.1.3"
   },
