@@ -104,5 +104,8 @@
     "jsdom": "^16.6.0",
     "microbundle": "^0.12.3",
     "prettier": "^2.3.0"
+  },
+  "resolutions": {
+    "beasties": "file:./packages/beasties"
   }
 }
