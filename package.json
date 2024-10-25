@@ -12,6 +12,11 @@
     {
       "name": "Janicklas Ralph",
       "email": "janicklas@google.com"
+    },
+    {
+      "name": "Daniel Roe",
+      "email": "daniel@roe.dev",
+      "url": "https://roe.dev"
     }
   ],
   "workspaces": {
