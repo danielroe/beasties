@@ -19,7 +19,7 @@ import { createRequire } from 'module';
 import minimatch from 'minimatch';
 import sources from 'webpack-sources';
 import log from 'webpack-log';
-import Critters from 'critters';
+import Beasties from 'beasties';
 import { tap } from './util';
 
 const $require =
@@ -28,19 +28,19 @@ const $require =
     : createRequire(eval('import.meta.url'));
 
 // Used to annotate this plugin's hooks in Tappable invocations
-const PLUGIN_NAME = 'critters-webpack-plugin';
+const PLUGIN_NAME = 'beasties-webpack-plugin';
 
-/** @typedef {import('critters').Options} Options */
+/** @typedef {import('beasties').Options} Options */
 
 /**
- * Create a Critters plugin instance with the given options.
+ * Create a Beasties plugin instance with the given options.
  * @public
- * @param {Options} options Options to control how Critters inlines CSS. See https://github.com/GoogleChromeLabs/critters#usage
+ * @param {Options} options Options to control how Beasties inlines CSS. See https://github.com/danielroe/beasties#usage
  * @example
  * // webpack.config.js
  * module.exports = {
  *   plugins: [
- *     new Critters({
+ *     new Beasties({
  *       // Outputs: <link rel="preload" onload="this.rel='stylesheet'">
  *       preload: 'swap',
  *
@@ -50,13 +50,13 @@ const PLUGIN_NAME = 'critters-webpack-plugin';
  *   ]
  * }
  */
-export default class CrittersWebpackPlugin extends Critters {
+export default class BeastiesWebpackPlugin extends Beasties {
   constructor(options) {
     super(options);
 
     // TODO: Remove webpack-log
     this.logger = log({
-      name: 'Critters',
+      name: 'Beasties',
       unique: true,
       level: this.options.logLevel
     });

@@ -1,1 +1,1 @@
-packages/critters/README.md
+packages/beasties/README.md

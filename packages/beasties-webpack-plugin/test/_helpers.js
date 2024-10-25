@@ -19,7 +19,7 @@ import fs from 'fs';
 import path from 'path';
 import webpack from 'webpack';
 import { JSDOM } from 'jsdom';
-import CrittersWebpackPlugin from '../src/index.js';
+import BeastiesWebpackPlugin from '../src/index.js';
 
 const { window } = new JSDOM();
 
@@ -70,20 +70,20 @@ export function compile(entry, configDecorator) {
   });
 }
 
-// invoke webpack via compile(), applying Critters to inline CSS and injecting `html` and `document` properties into the webpack build info.
+// invoke webpack via compile(), applying Beasties to inline CSS and injecting `html` and `document` properties into the webpack build info.
 export async function compileToHtml(
   fixture,
   configDecorator,
-  crittersOptions = {}
+  beastiesOptions = {}
 ) {
   const info = await compile(`fixtures/${fixture}/index.js`, (config) => {
     config = configDecorator(config) || config;
     config.plugins.push(
-      new CrittersWebpackPlugin({
+      new BeastiesWebpackPlugin({
         pruneSource: true,
         compress: false,
         logLevel: 'silent',
-        ...crittersOptions
+        ...beastiesOptions
       })
     );
   });

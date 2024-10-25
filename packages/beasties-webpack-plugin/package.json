@@ -1,14 +1,14 @@
 {
-  "name": "critters-webpack-plugin",
+  "name": "beasties-webpack-plugin",
   "version": "3.0.2",
   "description": "Webpack plugin to inline critical CSS and lazy-load the rest.",
-  "main": "dist/critters-webpack-plugin.js",
-  "module": "dist/critters-webpack-plugin.mjs",
+  "main": "dist/beasties-webpack-plugin.js",
+  "module": "dist/beasties-webpack-plugin.mjs",
   "source": "src/index.js",
   "exports": {
-    "import": "./dist/critters-webpack-plugin.mjs",
-    "require": "./dist/critters-webpack-plugin.js",
-    "default": "./dist/critters-webpack-plugin.mjs"
+    "import": "./dist/beasties-webpack-plugin.mjs",
+    "require": "./dist/beasties-webpack-plugin.js",
+    "default": "./dist/beasties-webpack-plugin.mjs"
   },
   "files": [
     "src",
@@ -30,14 +30,14 @@
     "critical css",
     "inline css",
     "critical",
-    "critters",
+    "beasties",
     "webpack plugin",
     "performance"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/GoogleChromeLabs/critters",
-    "directory": "packages/critters-webpack-plugin"
+    "url": "https://github.com/danielroe/beasties",
+    "directory": "packages/beasties-webpack-plugin"
   },
   "scripts": {
     "build": "microbundle --target node --no-sourcemap -f cjs,esm",
@@ -54,7 +54,7 @@
     "webpack": "^4.46.0"
   },
   "dependencies": {
-    "critters": "^0.0.16",
+    "beasties": "^0.0.16",
     "minimatch": "^3.0.4",
     "webpack-log": "^3.0.1",
     "webpack-sources": "^1.3.0"

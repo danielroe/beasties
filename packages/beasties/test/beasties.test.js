@@ -14,7 +14,7 @@
  * the License.
  */
 
-import Critters from '../src/index';
+import Beasties from '../src/index';
 import fs from 'fs';
 import path from 'path';
 
@@ -23,9 +23,9 @@ const trim = (s) =>
     .trim()
     .replace(new RegExp('^' + s[0].match(/^( {2}|\t)+/m)[0], 'gm'), '');
 
-describe('Critters', () => {
+describe('Beasties', () => {
   test('Basic Usage', async () => {
-    const critters = new Critters({
+    const beasties = new Beasties({
       reduceInlineStyles: false,
       path: '/'
     });
@@ -37,8 +37,8 @@ describe('Critters', () => {
         p.unused { color: orange; }
       `
     };
-    critters.readFile = (filename) => assets[filename];
-    const result = await critters.process(trim`
+    beasties.readFile = (filename) => assets[filename];
+    const result = await beasties.process(trim`
       <html>
         <head>
           <link rel="stylesheet" href="/style.css">
@@ -55,7 +55,7 @@ describe('Critters', () => {
   });
 
   test('Run on HTML file', async () => {
-    const critters = new Critters({
+    const beasties = new Beasties({
       reduceInlineStyles: false,
       path: path.join(__dirname, 'src')
     });
@@ -65,12 +65,12 @@ describe('Critters', () => {
       'utf8'
     );
 
-    const result = await critters.process(html);
+    const result = await beasties.process(html);
     expect(result).toMatchSnapshot();
   });
 
   test('Does not encode HTML', async () => {
-    const critters = new Critters({
+    const beasties = new Beasties({
       reduceInlineStyles: false,
       path: '/'
     });
@@ -79,8 +79,8 @@ describe('Critters', () => {
         h1 { color: blue; }
       `
     };
-    critters.readFile = (filename) => assets[filename];
-    const result = await critters.process(trim`
+    beasties.readFile = (filename) => assets[filename];
+    const result = await beasties.process(trim`
       <html>
         <head>
           <title>$title</title>
@@ -97,7 +97,7 @@ describe('Critters', () => {
   });
 
   test('should keep existing link tag attributes in the noscript link', async () => {
-    const critters = new Critters({
+    const beasties = new Beasties({
       reduceInlineStyles: false,
       path: '/',
       preload: 'media'
@@ -107,8 +107,8 @@ describe('Critters', () => {
         h1 { color: blue; }
       `
     };
-    critters.readFile = (filename) => assets[filename];
-    const result = await critters.process(trim`
+    beasties.readFile = (filename) => assets[filename];
+    const result = await beasties.process(trim`
       <html>
         <head>
           <title>$title</title>
@@ -128,7 +128,7 @@ describe('Critters', () => {
   });
 
   test('should keep existing link tag attributes', async () => {
-    const critters = new Critters({
+    const beasties = new Beasties({
       reduceInlineStyles: false,
       path: '/'
     });
@@ -137,8 +137,8 @@ describe('Critters', () => {
         h1 { color: blue; }
       `
     };
-    critters.readFile = (filename) => assets[filename];
-    const result = await critters.process(trim`
+    beasties.readFile = (filename) => assets[filename];
+    const result = await beasties.process(trim`
       <html>
         <head>
           <title>$title</title>
@@ -158,11 +158,11 @@ describe('Critters', () => {
   });
 
   test('Does not decode entities in HTML document', async () => {
-    const critters = new Critters({
+    const beasties = new Beasties({
       path: '/'
     });
-    critters.readFile = (filename) => assets[filename];
-    const result = await critters.process(trim`
+    beasties.readFile = (filename) => assets[filename];
+    const result = await beasties.process(trim`
       <html>
         <body>
           &lt;h1&gt;Hello World!&lt;/h1&gt;
@@ -173,7 +173,7 @@ describe('Critters', () => {
   });
 
   test('Prevent injection via media attr', async () => {
-    const critters = new Critters({
+    const beasties = new Beasties({
       reduceInlineStyles: false,
       path: path.join(__dirname, 'src'),
       preload: 'media'
@@ -184,7 +184,7 @@ describe('Critters', () => {
       'utf8'
     );
 
-    const result = await critters.process(html);
+    const result = await beasties.process(html);
     expect(result).toContain(
       '<noscript><link rel="stylesheet" href="styles2.css" media="screen and (min-width: 480px)"></noscript>'
     );
@@ -194,7 +194,7 @@ describe('Critters', () => {
   test('Skip invalid path', async () => {
     const consoleSpy = jest.spyOn(console, 'warn');
 
-    const critters = new Critters({
+    const beasties = new Beasties({
       reduceInlineStyles: false,
       path: path.join(__dirname, 'src')
     });
@@ -204,7 +204,7 @@ describe('Critters', () => {
       'utf8'
     );
 
-    const result = await critters.process(html);
+    const result = await beasties.process(html);
     expect(consoleSpy).not.toHaveBeenCalledWith(
       expect.stringContaining('Unable to locate stylesheet')
     );
@@ -212,9 +212,9 @@ describe('Critters', () => {
   });
 
   it('should not load stylesheets outside of the base path', async () => {
-    const critters = new Critters({ path: '/var/www' });
-    jest.spyOn(critters, 'readFile');
-    await critters.process(`
+    const beasties = new Beasties({ path: '/var/www' });
+    jest.spyOn(beasties, 'readFile');
+    await beasties.process(`
         <html>
             <head>
                 <link rel=stylesheet href=/file.css>
@@ -223,8 +223,8 @@ describe('Critters', () => {
             <body></body>
         </html>
     `);
-    expect(critters.readFile).toHaveBeenCalledWith('/var/www/file.css');
-    expect(critters.readFile).not.toHaveBeenCalledWith(
+    expect(beasties.readFile).toHaveBeenCalledWith('/var/www/file.css');
+    expect(beasties.readFile).not.toHaveBeenCalledWith(
       '/company-secrets/secret.css'
     );
   });

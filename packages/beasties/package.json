@@ -1,14 +1,14 @@
 {
-  "name": "critters",
+  "name": "beasties",
   "version": "0.0.25",
   "description": "Inline critical CSS and lazy-load the rest.",
-  "main": "dist/critters.js",
-  "module": "dist/critters.mjs",
+  "main": "dist/beasties.js",
+  "module": "dist/beasties.mjs",
   "source": "src/index.js",
   "exports": {
-    "import": "./dist/critters.mjs",
-    "require": "./dist/critters.js",
-    "default": "./dist/critters.mjs"
+    "import": "./dist/beasties.mjs",
+    "require": "./dist/beasties.js",
+    "default": "./dist/beasties.mjs"
   },
   "typings": "src/index.d.ts",
   "files": [
@@ -31,14 +31,14 @@
     "critical css",
     "inline css",
     "critical",
-    "critters",
+    "beasties",
     "webpack plugin",
     "performance"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/GoogleChromeLabs/critters",
-    "directory": "packages/critters"
+    "url": "https://github.com/danielroe/beasties",
+    "directory": "packages/beasties"
   },
   "scripts": {
     "build": "microbundle --target node --no-sourcemap -f cjs,esm",

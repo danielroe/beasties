@@ -60,16 +60,16 @@ export function createDocument(html) {
   // Extend Element.prototype with DOM manipulation methods.
   defineProperties(Element.prototype, ElementExtensions);
 
-  // Critters container is the viewport to evaluate critical CSS
-  let crittersContainer = document.querySelector('[data-critters-container]');
+  // Beasties container is the viewport to evaluate critical CSS
+  let beastiesContainer = document.querySelector('[data-beasties-container]');
 
-  if (!crittersContainer) {
-    document.documentElement.setAttribute('data-critters-container', '');
-    crittersContainer = document.documentElement;
+  if (!beastiesContainer) {
+    document.documentElement.setAttribute('data-beasties-container', '');
+    beastiesContainer = document.documentElement;
   }
 
-  document.crittersContainer = crittersContainer;
-  buildCache(crittersContainer);
+  document.beastiesContainer = beastiesContainer;
+  buildCache(beastiesContainer);
 
   return document;
 }

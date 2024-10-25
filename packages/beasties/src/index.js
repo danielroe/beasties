@@ -83,7 +83,7 @@ import { createLogger, isSubpath } from './util';
  */
 
 /**
- * All optional. Pass them to `new Critters({ ... })`.
+ * All optional. Pass them to `new Beasties({ ... })`.
  * @public
  * @typedef Options
  * @property {String} path     Base path location of the CSS files _(default: `''`)_
@@ -112,7 +112,7 @@ import { createLogger, isSubpath } from './util';
  * @property {object} logger        Provide a custom logger interface {@link Logger logger}
  */
 
-export default class Critters {
+export default class Beasties {
   /** @private */
   constructor(options) {
     this.options = Object.assign(
@@ -459,7 +459,7 @@ export default class Critters {
 
     const name = style.$$name ? style.$$name.replace(/^\//, '') : 'inline CSS';
     const options = this.options;
-    const crittersContainer = document.crittersContainer;
+    const beastiesContainer = document.beastiesContainer;
     let keyframesMode = options.keyframes || 'critical';
     // we also accept a boolean value for options.keyframes
     if (keyframesMode === true) keyframesMode = 'all';
@@ -500,9 +500,9 @@ export default class Critters {
       markOnly((rule) => {
         if (rule.type === 'comment') {
           // we might want to remove a leading ! on comment blocks
-          // critters can be part of "legal comments" which aren't striped on build
-          const crittersComment = rule.text.match(/^(?<!\! )critters:(.*)/);
-          const command = crittersComment && crittersComment[1];
+          // beasties can be part of "legal comments" which aren't striped on build
+          const beastiesComment = rule.text.match(/^(?<!\! )beasties:(.*)/);
+          const command = beastiesComment && beastiesComment[1];
 
           if (command) {
             switch (command) {
@@ -579,7 +579,7 @@ export default class Critters {
             if (!sel) return false;
 
             try {
-              return crittersContainer.exists(sel);
+              return beastiesContainer.exists(sel);
             } catch (e) {
               failedSelectors.push(sel + ' -> ' + e.message);
               return false;

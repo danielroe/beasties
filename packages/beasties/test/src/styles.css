@@ -35,18 +35,18 @@ footer {
   margin-top: 10px;
 }
 
-/* critters:exclude */
+/* beasties:exclude */
 .container {
   border: 1px solid;
 }
 
-/* critters:include */
+/* beasties:include */
 .custom-element::part(tab) {
   color: #0c0dcc;
   border-bottom: transparent solid 2px;
 }
 
-/*! critters:include */
+/*! beasties:include */
 .other-element::part(tab) {
   color: #0c0dcc;
   border-bottom: transparent solid 2px;
@@ -58,7 +58,7 @@ footer {
   border-color: #0c0d33;
 }
 
-/* critters:include start */
+/* beasties:include start */
 .custom-element::part(tab):hover:active {
   background-color: #0c0d33;
   color: #ffffff;
@@ -68,7 +68,7 @@ footer {
   box-shadow: 0 0 0 1px #0a84ff inset, 0 0 0 1px #0a84ff,
     0 0 0 4px rgba(10, 132, 255, 0.3);
 }
-/* critters:include end */
+/* beasties:include end */
 
 .custom-element::part(active) {
   color: #0060df;

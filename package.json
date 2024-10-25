@@ -1,5 +1,5 @@
 {
-  "name": "critters-root",
+  "name": "beasties-root",
   "private": true,
   "description": "Inline critical CSS and lazy-load the rest.",
   "license": "Apache-2.0",
@@ -27,8 +27,8 @@
   },
   "scripts": {
     "build": "yarn workspaces run build",
-    "build:main": "yarn workspace critters run build",
-    "build:webpack": "yarn workspace critters-webpack-plugin run build",
+    "build:main": "yarn workspace beasties run build",
+    "build:webpack": "yarn workspace beasties-webpack-plugin run build",
     "docs": "yarn workspaces run docs",
     "release": "npm run build -s && git commit -am $npm_package_version && git tag $npm_package_version && git push && git push --tags && npm publish",
     "test": "jest --coverage"
@@ -44,15 +44,15 @@
       "text"
     ],
     "moduleNameMapper": {
-      "^critters$": "<rootDir>/packages/critters/src/index.js",
+      "^beasties$": "<rootDir>/packages/beasties/src/index.js",
       "#(.*)": "<rootDir>/node_modules/$1"
     },
     "collectCoverageFrom": [
       "packages/*/src/**/*.js"
     ],
     "modulePaths": [
-      "<rootDir>/packages/critters-webpack-plugin/node_modules",
-      "<rootDir>/packages/critters/node_modules"
+      "<rootDir>/packages/beasties-webpack-plugin/node_modules",
+      "<rootDir>/packages/beasties/node_modules"
     ],
     "watchPathIgnorePatterns": [
       "node_modules",

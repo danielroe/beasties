@@ -14,9 +14,9 @@
  * the License.
  */
 
-export default class Critters {
+export default class Beasties {
   /**
-   * Create an instance of Critters with custom options.
+   * Create an instance of Beasties with custom options.
    * The `.process()` method can be called repeatedly to re-use this instance and its cache.
    */
   constructor(options: Options);

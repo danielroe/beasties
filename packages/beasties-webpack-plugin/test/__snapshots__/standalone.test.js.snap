@@ -10,7 +10,7 @@ exports[`Usage without html-webpack-plugin should process the first html asset 1
 
 exports[`Usage without html-webpack-plugin should process the first html asset 2`] = `
 "<!DOCTYPE html>
-<html data-critters-container>
+<html data-beasties-container>
   <head>
     <title>Basic Demo</title>
     
