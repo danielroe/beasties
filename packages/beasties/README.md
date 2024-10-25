@@ -3,7 +3,7 @@
   <h1 align="center">Beasties</h1>
 </p>
 
-> Beasties is a plugin that inlines your app's [critical CSS] and lazy-loads the rest.
+> Beasties is a plugin that inlines your app's [critical CSS] and lazy-loads the rest. It is a maintained fork of [GoogleChromeLabs/critters](https://github.com/GoogleChromeLabs/critters)
 
 ## beasties [![npm](https://img.shields.io/npm/v/beasties.svg)](https://www.npmjs.org/package/beasties)
 
