@@ -22,8 +22,8 @@ export default class Beasties {
   constructor(options: Options)
   /**
    * Process an HTML document to inline critical CSS from its stylesheets.
-   * @param {string} html String containing a full HTML document to be parsed.
-   * @returns {string} A modified copy of the provided HTML with critical CSS inlined.
+   * @param html String containing a full HTML document to be parsed.
+   * @returns A modified copy of the provided HTML with critical CSS inlined.
    */
   process(html: string): Promise<string>
   /**

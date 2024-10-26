@@ -14,29 +14,35 @@
  * the License.
  */
 
+import type { AnyNode, ChildNode, Rule } from 'postcss'
+import type Root_ from 'postcss/lib/root'
 import { parse, stringify } from 'postcss'
-import mediaParser from 'postcss-media-query-parser'
+import mediaParser, { type Child, type Root } from 'postcss-media-query-parser'
 
 /**
  * Parse a textual CSS Stylesheet into a Stylesheet instance.
  * Stylesheet is a mutable postcss AST with format similar to CSSOM.
  * @see https://github.com/postcss/postcss/
  * @private
- * @param {string} stylesheet
- * @returns {css.Stylesheet} ast
  */
-export function parseStylesheet(stylesheet) {
+export function parseStylesheet(stylesheet: string) {
   return parse(stylesheet)
+}
+
+/**
+ * Options used by the stringify logic
+ */
+interface SerializeStylesheetOptions {
+  /** Compress CSS output (removes comments, whitespace, etc) */
+  compress?: boolean
 }
 
 /**
  * Serialize a postcss Stylesheet to a String of CSS.
  * @private
- * @param {css.Stylesheet} ast          A Stylesheet to serialize, such as one returned from `parseStylesheet()`
- * @param {object} options              Options used by the stringify logic
- * @param {boolean} [options.compress]  Compress CSS output (removes comments, whitespace, etc)
+ * @param ast A Stylesheet to serialize, such as one returned from `parseStylesheet()`
  */
-export function serializeStylesheet(ast, options) {
+export function serializeStylesheet(ast: AnyNode, options: SerializeStylesheetOptions) {
   let cssStr = ''
 
   stringify(ast, (result, node, type) => {
@@ -61,7 +67,7 @@ export function serializeStylesheet(ast, options) {
     }
 
     if (type === 'start') {
-      if (node.type === 'rule' && node.selectors) {
+      if (node?.type === 'rule' && node.selectors) {
         cssStr += `${node.selectors.join(',')}{`
       }
       else {
@@ -80,33 +86,36 @@ export function serializeStylesheet(ast, options) {
   return cssStr
 }
 
+type SingleIterator<T> = (item: T) => boolean | void
+
 /**
  * Converts a walkStyleRules() iterator to mark nodes with `.$$remove=true` instead of actually removing them.
  * This means they can be removed in a second pass, allowing the first pass to be nondestructive (eg: to preserve mirrored sheets).
  * @private
- * @param {Function} iterator   Invoked on each node in the tree. Return `false` to remove that node.
- * @returns {(rule) => void} nonDestructiveIterator
+ * @param predicate   Invoked on each node in the tree. Return `false` to remove that node.
  */
-export function markOnly(predicate) {
+export function markOnly(predicate: SingleIterator<ChildNode | Root_>): (rule: Rule | ChildNode | Root_) => void {
   return (rule) => {
-    const sel = rule.selectors
     if (predicate(rule) === false) {
       rule.$$remove = true
     }
-    rule.$$markedSelectors = rule.selectors
+    if ('selectors' in rule) {
+      const sel = rule.selectors
+      rule.$$markedSelectors = rule.selectors
+      rule.selectors = sel
+    }
     if (rule._other) {
       rule._other.$$markedSelectors = rule._other.selectors
     }
-    rule.selectors = sel
   }
 }
 
 /**
  * Apply filtered selectors to a rule from a previous markOnly run.
  * @private
- * @param {css.Rule} rule The Rule to apply marked selectors to (if they exist).
+ * @param rule The Rule to apply marked selectors to (if they exist).
  */
-export function applyMarkedSelectors(rule) {
+export function applyMarkedSelectors(rule: Rule) {
   if (rule.$$markedSelectors) {
     rule.selectors = rule.$$markedSelectors
   }
@@ -118,11 +127,14 @@ export function applyMarkedSelectors(rule) {
 /**
  * Recursively walk all rules in a stylesheet.
  * @private
- * @param {css.Rule} node       A Stylesheet or Rule to descend into.
- * @param {Function} iterator   Invoked on each node in the tree. Return `false` to remove that node.
+ * @param node       A Stylesheet or Rule to descend into.
+ * @param iterator   Invoked on each node in the tree. Return `false` to remove that node.
  */
-export function walkStyleRules(node, iterator) {
-  node.nodes = node.nodes.filter((rule) => {
+export function walkStyleRules(node: ChildNode | Root_, iterator: SingleIterator<ChildNode | Root_ | Rule>) {
+  if (!('nodes' in node)) {
+    return
+  }
+  node.nodes = node.nodes?.filter((rule) => {
     if (hasNestedRules(rule)) {
       walkStyleRules(rule, iterator)
     }
@@ -135,23 +147,23 @@ export function walkStyleRules(node, iterator) {
 /**
  * Recursively walk all rules in two identical stylesheets, filtering nodes into one or the other based on a predicate.
  * @private
- * @param {css.Rule} node       A Stylesheet or Rule to descend into.
- * @param {css.Rule} node2      A second tree identical to `node`
- * @param {Function} iterator   Invoked on each node in the tree. Return `false` to remove that node from the first tree, true to remove it from the second.
+ * @param node       A Stylesheet or Rule to descend into.
+ * @param node2      A second tree identical to `node`
+ * @param iterator   Invoked on each node in the tree. Return `false` to remove that node from the first tree, true to remove it from the second.
  */
-export function walkStyleRulesWithReverseMirror(node, node2, iterator) {
-  if (node2 === null)
+export function walkStyleRulesWithReverseMirror(node: Rule | Root_, node2: Rule | Root_ | undefined | null, iterator: SingleIterator<ChildNode | Root_>) {
+  if (!node2)
     return walkStyleRules(node, iterator);
 
   [node.nodes, node2.nodes] = splitFilter(
     node.nodes,
     node2.nodes,
-    (rule, index, rules, rules2) => {
-      const rule2 = rules2[index]
+    (rule, index, _rules, rules2) => {
+      const rule2 = rules2?.[index]
       if (hasNestedRules(rule)) {
-        walkStyleRulesWithReverseMirror(rule, rule2, iterator)
+        walkStyleRulesWithReverseMirror(rule, rule2 as Rule, iterator)
       }
-      rule._other = rule2
+      rule._other = rule2 as Rule
       rule.filterSelectors = filterSelectors
       return iterator(rule) !== false
     },
@@ -160,33 +172,35 @@ export function walkStyleRulesWithReverseMirror(node, node2, iterator) {
 
 // Checks if a node has nested rules, like @media
 // @keyframes are an exception since they are evaluated as a whole
-function hasNestedRules(rule) {
+function hasNestedRules(rule: ChildNode): rule is Rule {
   return (
-    rule.nodes?.length
-    && rule.name !== 'keyframes'
-    && rule.name !== '-webkit-keyframes'
+    'nodes' in rule
+    && !!rule.nodes?.length
+    && (!('name' in rule) || (rule.name !== 'keyframes' && rule.name !== '-webkit-keyframes'))
     && rule.nodes.some(n => n.type === 'rule' || n.type === 'atrule')
   )
 }
 
 // Like [].filter(), but applies the opposite filtering result to a second copy of the Array without a second pass.
 // This is just a quicker version of generating the compliment of the set returned from a filter operation.
-function splitFilter(a, b, predicate) {
-  const aOut = []
-  const bOut = []
+type SplitIterator<T> = (item: T, index: number, a: T[], b?: T[]) => boolean
+function splitFilter<T>(a: T[], b: T[], predicate: SplitIterator<T>) {
+  const aOut: T[] = []
+  const bOut: T[] = []
   for (let index = 0; index < a.length; index++) {
-    if (predicate(a[index], index, a, b)) {
-      aOut.push(a[index])
+    const item = a[index]!
+    if (predicate(item, index, a, b)) {
+      aOut.push(item)
     }
     else {
-      bOut.push(a[index])
+      bOut.push(item)
     }
   }
-  return [aOut, bOut]
+  return [aOut, bOut] as const
 }
 
 // can be invoked on a style rule to subset its selectors (with reverse mirroring)
-function filterSelectors(predicate) {
+function filterSelectors(this: Rule, predicate: SplitIterator<string>) {
   if (this._other) {
     const [a, b] = splitFilter(
       this.selectors,
@@ -218,7 +232,7 @@ const MEDIA_FEATURES = new Set(
   ].flatMap(feature => [feature, `min-${feature}`, `max-${feature}`]),
 )
 
-function validateMediaType(node) {
+function validateMediaType(node: Child | Root) {
   const { type: nodeType, value: nodeValue } = node
   if (nodeType === 'media-type') {
     return MEDIA_TYPES.has(nodeValue)
@@ -233,23 +247,22 @@ function validateMediaType(node) {
 
 /**
  *
- * @param {string} Media query to validate
- * @returns {boolean}
- *
  * This function performs a basic media query validation
  * to ensure the values passed as part of the 'media' config
  * is HTML safe and does not cause any injection issue
+ *
+ * @param query Media query to validate
  */
-export function validateMediaQuery(query) {
+export function validateMediaQuery(query: string): boolean {
   // The below is needed for consumption with webpack.
-  const mediaParserFn = 'default' in mediaParser ? mediaParser.default : mediaParser
+  const mediaParserFn = 'default' in mediaParser ? mediaParser.default as unknown as typeof mediaParser : mediaParser
   const mediaTree = mediaParserFn(query)
   const nodeTypes = new Set(['media-type', 'keyword', 'media-feature'])
 
-  const stack = [mediaTree]
+  const stack: Array<Child | Root> = [mediaTree]
 
   while (stack.length > 0) {
-    const node = stack.pop()
+    const node = stack.pop()!
 
     if (nodeTypes.has(node.type) && !validateMediaType(node)) {
       return false
@@ -261,4 +274,13 @@ export function validateMediaQuery(query) {
   }
 
   return true
+}
+
+declare module 'postcss' {
+  interface Node {
+    _other?: Rule
+    $$remove?: boolean
+    $$markedSelectors?: string[]
+    filterSelectors?: typeof filterSelectors
+  }
 }

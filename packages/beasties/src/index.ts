@@ -14,120 +14,37 @@
  * the License.
  */
 
+import type { ChildNode, Node } from 'domhandler'
+
+import type { HTMLDocument } from './dom'
+import type { Logger, Options } from './types'
+
 import { readFile } from 'node:fs'
 import path from 'node:path'
-import {
-  applyMarkedSelectors,
-  markOnly,
-  parseStylesheet,
-  serializeStylesheet,
-  validateMediaQuery,
-  walkStyleRules,
-  walkStyleRulesWithReverseMirror,
-} from './css'
+
+import { applyMarkedSelectors, markOnly, parseStylesheet, serializeStylesheet, validateMediaQuery, walkStyleRules, walkStyleRulesWithReverseMirror } from './css'
 import { createDocument, serializeDocument } from './dom'
 import { createLogger, isSubpath } from './util'
 
-/**
- * The mechanism to use for lazy-loading stylesheets.
- *
- * Note: <kbd>JS</kbd> indicates a strategy requiring JavaScript (falls back to `<noscript>` unless disabled).
- *
- * - **default:** Move stylesheet links to the end of the document and insert preload meta tags in their place.
- * - **"body":** Move all external stylesheet links to the end of the document.
- * - **"media":** Load stylesheets asynchronously by adding `media="not x"` and removing once loaded. <kbd>JS</kbd>
- * - **"swap":** Convert stylesheet links to preloads that swap to `rel="stylesheet"` once loaded ([details](https://www.filamentgroup.com/lab/load-css-simpler/#the-code)). <kbd>JS</kbd>
- * - **"swap-high":** Use `<link rel="alternate stylesheet preload">` and swap to `rel="stylesheet"` once loaded ([details](http://filamentgroup.github.io/loadCSS/test/new-high.html)). <kbd>JS</kbd>
- * - **"js":** Inject an asynchronous CSS loader similar to [LoadCSS](https://github.com/filamentgroup/loadCSS) and use it to load stylesheets. <kbd>JS</kbd>
- * - **"js-lazy":** Like `"js"`, but the stylesheet is disabled until fully loaded.
- * - **false:** Disables adding preload tags.
- * @typedef {(default|'body'|'media'|'swap'|'swap-high'|'js'|'js-lazy')} PreloadStrategy
- * @public
- */
-
-/**
- * Controls which keyframes rules are inlined.
- *
- * - **"critical":** _(default)_ inline keyframes rules that are used by the critical CSS.
- * - **"all":** Inline all keyframes rules.
- * - **"none":** Remove all keyframes rules.
- * @typedef {('critical'|'all'|'none')} KeyframeStrategy
- * @private
- * @property {string} keyframes     Which {@link KeyframeStrategy keyframe strategy} to use (default: `critical`)_
- */
-
-/**
- * Controls log level of the plugin. Specifies the level the logger should use. A logger will
- * not produce output for any log level beneath the specified level. Available levels and order
- * are:
- *
- * - **"info"** _(default)_
- * - **"warn"**
- * - **"error"**
- * - **"trace"**
- * - **"debug"**
- * - **"silent"**
- * @typedef {('info'|'warn'|'error'|'trace'|'debug'|'silent')} LogLevel
- * @public
- */
-
-/**
- * Custom logger interface:
- * @typedef {object} Logger
- * @public
- * @property {function(String)} trace - Prints a trace message
- * @property {function(String)} debug - Prints a debug message
- * @property {function(String)} info - Prints an information message
- * @property {function(String)} warn - Prints a warning message
- * @property {function(String)} error - Prints an error message
- */
-
-/**
- * All optional. Pass them to `new Beasties({ ... })`.
- * @public
- * @typedef Options
- * @property {string} path     Base path location of the CSS files _(default: `''`)_
- * @property {string} publicPath     Public path of the CSS resources. This prefix is removed from the href _(default: `''`)_
- * @property {boolean} external     Inline styles from external stylesheets _(default: `true`)_
- * @property {number} inlineThreshold Inline external stylesheets smaller than a given size _(default: `0`)_
- * @property {number} minimumExternalSize If the non-critical external stylesheet would be below this size, just inline it _(default: `0`)_
- * @property {boolean} pruneSource  Remove inlined rules from the external stylesheet _(default: `false`)_
- * @property {boolean} mergeStylesheets Merged inlined stylesheets into a single `<style>` tag _(default: `true`)_
- * @property {string[]} additionalStylesheets Glob for matching other stylesheets to be used while looking for critical CSS.
- * @property {string} preload       Which {@link PreloadStrategy preload strategy} to use
- * @property {boolean} noscriptFallback Add `<noscript>` fallback to JS-based strategies
- * @property {boolean} inlineFonts  Inline critical font-face rules _(default: `false`)_
- * @property {boolean} preloadFonts Preloads critical fonts _(default: `true`)_
- * @property {boolean} fonts        Shorthand for setting `inlineFonts` + `preloadFonts`
- *  - Values:
- *  - `true` to inline critical font-face rules and preload the fonts
- *  - `false` to don't inline any font-face rules and don't preload fonts
- * @property {string} keyframes     Controls which keyframes rules are inlined.
- *  - Values:
- *  - `"critical"`: _(default)_ inline keyframes rules used by the critical CSS
- *  - `"all"` inline all keyframes rules
- *  - `"none"` remove all keyframes rules
- * @property {boolean} compress     Compress resulting critical CSS _(default: `true`)_
- * @property {string} logLevel      Controls {@link LogLevel log level} of the plugin _(default: `"info"`)_
- * @property {object} logger        Provide a custom logger interface {@link Logger logger}
- */
-
 export default class Beasties {
-  /** @private */
-  constructor(options) {
-    this.options = Object.assign(
-      {
-        logLevel: 'info',
-        path: '',
-        publicPath: '',
-        reduceInlineStyles: true,
-        pruneSource: false,
-        additionalStylesheets: [],
-        allowRules: [],
-      },
-      options || {},
-    )
+  options: Options & Required<Pick<Options, 'logLevel' | 'path' | 'publicPath' | 'reduceInlineStyles' | 'pruneSource' | 'additionalStylesheets'>> & { allowRules: Array<string | RegExp> }
+  logger: Logger
+  fs?: typeof import('node:fs')
+  // TODO: remove (undocumented) support
+  urlFilter: (url: string) => boolean
 
+  constructor(options: Options) {
+    this.options = Object.assign({
+      logLevel: 'info',
+      path: '',
+      publicPath: '',
+      reduceInlineStyles: true,
+      pruneSource: false,
+      additionalStylesheets: [],
+      allowRules: [],
+    }, options || {})
+
+    // @ts-expect-error TODO: remove support
     this.urlFilter = this.options.filter
     if (this.urlFilter instanceof RegExp) {
       this.urlFilter = this.urlFilter.test.bind(this.urlFilter)
@@ -139,13 +56,14 @@ export default class Beasties {
   /**
    * Read the contents of a file from the specified filesystem or disk
    */
-  readFile(filename) {
+  readFile(filename: string): string | Promise<string> {
     const fs = this.fs
-    return new Promise((resolve, reject) => {
-      const callback = (err, data) => {
+    return new Promise<string>((resolve, reject) => {
+      // eslint-disable-next-line node/prefer-global/buffer
+      const callback = (err: NodeJS.ErrnoException | null, data: string | Buffer) => {
         if (err)
           reject(err)
-        else resolve(data)
+        else resolve(data.toString())
       }
       if (fs && fs.readFile) {
         fs.readFile(filename, callback)
@@ -159,7 +77,7 @@ export default class Beasties {
   /**
    * Apply critical CSS processing to the html
    */
-  async process(html) {
+  async process(html: string) {
     const start = Date.now()
 
     // Parse the generated HTML in a DOM we can mutate
@@ -171,7 +89,7 @@ export default class Beasties {
 
     // `external:false` skips processing of external sheets
     if (this.options.external !== false) {
-      const externalSheets = [].slice.call(
+      const externalSheets = ([] as ChildNode[]).slice.call(
         document.querySelectorAll('link[rel="stylesheet"]'),
       )
 
@@ -194,14 +112,14 @@ export default class Beasties {
     // serialize the document back to HTML and we're done
     const output = serializeDocument(document)
     const end = Date.now()
-    this.logger.info(`Time ${end - start}ms`)
+    this.logger.info?.(`Time ${end - start}ms`)
     return output
   }
 
   /**
    * Get the style tags that need processing
    */
-  getAffectedStyleTags(document) {
+  getAffectedStyleTags(document: HTMLDocument) {
     const styles = [...document.querySelectorAll('style')]
 
     // `inline:false` skips processing of inline stylesheets
@@ -211,19 +129,19 @@ export default class Beasties {
     return styles
   }
 
-  async mergeStylesheets(document) {
+  async mergeStylesheets(document: HTMLDocument) {
     const styles = this.getAffectedStyleTags(document)
     if (styles.length === 0) {
-      this.logger.warn(
+      this.logger.warn?.(
         'Merging inline stylesheets into a single <style> tag skipped, no inline stylesheets to merge',
       )
       return
     }
-    const first = styles[0]
+    const first = styles[0]!
     let sheet = first.textContent
 
     for (let i = 1; i < styles.length; i++) {
-      const node = styles[i]
+      const node = styles[i]!
       sheet += node.textContent
       node.remove()
     }
@@ -234,7 +152,7 @@ export default class Beasties {
   /**
    * Given href, find the corresponding CSS asset
    */
-  async getCssAsset(href) {
+  async getCssAsset(href: string, _style?: unknown): Promise<string | undefined> {
     const outputPath = this.options.path
     const publicPath = this.options.publicPath
 
@@ -259,26 +177,26 @@ export default class Beasties {
       return undefined
     }
 
-    let sheet
+    let sheet: string | undefined
 
     try {
       sheet = await this.readFile(filename)
     }
     catch {
-      this.logger.warn(`Unable to locate stylesheet: ${filename}`)
+      this.logger.warn?.(`Unable to locate stylesheet: ${filename}`)
     }
 
     return sheet
   }
 
-  checkInlineThreshold(link, style, sheet) {
+  checkInlineThreshold(link: Node, style: Node, sheet: string) {
     if (
       this.options.inlineThreshold
       && sheet.length < this.options.inlineThreshold
     ) {
       const href = style.$$name
       style.$$reduce = false
-      this.logger.info(
+      this.logger.info?.(
         `\u001B[32mInlined all of ${href} (${sheet.length} was below the threshold of ${this.options.inlineThreshold})\u001B[39m`,
       )
       link.remove()
@@ -291,35 +209,35 @@ export default class Beasties {
   /**
    * Inline the stylesheets from options.additionalStylesheets (assuming it passes `options.filter`)
    */
-  async embedAdditionalStylesheet(document) {
-    const styleSheetsIncluded = []
+  async embedAdditionalStylesheet(document: HTMLDocument) {
+    const styleSheetsIncluded: string[] = []
 
     const sources = await Promise.all(
       this.options.additionalStylesheets.map((cssFile) => {
         if (styleSheetsIncluded.includes(cssFile)) {
-          return undefined
+          return []
         }
         styleSheetsIncluded.push(cssFile)
         const style = document.createElement('style')
         style.$$external = true
-        return this.getCssAsset(cssFile, style).then(sheet => [sheet, style])
+        return this.getCssAsset(cssFile, style).then(sheet => [sheet, style] as const)
       }),
     )
 
-    sources.forEach(([sheet, style]) => {
-      if (!sheet)
-        return
-      style.textContent = sheet
-      document.head.appendChild(style)
-    })
+    for (const [sheet, style] of sources) {
+      if (sheet) {
+        style.textContent = sheet
+        document.head.appendChild(style)
+      }
+    }
   }
 
   /**
    * Inline the target stylesheet referred to by a <link rel="stylesheet"> (assuming it passes `options.filter`)
    */
-  async embedLinkedStylesheet(link, document) {
+  async embedLinkedStylesheet(link: ChildNode, document: HTMLDocument) {
     const href = link.getAttribute('href')
-    let media = link.getAttribute('media')
+    let media: string | undefined = link.getAttribute('media')
 
     if (media && !validateMediaQuery(media)) {
       media = undefined
@@ -344,7 +262,7 @@ export default class Beasties {
     style.textContent = sheet
     style.$$name = href
     style.$$links = [link]
-    link.parentNode.insertBefore(style, link)
+    link.parentNode?.insertBefore(style, link)
 
     if (this.checkInlineThreshold(link, style, sheet)) {
       return
@@ -380,7 +298,7 @@ export default class Beasties {
         const js = `${cssLoaderPreamble}$loadcss(document.currentScript.dataset.href,document.currentScript.dataset.media)`
         // script.appendChild(document.createTextNode(js));
         script.textContent = js
-        link.parentNode.insertBefore(script, link.nextSibling)
+        link.parentNode!.insertBefore(script, link.nextSibling)
         style.$$links.push(script)
         cssLoaderPreamble = ''
         noscriptFallback = true
@@ -424,7 +342,7 @@ export default class Beasties {
       // If an ID is present, remove it to avoid collisions.
       noscriptLink.removeAttribute('id')
       noscript.appendChild(noscriptLink)
-      link.parentNode.insertBefore(noscript, link.nextSibling)
+      link.parentNode!.insertBefore(noscript, link.nextSibling)
       style.$$links.push(noscript)
     }
 
@@ -438,12 +356,12 @@ export default class Beasties {
   /**
    * Prune the source CSS files
    */
-  pruneSource(style, before, sheetInverse) {
+  pruneSource(style: Node, before: string, sheetInverse: string) {
     // if external stylesheet would be below minimum size, just inline everything
     const minSize = this.options.minimumExternalSize
     const name = style.$$name
     if (minSize && sheetInverse.length < minSize) {
-      this.logger.info(
+      this.logger.info?.(
         `\u001B[32mInlined all of ${name} (non-critical external stylesheet would have been ${sheetInverse.length}b, which was below the threshold of ${minSize})\u001B[39m`,
       )
       style.textContent = before
@@ -465,14 +383,14 @@ export default class Beasties {
   /**
    * Parse the stylesheet within a <style> element, then reduce it to contain only rules used by the document.
    */
-  async processStyle(style, document) {
+  async processStyle(style: Node, document: HTMLDocument) {
     if (style.$$reduce === false)
       return
 
     const name = style.$$name ? style.$$name.replace(/^\//, '') : 'inline CSS'
     const options = this.options
-    const beastiesContainer = document.beastiesContainer
-    let keyframesMode = options.keyframes || 'critical'
+    const beastiesContainer = document.beastiesContainer!
+    let keyframesMode = options.keyframes ?? 'critical'
     // we also accept a boolean value for options.keyframes
     if (keyframesMode === true)
       keyframesMode = 'all'
@@ -494,7 +412,7 @@ export default class Beasties {
     // a string to search for font names (very loose)
     let criticalFonts = ''
 
-    const failedSelectors = []
+    const failedSelectors: string[] = []
 
     const criticalKeyframeNames = new Set()
 
@@ -566,7 +484,7 @@ export default class Beasties {
           }
 
           // Filter the selector list down to only those match
-          rule.filterSelectors((sel) => {
+          rule.filterSelectors?.((sel) => {
             // Validate rule with 'allowRules' option
             const isAllowedRule = options.allowRules.some((exp) => {
               if (exp instanceof RegExp) {
@@ -601,7 +519,7 @@ export default class Beasties {
               return beastiesContainer.exists(sel)
             }
             catch (e) {
-              failedSelectors.push(`${sel} -> ${e.message}`)
+              failedSelectors.push(`${sel} -> ${(e as Error).message || (e as Error).toString()}`)
               return false
             }
           })
@@ -613,12 +531,11 @@ export default class Beasties {
 
           if (rule.nodes) {
             for (const decl of rule.nodes) {
+              if (!('prop' in decl)) {
+                continue
+              }
               // detect used fonts
-              if (
-                shouldInlineFonts
-                && decl.prop
-                && /\bfont(?:-family)?\b/i.test(decl.prop)
-              ) {
+              if (shouldInlineFonts && /\bfont(?:-family)?\b/i.test(decl.prop)) {
                 criticalFonts += ` ${decl.value}`
               }
 
@@ -640,13 +557,13 @@ export default class Beasties {
           return
 
         // If there are no remaining rules, remove the whole rule:
-        const rules = rule.nodes?.filter(rule => !rule.$$remove)
+        const rules = 'nodes' in rule ? rule.nodes?.filter(rule => !rule.$$remove) : undefined
         return !rules || rules.length !== 0
       }),
     )
 
     if (failedSelectors.length !== 0) {
-      this.logger.warn(
+      this.logger.warn?.(
         `${
           failedSelectors.length
         } rules skipped due to selector errors:\n  ${failedSelectors.join(
@@ -655,14 +572,16 @@ export default class Beasties {
       )
     }
 
-    const preloadedFonts = new Set()
+    const preloadedFonts = new Set<string>()
     // Second pass, using data picked up from the first
     walkStyleRulesWithReverseMirror(ast, astInverse, (rule) => {
       // remove any rules marked in the first pass
       if (rule.$$remove === true)
         return false
 
-      applyMarkedSelectors(rule)
+      if ('selectors' in rule) {
+        applyMarkedSelectors(rule)
+      }
 
       // prune @keyframes rules
       if (rule.type === 'atrule' && rule.name === 'keyframes') {
@@ -676,14 +595,19 @@ export default class Beasties {
       // prune @font-face rules
       if (rule.type === 'atrule' && rule.name === 'font-face') {
         let family, src
-        for (const decl of rule.nodes) {
-          if (decl.prop === 'src') {
-            // TODO: parse this properly and generate multiple preloads with type="font/woff2" etc
-            // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
-            src = (decl.value.match(/url\s*\(\s*(['"]?)(.+?)\1\s*\)/) || [])[2]
-          }
-          else if (decl.prop === 'font-family') {
-            family = decl.value
+        if (rule.nodes) {
+          for (const decl of rule.nodes) {
+            if (!('prop' in decl)) {
+              continue
+            }
+            if (decl.prop === 'src') {
+              // TODO: parse this properly and generate multiple preloads with type="font/woff2" etc
+              // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
+              src = (decl.value.match(/url\s*\(\s*(['"]?)(.+?)\1\s*\)/) || [])[2]
+            }
+            else if (decl.prop === 'font-family') {
+              family = decl.value
+            }
           }
         }
 
@@ -724,7 +648,7 @@ export default class Beasties {
     let afterText = ''
     let styleInlinedCompletely = false
     if (options.pruneSource) {
-      const sheetInverse = serializeStylesheet(astInverse, {
+      const sheetInverse = serializeStylesheet(astInverse!, {
         compress: this.options.compress !== false,
       })
 
@@ -745,7 +669,7 @@ export default class Beasties {
 
     // output stats
     const percent = ((sheet.length / before.length) * 100) | 0
-    this.logger.info(
+    this.logger.info?.(
       `\u001B[32mInlined ${
         formatSize(sheet.length)
       } (${
@@ -760,7 +684,7 @@ export default class Beasties {
   }
 }
 
-function formatSize(size) {
+function formatSize(size: number) {
   if (size <= 0) {
     return '0 bytes'
   }
