@@ -96,13 +96,13 @@ type SingleIterator<T> = (item: T) => boolean | void
  */
 export function markOnly(predicate: SingleIterator<ChildNode | Root_>): (rule: Rule | ChildNode | Root_) => void {
   return (rule) => {
+    const sel = 'selectors' in rule ? rule.selectors : undefined
     if (predicate(rule) === false) {
       rule.$$remove = true
     }
     if ('selectors' in rule) {
-      const sel = rule.selectors
       rule.$$markedSelectors = rule.selectors
-      rule.selectors = sel
+      rule.selectors = sel!
     }
     if (rule._other) {
       rule._other.$$markedSelectors = rule._other.selectors
