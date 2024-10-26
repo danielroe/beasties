@@ -65,7 +65,7 @@
   },
   "devDependencies": {
     "css-loader": "4.3.0",
-    "documentation": "13.2.5",
+    "documentation": "14.0.3",
     "file-loader": "6.2.0",
     "html-webpack-plugin": "4.5.2",
     "microbundle": "0.15.1",
