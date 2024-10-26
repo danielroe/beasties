@@ -52,7 +52,7 @@
     "css-select": "^5.1.0",
     "dom-serializer": "^2.0.0",
     "domhandler": "^5.0.3",
-    "htmlparser2": "^8.0.2",
+    "htmlparser2": "^9.0.0",
     "picocolors": "^1.1.1",
     "postcss": "^8.4.47",
     "postcss-media-query-parser": "^0.2.3"
