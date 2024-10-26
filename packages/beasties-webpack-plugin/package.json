@@ -61,7 +61,7 @@
     "beasties": "^0.0.16",
     "minimatch": "^3.0.8",
     "webpack-log": "^3.0.2",
-    "webpack-sources": "^1.4.3"
+    "webpack-sources": "^3.0.0"
   },
   "devDependencies": {
     "css-loader": "4.3.0",

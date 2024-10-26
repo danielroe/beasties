@@ -85,8 +85,8 @@ importers:
         specifier: ^3.0.2
         version: 3.0.2
       webpack-sources:
-        specifier: ^1.4.3
-        version: 1.4.3
+        specifier: ^3.0.0
+        version: 3.2.3
     devDependencies:
       css-loader:
         specifier: 4.3.0
@@ -5839,6 +5839,10 @@ packages:
 
   webpack-sources@1.4.3:
     resolution: {integrity: sha512-lgTS3Xhv1lCOKo7SA5TjKXMjpSM4sBjNV5+q2bqesbSPs5FjGmU6jjtBSkX9b4qW87vDIsCIlUPOEhbZrMdjeQ==}
+
+  webpack-sources@3.2.3:
+    resolution: {integrity: sha512-/DyMEOrDgLKKIG0fmvtz+4dUX/3Ghozwgm6iPp8KRhvn+eQf9+Q7GWxVNMk3+uCPWfdXYC4ExGBckIXdFEfH1w==}
+    engines: {node: '>=10.13.0'}
 
   webpack@4.47.0:
     resolution: {integrity: sha512-td7fYwgLSrky3fI1EuU5cneU4+pbH6GgOfuKNS1tNPcfdGinGELAqsb/BP4nnvZyKSG2i/xFGU7+n2PvZA8HJQ==}
@@ -13010,6 +13014,8 @@ snapshots:
     dependencies:
       source-list-map: 2.0.1
       source-map: 0.6.1
+
+  webpack-sources@3.2.3: {}
 
   webpack@4.47.0:
     dependencies:
