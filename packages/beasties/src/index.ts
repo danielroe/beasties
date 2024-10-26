@@ -421,10 +421,8 @@ export default class Beasties {
     let excludeNext = false
     let excludeAll = false
 
-    const shouldPreloadFonts
-      = options.fonts === true || options.preloadFonts === true
-    const shouldInlineFonts
-      = options.fonts !== false && options.inlineFonts === true
+    const shouldPreloadFonts = options.fonts === true || options.preloadFonts === true
+    const shouldInlineFonts = options.fonts !== false && options.inlineFonts === true
 
     // Walk all CSS rules, marking unused rules with `.$$remove=true` for removal in the second pass.
     // This first pass is also used to collect font and keyframe usage used in the second pass.
@@ -609,16 +607,16 @@ export default class Beasties {
               family = decl.value
             }
           }
-        }
 
-        if (src && shouldPreloadFonts && !preloadedFonts.has(src)) {
-          preloadedFonts.add(src)
-          const preload = document.createElement('link')
-          preload.setAttribute('rel', 'preload')
-          preload.setAttribute('as', 'font')
-          preload.setAttribute('crossorigin', 'anonymous')
-          preload.setAttribute('href', src.trim())
-          document.head.appendChild(preload)
+          if (src && shouldPreloadFonts && !preloadedFonts.has(src)) {
+            preloadedFonts.add(src)
+            const preload = document.createElement('link')
+            preload.setAttribute('rel', 'preload')
+            preload.setAttribute('as', 'font')
+            preload.setAttribute('crossorigin', 'anonymous')
+            preload.setAttribute('href', src.trim())
+            document.head.appendChild(preload)
+          }
         }
 
         // if we're missing info, if the font is unused, or if critical font inlining is disabled, remove the rule:
