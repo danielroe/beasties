@@ -47,7 +47,7 @@
   "scripts": {
     "build": "microbundle --target node --no-sourcemap -f cjs,esm",
     "docs": "documentation readme src -q --no-markdown-toc -a public -s Usage --sort-order alpha",
-    "prepare": "npm run -s build"
+    "prepack": "npm run -s build"
   },
   "peerDependencies": {
     "html-webpack-plugin": "^5.0.0"

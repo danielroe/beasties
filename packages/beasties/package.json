@@ -44,7 +44,7 @@
   "scripts": {
     "build": "unbuild && cp src/index.d.ts dist/index.d.ts",
     "docs": "documentation readme src -q --no-markdown-toc -a public -s Usage --sort-order alpha",
-    "prepare": "npm run -s build"
+    "prepack": "npm run -s build"
   },
   "dependencies": {
     "css-select": "^5.1.0",
