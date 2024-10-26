@@ -104,8 +104,8 @@ importers:
         specifier: 0.15.1
         version: 0.15.1(@types/babel__core@7.20.5)
       mini-css-extract-plugin:
-        specifier: 0.10.1
-        version: 0.10.1(webpack@4.47.0)
+        specifier: 0.12.0
+        version: 0.12.0(webpack@4.47.0)
       webpack:
         specifier: 4.47.0
         version: 4.47.0
@@ -3977,8 +3977,8 @@ packages:
     resolution: {integrity: sha512-I9jwMn07Sy/IwOj3zVkVik2JTvgpaykDZEigL6Rx6N9LbMywwUSMtxET+7lVoDLLd3O3IXwJwvuuns8UB/HeAg==}
     engines: {node: '>=4'}
 
-  mini-css-extract-plugin@0.10.1:
-    resolution: {integrity: sha512-9B10gZixtNjHerADBrMxPXM5G0uL0CRGMcLRV67I8nd1SKbwJrI0okKUzD+PxKsUZ9Dxt8/hPvtzF0DrRnrOyA==}
+  mini-css-extract-plugin@0.12.0:
+    resolution: {integrity: sha512-z6PQCe9rd1XUwZ8gMaEVwwRyZlrYy8Ba1gRjFP5HcV51HkXX+XlwZ+a1iAYTjSYwgNBXoNR7mhx79mDpOn5fdw==}
     engines: {node: '>= 6.9.0'}
     peerDependencies:
       webpack: ^4.4.0 || ^5.0.0
@@ -10887,7 +10887,7 @@ snapshots:
 
   min-indent@1.0.1: {}
 
-  mini-css-extract-plugin@0.10.1(webpack@4.47.0):
+  mini-css-extract-plugin@0.12.0(webpack@4.47.0):
     dependencies:
       loader-utils: 1.4.2
       normalize-url: 1.9.1
