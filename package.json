@@ -27,6 +27,7 @@
     "build": "pnpm -r build",
     "build:main": "pnpm --filter beasties run build",
     "build:webpack": "pnpm --filter beasties-webpack-plugin run build",
+    "postinstall": "pnpm -r build:stub",
     "docs": "pnpm -r docs",
     "lint": "eslint .",
     "release": "bumpp && pnpm publish",
