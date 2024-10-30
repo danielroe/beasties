@@ -1,11 +1,17 @@
+import type { Options } from '../src/types'
 import fs from 'node:fs'
+
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-
 import { bench, describe } from 'vitest'
 import Beasties from '../src/index'
 
 const fixtureDir = fileURLToPath(new URL('./src', import.meta.url))
+
+const DEFAULT_BEASTIES_CONFIG: Partial<Options> = {
+  reduceInlineStyles: false,
+  logLevel: 'error',
+} as const
 
 function trim(s: TemplateStringsArray) {
   return s[0]!
@@ -16,7 +22,7 @@ function trim(s: TemplateStringsArray) {
 describe('beasties', () => {
   bench('basic Usage', async () => {
     const beasties = new Beasties({
-      reduceInlineStyles: false,
+      ...DEFAULT_BEASTIES_CONFIG,
       path: '/',
     })
     const assets: Record<string, string> = {
@@ -45,7 +51,7 @@ describe('beasties', () => {
 
   bench('run on HTML file', async () => {
     const beasties = new Beasties({
-      reduceInlineStyles: false,
+      ...DEFAULT_BEASTIES_CONFIG,
       path: fixtureDir,
     })
 
@@ -54,7 +60,7 @@ describe('beasties', () => {
 
   bench('does not encode HTML', async () => {
     const beasties = new Beasties({
-      reduceInlineStyles: false,
+      ...DEFAULT_BEASTIES_CONFIG,
       path: '/',
     })
     const assets: Record<string, string> = {
@@ -78,7 +84,7 @@ describe('beasties', () => {
 
   bench('should keep existing link tag attributes in the noscript link', async () => {
     const beasties = new Beasties({
-      reduceInlineStyles: false,
+      ...DEFAULT_BEASTIES_CONFIG,
       path: '/',
       preload: 'media',
     })
@@ -103,7 +109,7 @@ describe('beasties', () => {
 
   bench('should keep existing link tag attributes', async () => {
     const beasties = new Beasties({
-      reduceInlineStyles: false,
+      ...DEFAULT_BEASTIES_CONFIG,
       path: '/',
     })
     const assets: Record<string, string> = {
@@ -127,6 +133,7 @@ describe('beasties', () => {
 
   bench('does not decode entities in HTML document', async () => {
     const beasties = new Beasties({
+      ...DEFAULT_BEASTIES_CONFIG,
       path: '/',
     })
     const assets: Record<string, string> = {
@@ -150,7 +157,7 @@ describe('beasties', () => {
   const mediaValidationHtml = fs.readFileSync(join(fixtureDir, 'media-validation.html'), 'utf-8')
   bench('prevent injection via media attr', async () => {
     const beasties = new Beasties({
-      reduceInlineStyles: false,
+      ...DEFAULT_BEASTIES_CONFIG,
       path: fixtureDir,
       preload: 'media',
     })
@@ -161,7 +168,7 @@ describe('beasties', () => {
   const invalidPathHtml = fs.readFileSync(join(fixtureDir, 'subpath-validation.html'), 'utf-8')
   bench('skip invalid path', async () => {
     const beasties = new Beasties({
-      reduceInlineStyles: false,
+      ...DEFAULT_BEASTIES_CONFIG,
       path: fixtureDir,
     })
 
