@@ -76,14 +76,12 @@ export default class Beasties {
     const document = createDocument(html)
 
     if (this.options.additionalStylesheets.length > 0) {
-      this.embedAdditionalStylesheet(document)
+      await this.embedAdditionalStylesheet(document)
     }
 
     // `external:false` skips processing of external sheets
     if (this.options.external !== false) {
-      const externalSheets = ([] as ChildNode[]).slice.call(
-        document.querySelectorAll('link[rel="stylesheet"]'),
-      )
+      const externalSheets = [...document.querySelectorAll('link[rel="stylesheet"]')] as ChildNode[]
 
       await Promise.all(
         externalSheets.map(link => this.embedLinkedStylesheet(link, document)),
@@ -92,13 +90,12 @@ export default class Beasties {
 
     // go through all the style tags in the document and reduce them to only critical CSS
     const styles = this.getAffectedStyleTags(document)
-
-    await Promise.all(
-      styles.map(style => this.processStyle(style, document)),
-    )
+    for (const style of styles) {
+      this.processStyle(style, document)
+    }
 
     if (this.options.mergeStylesheets !== false && styles.length !== 0) {
-      await this.mergeStylesheets(document)
+      this.mergeStylesheets(document)
     }
 
     // serialize the document back to HTML and we're done
@@ -121,7 +118,7 @@ export default class Beasties {
     return styles
   }
 
-  async mergeStylesheets(document: HTMLDocument) {
+  mergeStylesheets(document: HTMLDocument) {
     const styles = this.getAffectedStyleTags(document)
     if (styles.length === 0) {
       this.logger.warn?.(
@@ -375,7 +372,7 @@ export default class Beasties {
   /**
    * Parse the stylesheet within a <style> element, then reduce it to contain only rules used by the document.
    */
-  async processStyle(style: Node, document: HTMLDocument) {
+  processStyle(style: Node, document: HTMLDocument) {
     if (style.$$reduce === false)
       return
 
