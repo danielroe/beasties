@@ -42,8 +42,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "unbuild && cp src/index.d.ts dist/index.d.ts",
-    "build:stub": "unbuild --stub && cp src/index.d.ts dist/index.d.ts",
+    "build": "unbuild && node -e \"require('fs/promises').cp('src/index.d.ts', 'dist/index.d.ts')\"",
+    "build:stub": "unbuild --stub && node -e \"require('fs/promises').cp('src/index.d.ts', 'dist/index.d.ts')\"",
     "docs": "documentation readme src -q --no-markdown-toc -a public -s Usage --sort-order alpha",
     "prepack": "npm run -s build"
   },
