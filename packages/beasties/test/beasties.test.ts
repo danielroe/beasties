@@ -44,7 +44,7 @@ describe('beasties', () => {
         p.unused { color: orange; }
       `,
     }
-    beasties.readFile = filename => assets[filename]!
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
     const result = await beasties.process(trim`
       <html>
         <head>
@@ -98,7 +98,7 @@ describe('beasties', () => {
         h1 { color: blue; }
       `,
     }
-    beasties.readFile = filename => assets[filename]!
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
     const result = await beasties.process(trim`
       <html>
         <head>
@@ -126,7 +126,7 @@ describe('beasties', () => {
         h1 { color: blue; }
       `,
     }
-    beasties.readFile = filename => assets[filename]!
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
     const result = await beasties.process(trim`
       <html>
         <head>
@@ -156,7 +156,7 @@ describe('beasties', () => {
         h1 { color: blue; }
       `,
     }
-    beasties.readFile = filename => assets[filename]!
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
     const result = await beasties.process(trim`
       <html>
         <head>
@@ -188,7 +188,7 @@ describe('beasties', () => {
         p.unused { color: orange; }
       `,
     }
-    beasties.readFile = filename => assets[filename]!
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
     const result = await beasties.process(trim`
       <html>
         <body>
@@ -244,7 +244,7 @@ describe('beasties', () => {
             <body></body>
         </html>
     `)
-    expect(beasties.readFile).toHaveBeenCalledWith('/var/www/file.css')
+    expect(beasties.readFile).toHaveBeenCalledWith(path.resolve('/var/www/file.css'))
     expect(beasties.readFile).not.toHaveBeenCalledWith(
       '/company-secrets/secret.css',
     )
