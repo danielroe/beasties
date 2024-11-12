@@ -201,7 +201,7 @@ describe('options', () => {
 describe('accessing file system', () => {
   it('works', async () => {
     const output = await compileToHtml('fs-access', configure, {
-      path: './dist/',
+      path: 'dist',
       publicPath: '',
     })
     expect(output.html).toMatch(/\.foo/)
