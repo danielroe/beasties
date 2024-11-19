@@ -35,7 +35,7 @@
     "test:types": "tsc --noEmit"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "3.9.1",
+    "@antfu/eslint-config": "3.9.2",
     "@codspeed/vitest-plugin": "3.1.1",
     "@types/node": "22.9.0",
     "@vitest/coverage-v8": "2.1.5",
