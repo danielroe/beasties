@@ -43,7 +43,7 @@ interface SerializeStylesheetOptions {
  * @param ast A Stylesheet to serialize, such as one returned from `parseStylesheet()`
  */
 export function serializeStylesheet(ast: AnyNode, options: SerializeStylesheetOptions) {
-  let cssStr = ''
+  const cssParts: string[] = []
 
   stringify(ast, (result, node, type) => {
     if (node?.type === 'decl' && node.value.includes('</style>')) {
@@ -51,7 +51,7 @@ export function serializeStylesheet(ast: AnyNode, options: SerializeStylesheetOp
     }
 
     if (!options.compress) {
-      cssStr += result
+      cssParts.push(result)
       return
     }
 
@@ -62,28 +62,36 @@ export function serializeStylesheet(ast: AnyNode, options: SerializeStylesheetOp
     if (node?.type === 'decl') {
       const prefix = node.prop + node.raws.between
 
-      cssStr += result.replace(prefix, prefix.trim())
+      cssParts.push(result.replace(prefix, prefix.trim()))
       return
     }
 
     if (type === 'start') {
       if (node?.type === 'rule' && node.selectors) {
-        cssStr += `${node.selectors.join(',')}{`
+        if (node.selectors.length === 1) {
+          cssParts.push(node.selectors[0] ?? '', '{')
+        }
+        else {
+          cssParts.push(node.selectors.join(','), '{')
+        }
       }
       else {
-        cssStr += result.replace(/\s\{$/, '{')
+        cssParts.push(result.trim())
       }
       return
     }
 
     if (type === 'end' && result === '}' && node?.raws?.semicolon) {
-      cssStr = cssStr.slice(0, -1)
+      const lastItemIdx = cssParts.length - 2
+      if (lastItemIdx >= 0 && cssParts[lastItemIdx]) {
+        cssParts[lastItemIdx] = cssParts[lastItemIdx].slice(0, -1)
+      }
     }
 
-    cssStr += result.trim()
+    cssParts.push(result.trim())
   })
 
-  return cssStr
+  return cssParts.join('')
 }
 
 type SingleIterator<T> = (item: T) => boolean | void
