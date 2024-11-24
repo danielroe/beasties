@@ -58,6 +58,16 @@ describe('beasties', () => {
     await beasties.process(basicHTML)
   })
 
+  bench('run on HTML file multiple times', async () => {
+    const beasties = new Beasties({
+      ...DEFAULT_BEASTIES_CONFIG,
+      path: fixtureDir,
+    })
+
+    await beasties.process(basicHTML)
+    await beasties.process(basicHTML)
+  })
+
   bench('does not encode HTML', async () => {
     const beasties = new Beasties({
       ...DEFAULT_BEASTIES_CONFIG,

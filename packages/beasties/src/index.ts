@@ -26,7 +26,12 @@ import { applyMarkedSelectors, markOnly, parseStylesheet, serializeStylesheet, v
 import { createDocument, serializeDocument } from './dom'
 import { createLogger, isSubpath } from './util'
 
+const removePseudoElementsPattern = /(?<!\\)::?[a-z-]+(?![a-z-(])/gi
+const cleanEmptyNotPattern = /::?not\(\s*\)/g
+const removeTrailingCommasPattern = /\(\s*,|,\s*\)/g
+
 export default class Beasties {
+  #selectorCache = new Map<string, string>()
   options: Options & Required<Pick<Options, 'logLevel' | 'path' | 'publicPath' | 'reduceInlineStyles' | 'pruneSource' | 'additionalStylesheets'>> & { allowRules: Array<string | RegExp> }
   logger: Logger
   fs?: typeof import('node:fs')
@@ -488,17 +493,13 @@ export default class Beasties {
               sel === ':root'
               || sel === 'html'
               || sel === 'body'
-              || /^::?(?:before|after)$/.test(sel)
+              || (sel[0] === ':' && /^::?(?:before|after)$/.test(sel))
             ) {
               return true
             }
-            sel = sel
-              .replace(/(?<!\\)::?[a-z-]+(?![a-z-(])/gi, '')
-              .replace(/::?not\(\s*\)/g, '')
-              // Remove tailing or leading commas from cleaned sub selector `is(.active, :hover)` -> `is(.active)`.
-              .replace(/\(\s*,/g, '(')
-              .replace(/,\s*\)/g, ')')
-              .trim()
+
+            sel = this.normalizeCssSelector(sel)
+
             if (!sel)
               return false
 
@@ -544,8 +545,8 @@ export default class Beasties {
           return
 
         // If there are no remaining rules, remove the whole rule:
-        const rules = 'nodes' in rule ? rule.nodes?.filter(rule => !rule.$$remove) : undefined
-        return !rules || rules.length !== 0
+        const hasRemainingRules = ('nodes' in rule && rule.nodes?.some(rule => !rule.$$remove)) ?? true
+        return hasRemainingRules
       }),
     )
 
@@ -668,6 +669,23 @@ export default class Beasties {
       }${afterText
       }.\u001B[39m`,
     )
+  }
+
+  private normalizeCssSelector(sel: string): string {
+    let normalizedSelector = this.#selectorCache.get(sel)
+    if (normalizedSelector !== undefined) {
+      return normalizedSelector
+    }
+
+    normalizedSelector = sel
+      .replace(removePseudoElementsPattern, '')
+      .replace(cleanEmptyNotPattern, '')
+      .replace(removeTrailingCommasPattern, match => (match.includes('(') ? '(' : ')'))
+      .trim() as string
+
+    this.#selectorCache.set(sel, normalizedSelector)
+
+    return normalizedSelector
   }
 }
 
