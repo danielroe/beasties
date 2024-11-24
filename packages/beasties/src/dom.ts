@@ -18,7 +18,7 @@ import type { ChildNode, Node, NodeWithChildren } from 'domhandler'
 
 import { selectAll, selectOne } from 'css-select'
 
-import { parse as selectorParser } from 'css-what'
+import { type AttributeSelector, parse as selectorParser } from 'css-what'
 import render from 'dom-serializer'
 import { Element, Text } from 'domhandler'
 import { DomUtils, parseDocument } from 'htmlparser2'
@@ -137,7 +137,7 @@ function extendElement(element: typeof Element.prototype) {
         return this.getAttribute('id')
       },
       set(value) {
-        this.setAttribue('id', value)
+        this.setAttribute('id', value)
       },
     },
 
@@ -341,19 +341,47 @@ function extendDocument(document: ParsedDocument): asserts document is HTMLDocum
   })
 }
 
+// TODO: we sould probable move this case as part of the class
+// so that it's disposed with it.
+const selectorTokensCache = new Map<string, null | AttributeSelector[]>()
+
 function cachedQuerySelector(sel: string, node: Node | Node[]) {
-  const selectorTokens = selectorParser(sel)
-  for (const tokens of selectorTokens) {
-    // Check if the selector is a class selector
-    if (tokens.length === 1) {
-      const token = tokens[0]!
-      if (token.type === 'attribute' && token.name === 'class') {
+  let selectorTokens = selectorTokensCache.get(sel)
+  if (selectorTokens === undefined) {
+    selectorTokens = parseRelevantSelectors(sel)
+    selectorTokensCache.set(sel, selectorTokens)
+  }
+
+  if (selectorTokens) {
+    for (const token of selectorTokens) {
+      // Check if the selector is a class selector
+      if (token.name === 'class') {
         return classCache!.has(token.value)
       }
-      if (token.type === 'attribute' && token.name === 'id') {
+      if (token.name === 'id') {
         return idCache!.has(token.value)
       }
     }
   }
+
   return !!selectOne(sel, node)
+}
+
+function parseRelevantSelectors(sel: string): AttributeSelector[] | null {
+  const tokens = selectorParser(sel)
+  const relevantTokens: AttributeSelector[] = []
+
+  for (let i = 0; i < tokens.length; i++) {
+    const tokenGroup = tokens[i]
+    if (tokenGroup?.length !== 1) {
+      continue
+    }
+
+    const token = tokenGroup[0]
+    if (token?.type === 'attribute' && (token.name === 'class' || token.name === 'id')) {
+      relevantTokens.push(token)
+    }
+  }
+
+  return relevantTokens.length > 0 ? relevantTokens : null
 }
