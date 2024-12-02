@@ -42,7 +42,7 @@
     "bumpp": "9.8.1",
     "cheerio": "1.0.0",
     "css-what": "6.1.0",
-    "eslint": "9.15.0",
+    "eslint": "9.16.0",
     "jsdom": "25.0.1",
     "lint-staged": "15.2.10",
     "microbundle": "0.15.1",
