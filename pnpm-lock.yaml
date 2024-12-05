@@ -114,25 +114,25 @@ importers:
         version: 3.2.3
       css-loader:
         specifier: 7.1.2
-        version: 7.1.2(webpack@5.97.0)
+        version: 7.1.2(webpack@5.97.1)
       documentation:
         specifier: 14.0.3
         version: 14.0.3
       file-loader:
         specifier: 6.2.0
-        version: 6.2.0(webpack@5.97.0)
+        version: 6.2.0(webpack@5.97.1)
       html-webpack-plugin:
         specifier: 5.6.3
-        version: 5.6.3(webpack@5.97.0)
+        version: 5.6.3(webpack@5.97.1)
       microbundle:
         specifier: 0.15.1
         version: 0.15.1
       mini-css-extract-plugin:
         specifier: 2.9.2
-        version: 2.9.2(webpack@5.97.0)
+        version: 2.9.2(webpack@5.97.1)
       webpack:
-        specifier: 5.97.0
-        version: 5.97.0
+        specifier: 5.97.1
+        version: 5.97.1
 
 packages:
 
@@ -5499,8 +5499,8 @@ packages:
     resolution: {integrity: sha512-/DyMEOrDgLKKIG0fmvtz+4dUX/3Ghozwgm6iPp8KRhvn+eQf9+Q7GWxVNMk3+uCPWfdXYC4ExGBckIXdFEfH1w==}
     engines: {node: '>=10.13.0'}
 
-  webpack@5.97.0:
-    resolution: {integrity: sha512-CWT8v7ShSfj7tGs4TLRtaOLmOCPWhoKEvp+eA7FVx8Xrjb3XfT0aXdxDItnRZmE8sHcH+a8ayDrJCOjXKxVFfQ==}
+  webpack@5.97.1:
+    resolution: {integrity: sha512-EksG6gFY3L1eFMROS/7Wzgrii5mBAFe4rIr3r2BTfo7bcc+DWwFZ4OJ/miOuHJO/A85HwyI4eQ0F6IKXesO7Fg==}
     engines: {node: '>=10.13.0'}
     hasBin: true
     peerDependencies:
@@ -7753,7 +7753,7 @@ snapshots:
     dependencies:
       postcss: 8.4.49
 
-  css-loader@7.1.2(webpack@5.97.0):
+  css-loader@7.1.2(webpack@5.97.1):
     dependencies:
       icss-utils: 5.1.0(postcss@8.4.49)
       postcss: 8.4.49
@@ -7764,7 +7764,7 @@ snapshots:
       postcss-value-parser: 4.2.0
       semver: 7.6.3
     optionalDependencies:
-      webpack: 5.97.0
+      webpack: 5.97.1
 
   css-select@4.3.0:
     dependencies:
@@ -8632,11 +8632,11 @@ snapshots:
     dependencies:
       flat-cache: 4.0.1
 
-  file-loader@6.2.0(webpack@5.97.0):
+  file-loader@6.2.0(webpack@5.97.1):
     dependencies:
       loader-utils: 2.0.4
       schema-utils: 3.3.0
-      webpack: 5.97.0
+      webpack: 5.97.1
 
   filelist@1.0.4:
     dependencies:
@@ -8981,7 +8981,7 @@ snapshots:
 
   html-void-elements@2.0.1: {}
 
-  html-webpack-plugin@5.6.3(webpack@5.97.0):
+  html-webpack-plugin@5.6.3(webpack@5.97.1):
     dependencies:
       '@types/html-minifier-terser': 6.1.0
       html-minifier-terser: 6.1.0
@@ -8989,7 +8989,7 @@ snapshots:
       pretty-error: 4.0.0
       tapable: 2.2.1
     optionalDependencies:
-      webpack: 5.97.0
+      webpack: 5.97.1
 
   htmlparser2@6.1.0:
     dependencies:
@@ -10167,11 +10167,11 @@ snapshots:
 
   min-indent@1.0.1: {}
 
-  mini-css-extract-plugin@2.9.2(webpack@5.97.0):
+  mini-css-extract-plugin@2.9.2(webpack@5.97.1):
     dependencies:
       schema-utils: 4.2.0
       tapable: 2.2.1
-      webpack: 5.97.0
+      webpack: 5.97.1
 
   minimatch@10.0.1:
     dependencies:
@@ -11486,14 +11486,14 @@ snapshots:
       mkdirp: 1.0.4
       yallist: 4.0.0
 
-  terser-webpack-plugin@5.3.10(webpack@5.97.0):
+  terser-webpack-plugin@5.3.10(webpack@5.97.1):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.25
       jest-worker: 27.5.1
       schema-utils: 3.3.0
       serialize-javascript: 6.0.2
       terser: 5.36.0
-      webpack: 5.97.0
+      webpack: 5.97.1
 
   terser@5.36.0:
     dependencies:
@@ -11910,7 +11910,7 @@ snapshots:
 
   webpack-sources@3.2.3: {}
 
-  webpack@5.97.0:
+  webpack@5.97.1:
     dependencies:
       '@types/eslint-scope': 3.7.7
       '@types/estree': 1.0.6
@@ -11932,7 +11932,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 3.3.0
       tapable: 2.2.1
-      terser-webpack-plugin: 5.3.10(webpack@5.97.0)
+      terser-webpack-plugin: 5.3.10(webpack@5.97.1)
       watchpack: 2.4.2
       webpack-sources: 3.2.3
     transitivePeerDependencies:
