@@ -123,3 +123,16 @@ exports[`beasties > skip invalid path 1`] = `
 </html>
 "
 `;
+
+exports[`beasties > works with pseudo classes and elements 1`] = `
+"<html data-beasties-container>
+  <head>
+    <style>h1{color:blue}h1:has(+ p){margin-bottom:0}p{color:purple}p:only-child{color:fuchsia}input:where(:not([readonly])):where(:active, :focus, :focus-visible, [data-focused]){color:blue}</style><link rel="preload" href="/style.css" as="style">
+  </head>
+  <body>
+    <h1>Hello World!</h1>
+    <p>This is a paragraph</p>
+    <input type="text">
+  <link rel="stylesheet" href="/style.css"></body>
+</html>"
+`;

@@ -14,12 +14,13 @@
  * the License.
  */
 
+import type { Logger } from '../src/util'
 import fs from 'node:fs'
 import path from 'node:path'
+
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it, vi } from 'vitest'
-
 import Beasties from '../src/index'
 
 const fixtureDir = fileURLToPath(new URL('./src', import.meta.url))
@@ -248,5 +249,53 @@ describe('beasties', () => {
     expect(beasties.readFile).not.toHaveBeenCalledWith(
       '/company-secrets/secret.css',
     )
+  })
+
+  it('works with pseudo classes and elements', async () => {
+    const logger: Logger = {
+      warn: () => {},
+      info: () => {},
+      error: () => {},
+      debug: () => {},
+    }
+
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+      logLevel: 'warn',
+      logger,
+    })
+    const assets: Record<string, string> = {
+      '/style.css': trim`
+        h1 { color: blue; }
+        h1:has(+ p) { margin-bottom: 0; }
+        h2.unused { color: red; }
+        p { color: purple; }
+        p:only-child { color: fuchsia; }
+        p.unused { color: orange; }
+        input:where(:not([readonly])):where(:active, :focus, :focus-visible, [data-focused]) {
+          color: blue;
+        }
+      `,
+    }
+
+    const loggerWarnSpy = vi.spyOn(logger, 'warn')
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+          <p>This is a paragraph</p>
+          <input type="text">
+        </body>
+      </html>
+    `)
+    expect(loggerWarnSpy).not.toHaveBeenCalled()
+    expect(result).toMatch('<style>h1{color:blue}h1:has(+ p){margin-bottom:0}p{color:purple}p:only-child{color:fuchsia}input:where(:not([readonly])):where(:active, :focus, :focus-visible, [data-focused]){color:blue}</style>')
+    expect(result).toMatch('<link rel="stylesheet" href="/style.css">')
+    expect(result).toMatchSnapshot()
   })
 })

@@ -26,8 +26,7 @@ import { applyMarkedSelectors, markOnly, parseStylesheet, serializeStylesheet, v
 import { createDocument, serializeDocument } from './dom'
 import { createLogger, isSubpath } from './util'
 
-const removePseudoElementsPattern = /(?<!\\)::?[a-z-]+(?![a-z-(])/gi
-const cleanEmptyNotPattern = /::?not\(\s*\)/g
+const removePseudoClassesAndElementsPattern = /(?<!\\)::?[a-z-]+(?:\(.+\))?/gi
 const removeTrailingCommasPattern = /\(\s*,|,\s*\)/g
 
 export default class Beasties {
@@ -678,8 +677,7 @@ export default class Beasties {
     }
 
     normalizedSelector = sel
-      .replace(removePseudoElementsPattern, '')
-      .replace(cleanEmptyNotPattern, '')
+      .replace(removePseudoClassesAndElementsPattern, '')
       .replace(removeTrailingCommasPattern, match => (match.includes('(') ? '(' : ')'))
       .trim() as string
 
