@@ -39,7 +39,7 @@
     "@codspeed/vitest-plugin": "3.1.1",
     "@types/node": "22.10.2",
     "@vitest/coverage-v8": "2.1.8",
-    "bumpp": "9.9.0",
+    "bumpp": "9.9.1",
     "changelogithub": "0.13.11",
     "cheerio": "1.0.0",
     "eslint": "9.16.0",
