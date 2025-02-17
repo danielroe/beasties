@@ -75,6 +75,6 @@
     "html-webpack-plugin": "5.6.3",
     "microbundle": "0.15.1",
     "mini-css-extract-plugin": "2.9.2",
-    "webpack": "5.97.1"
+    "webpack": "5.98.0"
   }
 }
