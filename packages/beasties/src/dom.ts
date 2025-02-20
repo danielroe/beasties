@@ -14,11 +14,12 @@
  * the License.
  */
 
+import type { AttributeSelector } from 'css-what'
+
 import type { ChildNode, Node, NodeWithChildren } from 'domhandler'
 
 import { selectAll, selectOne } from 'css-select'
-
-import { type AttributeSelector, parse as selectorParser } from 'css-what'
+import { parse as selectorParser } from 'css-what'
 import render from 'dom-serializer'
 import { Element, Text } from 'domhandler'
 import { DomUtils, parseDocument } from 'htmlparser2'
