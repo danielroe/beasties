@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "4.11.0",
-    "@codspeed/vitest-plugin": "4.0.0",
+    "@codspeed/vitest-plugin": "4.0.1",
     "@types/node": "22.13.11",
     "@vitest/coverage-v8": "3.0.9",
     "bumpp": "10.1.0",
