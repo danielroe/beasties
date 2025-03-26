@@ -310,6 +310,13 @@ export default class Beasties {
         link.setAttribute('onload', `this.title='';this.rel='stylesheet'`)
         noscriptFallback = true
       }
+      else if (preloadMode === 'swap-low') {
+        // @see http://filamentgroup.github.io/loadCSS/test/new-low.html
+        link.setAttribute('rel', 'alternate stylesheet')
+        link.setAttribute('title', 'styles')
+        link.setAttribute('onload', `this.title='';this.rel='stylesheet'`)
+        noscriptFallback = true
+      }
       else if (preloadMode === 'swap') {
         link.setAttribute('onload', 'this.rel=\'stylesheet\'')
         noscriptFallback = true
