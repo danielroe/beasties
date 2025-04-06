@@ -41,7 +41,7 @@ export function beasties(options: ViteBeastiesOptions = {}): Plugin {
       }
 
       beastiesInstance.readFile = (filename: string) => {
-        const path = relative(config.build.outDir, filename)
+        const path = relative(config.build.outDir, filename).replace(/\\/g, '/')
         const chunk = bundle[path] ?? { type: 'asset', source: readFileSync(filename, 'utf-8') }
         if (!chunk) {
           throw new Error(`Failed to read file: ${filename}`)
