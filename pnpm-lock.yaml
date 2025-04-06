@@ -186,12 +186,6 @@ importers:
         specifier: 3.1.1
         version: 3.1.1(@types/debug@4.1.12)(@types/node@22.14.0)(jiti@2.4.2)(jsdom@26.0.0)(terser@5.39.0)(yaml@2.7.1)
 
-  packages/vite-plugin-beasties/playground:
-    dependencies:
-      vite-plugin-beasties:
-        specifier: latest
-        version: 0.0.0
-
 packages:
 
   '@ampproject/remapping@2.3.0':
@@ -5712,9 +5706,6 @@ packages:
     resolution: {integrity: sha512-V+IxPAE2FvXpTCHXyNem0M+gWm6J7eRyWPR6vYoG/Gl+IscNOjXzztUhimQgTxaAoUoj40Qqimaa0NLIOOAH4w==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
-
-  vite-plugin-beasties@0.0.0:
-    resolution: {integrity: sha512-ZwTyguCPvOZVSm1qvxTr1/GTM7cFKFxoLgVnzRd8FmUSsg5F1xT3mVT4IoI/YepDeuFBewdFfzBN8CajHma8AA==}
 
   vite@6.2.5:
     resolution: {integrity: sha512-j023J/hCAa4pRIUH6J9HemwYfjB5llR2Ps0CWeikOtdR8+pAURAk0DoJC5/mm9kd+UgdnIy7d6HE4EAvlYhPhA==}
@@ -12952,8 +12943,6 @@ snapshots:
       - terser
       - tsx
       - yaml
-
-  vite-plugin-beasties@0.0.0: {}
 
   vite@6.2.5(@types/node@22.14.0)(jiti@2.4.2)(terser@5.39.0)(yaml@2.7.1):
     dependencies:
