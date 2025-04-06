@@ -188,3 +188,29 @@ exports[`preload modes > should use "swap" preload mode correctly 1`] = `
       </html>
     "
 `;
+
+exports[`preload modes > should use "swap-high" preload mode correctly 1`] = `
+"
+      <html data-beasties-container>
+        <head>
+          <style>h1{color:blue}</style><link rel="alternate stylesheet preload" href="/style.css" title="styles" onload="this.title='';this.rel='stylesheet'"><noscript><link rel="stylesheet" href="/style.css"></noscript>
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    "
+`;
+
+exports[`preload modes > should use "swap-low" preload mode correctly 1`] = `
+"
+      <html data-beasties-container>
+        <head>
+          <style>h1{color:blue}</style><link rel="alternate stylesheet" href="/style.css" title="styles" onload="this.title='';this.rel='stylesheet'"><noscript><link rel="stylesheet" href="/style.css"></noscript>
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    "
+`;

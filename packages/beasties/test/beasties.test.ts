@@ -405,4 +405,56 @@ describe('preload modes', () => {
     expect(result).not.toContain('<noscript>')
     expect(result).toMatchSnapshot()
   })
+
+  it('should use "swap-low" preload mode correctly', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+      preload: 'swap-low',
+    })
+    const assets: Record<string, string> = {
+      '/style.css': 'h1 { color: blue; }',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+    const result = await beasties.process(`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+    expect(result).toContain('<style>h1{color:blue}</style>')
+    expect(result).toContain(`<link rel="alternate stylesheet" href="/style.css" title="styles" onload="this.title='';this.rel='stylesheet'">`)
+    expect(result).toContain('<noscript><link rel="stylesheet" href="/style.css"></noscript>')
+    expect(result).toMatchSnapshot()
+  })
+
+  it('should use "swap-high" preload mode correctly', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+      preload: 'swap-high',
+    })
+    const assets: Record<string, string> = {
+      '/style.css': 'h1 { color: blue; }',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+    const result = await beasties.process(`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+    expect(result).toContain('<style>h1{color:blue}</style>')
+    expect(result).toContain(`<link rel="alternate stylesheet preload" href="/style.css" title="styles" onload="this.title='';this.rel='stylesheet'">`)
+    expect(result).toContain('<noscript><link rel="stylesheet" href="/style.css"></noscript>')
+    expect(result).toMatchSnapshot()
+  })
 })
