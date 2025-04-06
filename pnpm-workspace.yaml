@@ -1,5 +1,6 @@
 packages:
   - packages/*
+  - packages/vite-plugin-beasties/playground
 ignoredBuiltDependencies:
   - esbuild
 onlyBuiltDependencies:

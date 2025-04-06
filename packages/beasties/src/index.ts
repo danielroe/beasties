@@ -652,9 +652,7 @@ export default class Beasties {
 
       if (styleInlinedCompletely) {
         const percent = (sheetInverse.length / before.length) * 100
-        afterText = `, reducing non-inlined size ${
-          percent | 0
-        }% to ${formatSize(sheetInverse.length)}`
+        afterText = `, reducing non-inlined size ${percent | 0}% to ${formatSize(sheetInverse.length)}`
       }
     }
 
@@ -666,16 +664,7 @@ export default class Beasties {
     // output stats
     const percent = ((sheet.length / before.length) * 100) | 0
     this.logger.info?.(
-      `\u001B[32mInlined ${
-        formatSize(sheet.length)
-      } (${
-        percent
-      }% of original ${
-        formatSize(before.length)
-      }) of ${
-        name
-      }${afterText
-      }.\u001B[39m`,
+      `\u001B[32mInlined ${formatSize(sheet.length)} (${percent}% of original ${formatSize(before.length)}) of ${name}${afterText}.\u001B[39m`,
     )
   }
 

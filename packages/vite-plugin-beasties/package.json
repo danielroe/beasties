@@ -1,0 +1,73 @@
+{
+  "name": "vite-plugin-beasties",
+  "type": "module",
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.7.1",
+  "description": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielroe/beasties.git",
+    "directory": "packages/vite-plugin-beasties"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.mjs"
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/index.d.mts"
+      ]
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "unbuild",
+    "dev": "vitest dev",
+    "lint": "eslint . --fix",
+    "prepare": "simple-git-hooks",
+    "prepack": "pnpm build",
+    "prepublishOnly": "pnpm lint && pnpm test",
+    "release": "bumpp && pnpm publish",
+    "test": "pnpm test:unit && pnpm test:types",
+    "test:unit": "vitest",
+    "test:knip": "knip",
+    "test:versions": "installed-check -d --no-workspaces",
+    "test:types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "beasties": "workspace:^"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "4.11.0",
+    "@vitest/coverage-v8": "3.1.1",
+    "bumpp": "10.1.0",
+    "changelogithub": "13.13.0",
+    "eslint": "9.24.0",
+    "installed-check": "9.3.0",
+    "knip": "5.47.0",
+    "lint-staged": "15.5.0",
+    "rollup": "^4.39.0",
+    "simple-git-hooks": "2.12.1",
+    "typescript": "5.8.3",
+    "unbuild": "3.5.0",
+    "vite": "^6.2.5",
+    "vitest": "3.1.1"
+  },
+  "resolutions": {
+    "vite-plugin-beasties": "link:."
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged"
+  },
+  "lint-staged": {
+    "*.{js,ts,mjs,cjs,json,.*rc}": [
+      "npx eslint --fix"
+    ]
+  }
+}
