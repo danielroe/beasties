@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - run: corepack enable
+      - run: npm i -g --force corepack && corepack enable
       - uses: actions/setup-node@v4
         with:
           node-version: 18
@@ -36,7 +36,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - run: corepack enable
+      - run: npm i -g --force corepack && corepack enable
       - uses: actions/setup-node@v4
         with:
           node-version: 18
@@ -62,7 +62,7 @@ jobs:
           token: ${{ secrets.CODSPEED_TOKEN }}
 
       - name: ⚙️ Check engine ranges
-        run: pnpm installed-check
+        run: pnpm installed-check --no-include-workspace-root --ignore-dev
 
       - name: 🟩 Coverage
         if: matrix.os != 'windows-latest'

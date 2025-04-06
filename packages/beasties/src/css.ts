@@ -15,9 +15,10 @@
  */
 
 import type { AnyNode, ChildNode, Rule } from 'postcss'
+import type { Child, Root } from 'postcss-media-query-parser'
 import type Root_ from 'postcss/lib/root'
 import { parse, stringify } from 'postcss'
-import mediaParser, { type Child, type Root } from 'postcss-media-query-parser'
+import mediaParser from 'postcss-media-query-parser'
 
 /**
  * Parse a textual CSS Stylesheet into a Stylesheet instance.

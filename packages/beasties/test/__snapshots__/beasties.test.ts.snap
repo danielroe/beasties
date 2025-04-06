@@ -136,3 +136,55 @@ exports[`beasties > works with pseudo classes and elements 1`] = `
   <link rel="stylesheet" href="/style.css"></body>
 </html>"
 `;
+
+exports[`preload modes > should handle "false" preload mode correctly 1`] = `
+"
+      <html data-beasties-container>
+        <head>
+          <style>h1{color:blue}</style><link rel="stylesheet" href="/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    "
+`;
+
+exports[`preload modes > should use "js" preload mode correctly 1`] = `
+"
+      <html data-beasties-container>
+        <head>
+          <style>h1{color:blue}</style><link rel="preload" href="/style.css" as="style"><noscript><link rel="stylesheet" href="/style.css"></noscript><script data-href="/style.css" data-media="all">function $loadcss(u,m,l){(l=document.createElement('link')).rel='stylesheet';l.href=u;document.head.appendChild(l)}$loadcss(document.currentScript.dataset.href,document.currentScript.dataset.media)</script>
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    "
+`;
+
+exports[`preload modes > should use "media" preload mode correctly 1`] = `
+"
+      <html data-beasties-container>
+        <head>
+          <style>h1{color:blue}</style><link rel="stylesheet" href="/style.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="/style.css"></noscript>
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    "
+`;
+
+exports[`preload modes > should use "swap" preload mode correctly 1`] = `
+"
+      <html data-beasties-container>
+        <head>
+          <style>h1{color:blue}</style><link rel="preload" href="/style.css" onload="this.rel='stylesheet'" as="style"><noscript><link rel="stylesheet" href="/style.css"></noscript>
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    "
+`;

@@ -57,8 +57,8 @@ describe('beasties', () => {
         </body>
       </html>
     `)
-    expect(result).toMatch('<style>h1{color:blue}p{color:purple}</style>')
-    expect(result).toMatch('<link rel="stylesheet" href="/style.css">')
+    expect(result).toContain('<style>h1{color:blue}p{color:purple}</style>')
+    expect(result).toContain('<link rel="stylesheet" href="/style.css">')
     expect(result).toMatchSnapshot()
   })
 
@@ -111,9 +111,9 @@ describe('beasties', () => {
         </body>
       </html>
     `)
-    expect(result).toMatch('<style>h1{color:blue}</style>')
-    expect(result).toMatch('<link rel="stylesheet" href="/style.css">')
-    expect(result).toMatch('<title>$title</title>')
+    expect(result).toContain('<style>h1{color:blue}</style>')
+    expect(result).toContain('<link rel="stylesheet" href="/style.css">')
+    expect(result).toContain('<title>$title</title>')
   })
 
   it('should keep existing link tag attributes in the noscript link', async () => {
@@ -140,8 +140,8 @@ describe('beasties', () => {
       </html>
     `)
 
-    expect(result).toMatch('<style>h1{color:blue}</style>')
-    expect(result).toMatch(
+    expect(result).toContain('<style>h1{color:blue}</style>')
+    expect(result).toContain(
       `<link rel="stylesheet" href="/style.css" crossorigin="anonymous" integrity="sha384-j1GsrLo96tLqzfCY+" media="print" onload="this.media='all'">`,
     )
     expect(result).toMatchSnapshot()
@@ -170,8 +170,8 @@ describe('beasties', () => {
       </html>
     `)
 
-    expect(result).toMatch('<style>h1{color:blue}</style>')
-    expect(result).toMatch(
+    expect(result).toContain('<style>h1{color:blue}</style>')
+    expect(result).toContain(
       `<link rel="stylesheet" href="/style.css" crossorigin="anonymous" integrity="sha384-j1GsrLo96tLqzfCY+">`,
     )
     expect(result).toMatchSnapshot()
@@ -197,7 +197,7 @@ describe('beasties', () => {
         </body>
       </html>
     `)
-    expect(result).toMatch('&lt;h1&gt;Hello World!&lt;/h1&gt;')
+    expect(result).toContain('&lt;h1&gt;Hello World!&lt;/h1&gt;')
   })
 
   it('prevent injection via media attr', async () => {
@@ -294,8 +294,115 @@ describe('beasties', () => {
       </html>
     `)
     expect(loggerWarnSpy).not.toHaveBeenCalled()
-    expect(result).toMatch('<style>h1{color:blue}h1:has(+ p){margin-bottom:0}p{color:purple}p:only-child{color:fuchsia}input:where(:not([readonly])):where(:active, :focus, :focus-visible, [data-focused]){color:blue}</style>')
-    expect(result).toMatch('<link rel="stylesheet" href="/style.css">')
+    expect(result).toContain('<style>h1{color:blue}h1:has(+ p){margin-bottom:0}p{color:purple}p:only-child{color:fuchsia}input:where(:not([readonly])):where(:active, :focus, :focus-visible, [data-focused]){color:blue}</style>')
+    expect(result).toContain('<link rel="stylesheet" href="/style.css">')
+    expect(result).toMatchSnapshot()
+  })
+})
+
+describe('preload modes', () => {
+  it('should use "js" preload mode correctly', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+      preload: 'js',
+    })
+    const assets: Record<string, string> = {
+      '/style.css': 'h1 { color: blue; }',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+    const result = await beasties.process(`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+    expect(result).toContain('<style>h1{color:blue}</style>')
+    expect(result).toContain('<link rel="preload" href="/style.css" as="style">')
+    expect(result).toContain(`<script data-href="/style.css" data-media="all">function $loadcss(u,m,l){(l=document.createElement('link')).rel='stylesheet';l.href=u;document.head.appendChild(l)}$loadcss(document.currentScript.dataset.href,document.currentScript.dataset.media)</script>`)
+    expect(result).toMatchSnapshot()
+  })
+
+  it('should use "media" preload mode correctly', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+      preload: 'media',
+    })
+    const assets: Record<string, string> = {
+      '/style.css': 'h1 { color: blue; }',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+    const result = await beasties.process(`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+    expect(result).toContain('<style>h1{color:blue}</style>')
+    expect(result).toContain('<link rel="stylesheet" href="/style.css" media="print" onload="this.media=\'all\'">')
+    expect(result).toContain('<noscript><link rel="stylesheet" href="/style.css"></noscript>')
+    expect(result).toMatchSnapshot()
+  })
+
+  it('should use "swap" preload mode correctly', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+      preload: 'swap',
+    })
+    const assets: Record<string, string> = {
+      '/style.css': 'h1 { color: blue; }',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+    const result = await beasties.process(`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+    expect(result).toContain('<style>h1{color:blue}</style>')
+    expect(result).toContain('<link rel="preload" href="/style.css" onload="this.rel=\'stylesheet\'" as="style">')
+    expect(result).toContain('<noscript><link rel="stylesheet" href="/style.css"></noscript>')
+    expect(result).toMatchSnapshot()
+  })
+
+  it('should handle "false" preload mode correctly', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+      preload: false,
+    })
+    const assets: Record<string, string> = {
+      '/style.css': 'h1 { color: blue; }',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+    const result = await beasties.process(`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+    expect(result).toContain('<style>h1{color:blue}</style>')
+    expect(result).toContain('<link rel="stylesheet" href="/style.css">')
+    expect(result).not.toContain('onload=')
+    expect(result).not.toContain('<noscript>')
     expect(result).toMatchSnapshot()
   })
 })
