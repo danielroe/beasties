@@ -1,6 +1,8 @@
 import type { Plugin, ResolvedConfig } from 'vite'
+
 import { readFileSync } from 'node:fs'
 import { relative } from 'node:path'
+
 import Beasties from 'beasties'
 
 export interface ViteBeastiesOptions {
