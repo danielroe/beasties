@@ -36,6 +36,10 @@ export default class Beasties {
    * Overriding this method requires doing your own URL normalization, so it's generally better to override `readFile()`.
    */
   getCssAsset(href: string): Promise<string | undefined> | string | undefined
+  /**
+   * Override this method to customise how beasties prunes the content of source files.
+   */
+  pruneSource(style: Node, before: string, sheetInverse: string): boolean
 }
 
 export interface Options {
