@@ -298,4 +298,51 @@ describe('beasties', () => {
     expect(result).toContain('<link rel="stylesheet" href="/style.css">')
     expect(result).toMatchSnapshot()
   })
+
+  it('works with at-rules (@layer)', async () => {
+    const logger: Logger = {
+      warn: () => {},
+      info: () => {},
+      error: () => {},
+      debug: () => {},
+    }
+
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+      logLevel: 'warn',
+      logger,
+    })
+    const assets: Record<string, string> = {
+      '/style.css': trim`
+        @layer foo, bar;
+
+        @layer foo {
+          h1 { color: red }
+          h4 { background: blue; }
+        }
+
+        @layer bar {
+          h4 { background: lime; }
+        }
+      `,
+    }
+
+    const loggerWarnSpy = vi.spyOn(logger, 'warn')
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+    expect(loggerWarnSpy).not.toHaveBeenCalled()
+    expect(result).toContain('<style>@layer foo, bar;@layer foo {h1{color:red}}@layer bar {}</style>')
+    expect(result).toContain('<link rel="stylesheet" href="/style.css">')
+    expect(result).toMatchSnapshot()
+  })
 })

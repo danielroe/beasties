@@ -549,7 +549,7 @@ export default class Beasties {
         }
 
         // keep font rules, they're handled in the second pass:
-        if (rule.type === 'atrule' && rule.name === 'font-face')
+        if (rule.type === 'atrule' && (rule.name === 'font-face' || rule.name === 'layer'))
           return
 
         // If there are no remaining rules, remove the whole rule:

@@ -124,6 +124,17 @@ exports[`beasties > skip invalid path 1`] = `
 "
 `;
 
+exports[`beasties > works with at-rules (@layer) 1`] = `
+"<html data-beasties-container>
+  <head>
+    <style>@layer foo, bar;@layer foo {h1{color:red}}@layer bar {}</style><link rel="preload" href="/style.css" as="style">
+  </head>
+  <body>
+    <h1>Hello World!</h1>
+  <link rel="stylesheet" href="/style.css"></body>
+</html>"
+`;
+
 exports[`beasties > works with pseudo classes and elements 1`] = `
 "<html data-beasties-container>
   <head>
