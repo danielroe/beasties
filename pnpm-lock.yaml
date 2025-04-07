@@ -180,7 +180,7 @@ importers:
         specifier: 3.5.0
         version: 3.5.0(typescript@5.8.3)
       vite:
-        specifier: ^6.2.5
+        specifier: 6.2.5
         version: 6.2.5(@types/node@22.14.0)(jiti@2.4.2)(terser@5.39.0)(yaml@2.7.1)
       vitest:
         specifier: 3.1.1
