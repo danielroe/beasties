@@ -34,9 +34,9 @@
     "test:versions": "installed-check --no-include-workspace-root --ignore-dev"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "4.11.0",
+    "@antfu/eslint-config": "4.12.0",
     "@codspeed/vitest-plugin": "4.0.1",
-    "@types/node": "22.14.0",
+    "@types/node": "22.14.1",
     "@vitest/coverage-v8": "3.1.1",
     "bumpp": "10.1.0",
     "changelogithub": "13.13.0",
@@ -44,8 +44,8 @@
     "eslint": "9.24.0",
     "installed-check": "9.3.0",
     "jsdom": "26.0.0",
-    "knip": "5.47.0",
-    "lint-staged": "15.5.0",
+    "knip": "5.50.2",
+    "lint-staged": "15.5.1",
     "simple-git-hooks": "2.12.1",
     "typescript": "5.8.3",
     "vitest": "3.1.1"
