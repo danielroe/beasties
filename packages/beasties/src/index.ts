@@ -558,10 +558,7 @@ export default class Beasties {
 
     if (failedSelectors.length !== 0) {
       this.logger.warn?.(
-        `${failedSelectors.length
-        } rules skipped due to selector errors:\n  ${failedSelectors.join(
-          '\n  ',
-        )}`,
+        `${failedSelectors.length} rules skipped due to selector errors:\n  ${failedSelectors.join('\n  ')}`,
       )
     }
 
@@ -666,19 +663,19 @@ export default class Beasties {
   }
 
   private normalizeCssSelector(sel: string): string {
-    let normalized = this.#selectorCache.get(sel)
-    if (normalized !== undefined)
-      return normalized
+    let normalizedSelector = this.#selectorCache.get(sel)
+    if (normalizedSelector !== undefined)
+      return normalizedSelector
 
-    normalized = sel
+    normalizedSelector = sel
       .replace(removePseudoClassesAndElementsPattern, '')
       .replace(removeTrailingCommasPattern, m => (m.includes('(') ? '(' : ')'))
       .replace(implicitUniversalPattern, '$1 * $2')
       .replace(emptyCombinatorPattern, '$1 *')
       .trim()
 
-    this.#selectorCache.set(sel, normalized)
-    return normalized
+    this.#selectorCache.set(sel, normalizedSelector)
+    return normalizedSelector
   }
 }
 
