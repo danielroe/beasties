@@ -664,17 +664,19 @@ export default class Beasties {
 
   private normalizeCssSelector(sel: string): string {
     let normalizedSelector = this.#selectorCache.get(sel)
-    if (normalizedSelector !== undefined)
+    if (normalizedSelector !== undefined) {
       return normalizedSelector
+    }
 
     normalizedSelector = sel
       .replace(removePseudoClassesAndElementsPattern, '')
-      .replace(removeTrailingCommasPattern, m => (m.includes('(') ? '(' : ')'))
+      .replace(removeTrailingCommasPattern, match => (match.includes('(') ? '(' : ')'))
       .replace(implicitUniversalPattern, '$1 * $2')
       .replace(emptyCombinatorPattern, '$1 *')
       .trim()
 
     this.#selectorCache.set(sel, normalizedSelector)
+
     return normalizedSelector
   }
 }
