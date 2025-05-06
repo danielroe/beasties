@@ -19,7 +19,7 @@ import type { ChildNode, Node } from 'domhandler'
 import type { HTMLDocument } from './dom'
 import type { Logger, Options } from './types'
 
-import { readFile } from 'node:fs'
+import { readFile, writeFile } from 'node:fs'
 import path from 'node:path'
 
 import { applyMarkedSelectors, markOnly, parseStylesheet, serializeStylesheet, validateMediaQuery, walkStyleRules, walkStyleRulesWithReverseMirror } from './css'
@@ -68,6 +68,26 @@ export default class Beasties {
       }
       else {
         readFile(filename, 'utf-8', callback)
+      }
+    })
+  }
+
+  /**
+   * Write content to a file
+   */
+  writeFile(filename: string, data: string): Promise<void> {
+    const fs = this.fs
+    return new Promise<void>((resolve, reject) => {
+      const callback = (err: NodeJS.ErrnoException | null) => {
+        if (err)
+          reject(err)
+        else resolve()
+      }
+      if (fs && fs.writeFile) {
+        fs.writeFile(filename, data, callback)
+      }
+      else {
+        writeFile(filename, data, callback)
       }
     })
   }
@@ -648,6 +668,11 @@ export default class Beasties {
         const percent = (sheetInverse.length / before.length) * 100
         afterText = `, reducing non-inlined size ${percent | 0}% to ${formatSize(sheetInverse.length)}`
       }
+
+      const cssFilePath = path.resolve(this.options.path, name)
+      this.writeFile(cssFilePath, sheetInverse)
+        .then(() => this.logger.info?.(`${name} was successfully updated`))
+        .catch(err => this.logger.error?.(err))
     }
 
     // replace the inline stylesheet with its critical'd counterpart
