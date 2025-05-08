@@ -59,6 +59,7 @@ export interface Options {
   noscriptFallback?: boolean
   inlineFonts?: boolean
   preloadFonts?: boolean
+  allowRules?: Array<string | RegExp>
   fonts?: boolean
   keyframes?: string
   compress?: boolean
