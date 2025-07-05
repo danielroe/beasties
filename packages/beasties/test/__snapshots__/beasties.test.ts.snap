@@ -12,6 +12,31 @@ exports[`beasties > basic Usage 1`] = `
 </html>"
 `;
 
+exports[`beasties > css file is updated when pruneSource is enabled 1`] = `
+"<html>
+  <head>
+    <title>Prune Source</title>
+    <style>h1{color:blue}p{color:purple}.contents{padding:50px;text-align:center}.input-field{padding:10px}div:is(:hover,.active){color:#000}div:is(.selected,:hover){color:#fff}</style><link rel="preload" href="prune-source.css" as="style">
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="banner">Lorem ipsum dolor sit amet</div>
+      </header>
+    </div>
+    <div class data-beasties-container>
+      <h1>Hello World!</h1>
+      <p>This is a paragraph</p>
+      <input class="input-field">
+      <div class="contents"></div>
+      <div class="selected active"></div>
+    </div>
+    <footer class></footer>
+  <link rel="stylesheet" href="prune-source.css"></body>
+</html>
+"
+`;
+
 exports[`beasties > prevent injection via media attr 1`] = `
 "<html>
 <link>

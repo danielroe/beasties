@@ -345,4 +345,42 @@ describe('beasties', () => {
     expect(result).toContain('<link rel="stylesheet" href="/style.css">')
     expect(result).toMatchSnapshot()
   })
+
+  it('css file is updated when pruneSource is enabled', async () => {
+    const logger: Logger = {
+      warn: () => {},
+      info: () => {},
+      error: () => {},
+      debug: () => {},
+    }
+    const loggerWarnSpy = vi.spyOn(logger, 'warn')
+
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: fixtureDir,
+      logLevel: 'warn',
+      logger,
+      pruneSource: true,
+    })
+
+    beasties.writeFile = (filename, data) => new Promise((resolve, reject) => {
+      try {
+        fs.writeFileSync(filename, data)
+        resolve()
+      }
+      catch (err) {
+        reject(err)
+      }
+    })
+
+    const html = fs.readFileSync(path.join(fixtureDir, 'prune-source.html'), 'utf-8')
+    const result = await beasties.process(html)
+    expect(result).toContain('<style>h1{color:blue}p{color:purple}.contents{padding:50px;text-align:center}.input-field{padding:10px}div:is(:hover,.active){color:#000}div:is(.selected,:hover){color:#fff}</style>')
+
+    const css = fs.readFileSync(path.join(fixtureDir, 'prune-source.css'), 'utf-8')
+    expect(css).toEqual('h2.unused{color:red}p.unused{color:orange}header{padding:0 50px}.banner{font-family:sans-serif}footer{margin-top:10px}.container{border:1px solid}.custom-element::part(tab){color:#0c0dcc;border-bottom:transparent solid 2px}.other-element::part(tab){color:#0c0dcc;border-bottom:transparent solid 2px}.custom-element::part(tab):hover{background-color:#0c0d19;color:#ffffff;border-color:#0c0d33}.custom-element::part(tab):hover:active{background-color:#0c0d33;color:#ffffff}.custom-element::part(tab):focus{box-shadow:0 0 0 1px #0a84ff inset, 0 0 0 1px #0a84ff, 0 0 0 4px rgba(10, 132, 255, 0.3)}.custom-element::part(active){color:#0060df;border-color:#0a84ff !important}')
+
+    expect(loggerWarnSpy).not.toHaveBeenCalled()
+    expect(result).toMatchSnapshot()
+  })
 })
