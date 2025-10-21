@@ -14,16 +14,16 @@ importers:
     devDependencies:
       '@antfu/eslint-config':
         specifier: 6.0.0
-        version: 6.0.0(@vue/compiler-sfc@3.5.22)(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.2)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.0(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1))
+        version: 6.0.0(@vue/compiler-sfc@3.5.22)(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.2)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1))
       '@codspeed/vitest-plugin':
         specifier: 5.0.1
-        version: 5.0.1(tinybench@2.9.0)(vite@7.1.11(@types/node@22.18.4)(jiti@2.6.1)(terser@5.44.0)(yaml@2.8.1))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.0(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1))
+        version: 5.0.1(tinybench@2.9.0)(vite@7.1.11(@types/node@22.18.4)(jiti@2.6.1)(terser@5.44.0)(yaml@2.8.1))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1))
       '@types/node':
         specifier: 22.18.4
         version: 22.18.4
       '@vitest/coverage-v8':
         specifier: 3.2.4
-        version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.0(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1))
+        version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1))
       bumpp:
         specifier: 10.2.3
         version: 10.2.3(magicast@0.3.5)
@@ -40,8 +40,8 @@ importers:
         specifier: 9.3.0
         version: 9.3.0
       jsdom:
-        specifier: 27.0.0
-        version: 27.0.0(postcss@8.5.6)
+        specifier: 27.0.1
+        version: 27.0.1(postcss@8.5.6)
       knip:
         specifier: 5.63.1
         version: 5.63.1(@types/node@22.18.4)(typescript@5.9.2)
@@ -56,7 +56,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: 3.2.4
-        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.0(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1)
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1)
 
   packages/beasties:
     dependencies:
@@ -221,8 +221,8 @@ packages:
   '@asamuzakjp/css-color@4.0.5':
     resolution: {integrity: sha512-lMrXidNhPGsDjytDy11Vwlb6OIGrT3CmLg3VWNFyWkLWtijKl7xjvForlh8vuj0SHGjgl4qZEQzUmYTeQA2JFQ==}
 
-  '@asamuzakjp/dom-selector@6.6.2':
-    resolution: {integrity: sha512-+AG0jN9HTwfDLBhjhX1FKi6zlIAc/YGgEHlN/OMaHD1pOPFsC5CpYQpLkPX0aFjyaVmoq9330cQDCU4qnSL1qA==}
+  '@asamuzakjp/dom-selector@6.7.2':
+    resolution: {integrity: sha512-ccKogJI+0aiDhOahdjANIc9SDixSud1gbwdVrhn7kMopAtLXqsz9MKmQQtIl6Y5aC2IYq+j4dz/oedL2AVMmVQ==}
 
   '@asamuzakjp/nwsapi@2.3.9':
     resolution: {integrity: sha512-n8GuYSrI9bF7FFZ/SjhwevlHc8xaVlb/7HmHelnc/PZXBD2ZR49NnN9sMMuDdEGPeeRQ5d0hqlSlEpgCX3Wl0Q==}
@@ -3545,8 +3545,8 @@ packages:
     resolution: {integrity: sha512-F9GQ+F1ZU6qvSrZV8fNFpjDNf614YzR2eF6S0+XbDjAcUI28FSoXnYZFjQmb1kFx3rrJb5PnxUH3/Yti6fcM+g==}
     engines: {node: '>=12.0.0'}
 
-  jsdom@27.0.0:
-    resolution: {integrity: sha512-lIHeR1qlIRrIN5VMccd8tI2Sgw6ieYXSVktcSHaNe3Z5nE/tcPQYQWOq00wxMvYOsz+73eAkNenVvmPC6bba9A==}
+  jsdom@27.0.1:
+    resolution: {integrity: sha512-SNSQteBL1IlV2zqhwwolaG9CwhIhTvVHWg3kTss/cLE7H/X4644mtPQqYvCfsSrGQWt9hSZcgOXX8bOZaMN+kA==}
     engines: {node: '>=20'}
     peerDependencies:
       canvas: ^3.0.0
@@ -4357,6 +4357,9 @@ packages:
 
   parse5@7.3.0:
     resolution: {integrity: sha512-IInvU7fabl34qmi9gY8XOVxhYyMyuH2xUNpb2q8/Y+7552KlejkRvqvD19nMoUW/uQGGbqNpA6Tufu5FL5BZgw==}
+
+  parse5@8.0.0:
+    resolution: {integrity: sha512-9m4m5GSgXjL4AjumKzq1Fgfp3Z8rsvjRNbnkVwfu2ImRqE5D0LnY2QfDen18FSY9C573YU5XxSapdHZTZ2WolA==}
 
   pascal-case@3.1.2:
     resolution: {integrity: sha512-uWlGT3YSnK9x3BQJaOdcZwrnV6hPpd8jFH1/ucpiLRPh/2zCVJKS19E4GvYHvaCcACn3foXZ0cLB9Wrx1KGe5g==}
@@ -5969,7 +5972,7 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
 
-  '@antfu/eslint-config@6.0.0(@vue/compiler-sfc@3.5.22)(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.2)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.0(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1))':
+  '@antfu/eslint-config@6.0.0(@vue/compiler-sfc@3.5.22)(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.2)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1))':
     dependencies:
       '@antfu/install-pkg': 1.1.0
       '@clack/prompts': 0.11.0
@@ -5978,7 +5981,7 @@ snapshots:
       '@stylistic/eslint-plugin': 5.4.0(eslint@9.38.0(jiti@2.6.1))
       '@typescript-eslint/eslint-plugin': 8.46.1(@typescript-eslint/parser@8.46.1(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.2))(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/parser': 8.46.1(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.2)
-      '@vitest/eslint-plugin': 1.3.23(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.2)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.0(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1))
+      '@vitest/eslint-plugin': 1.3.23(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.2)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1))
       ansis: 4.2.0
       cac: 6.7.14
       eslint: 9.38.0(jiti@2.6.1)
@@ -6028,7 +6031,7 @@ snapshots:
       '@csstools/css-tokenizer': 3.0.4
       lru-cache: 11.2.2
 
-  '@asamuzakjp/dom-selector@6.6.2':
+  '@asamuzakjp/dom-selector@6.7.2':
     dependencies:
       '@asamuzakjp/nwsapi': 2.3.9
       bidi-js: 1.0.3
@@ -6791,12 +6794,12 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@codspeed/vitest-plugin@5.0.1(tinybench@2.9.0)(vite@7.1.11(@types/node@22.18.4)(jiti@2.6.1)(terser@5.44.0)(yaml@2.8.1))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.0(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1))':
+  '@codspeed/vitest-plugin@5.0.1(tinybench@2.9.0)(vite@7.1.11(@types/node@22.18.4)(jiti@2.6.1)(terser@5.44.0)(yaml@2.8.1))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1))':
     dependencies:
       '@codspeed/core': 5.0.1
       tinybench: 2.9.0
       vite: 7.1.11(@types/node@22.18.4)(jiti@2.6.1)(terser@5.44.0)(yaml@2.8.1)
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.0(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1)
     transitivePeerDependencies:
       - debug
 
@@ -7538,7 +7541,7 @@ snapshots:
       '@typescript-eslint/types': 8.46.1
       eslint-visitor-keys: 4.2.1
 
-  '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.0(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1))':
+  '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 1.0.2
@@ -7553,18 +7556,18 @@ snapshots:
       std-env: 3.9.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.0(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1)
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/eslint-plugin@1.3.23(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.2)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.0(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1))':
+  '@vitest/eslint-plugin@1.3.23(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.2)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1))':
     dependencies:
       '@typescript-eslint/scope-manager': 8.46.1
       '@typescript-eslint/utils': 8.46.1(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.2)
       eslint: 9.38.0(jiti@2.6.1)
     optionalDependencies:
       typescript: 5.9.2
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.0(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -9854,9 +9857,9 @@ snapshots:
 
   jsdoc-type-pratt-parser@5.4.0: {}
 
-  jsdom@27.0.0(postcss@8.5.6):
+  jsdom@27.0.1(postcss@8.5.6):
     dependencies:
-      '@asamuzakjp/dom-selector': 6.6.2
+      '@asamuzakjp/dom-selector': 6.7.2
       cssstyle: 5.3.1(postcss@8.5.6)
       data-urls: 6.0.0
       decimal.js: 10.6.0
@@ -9864,7 +9867,7 @@ snapshots:
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.6
       is-potential-custom-element-name: 1.0.1
-      parse5: 7.3.0
+      parse5: 8.0.0
       rrweb-cssom: 0.8.0
       saxes: 6.0.0
       symbol-tree: 3.2.4
@@ -11119,6 +11122,10 @@ snapshots:
   parse5@6.0.1: {}
 
   parse5@7.3.0:
+    dependencies:
+      entities: 6.0.1
+
+  parse5@8.0.0:
     dependencies:
       entities: 6.0.1
 
@@ -12608,7 +12615,7 @@ snapshots:
       terser: 5.44.0
       yaml: 2.8.1
 
-  vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.0(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1):
+  vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.18.4)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(terser@5.44.0)(yaml@2.8.1):
     dependencies:
       '@types/chai': 5.2.2
       '@vitest/expect': 3.2.4
@@ -12636,7 +12643,7 @@ snapshots:
     optionalDependencies:
       '@types/debug': 4.1.12
       '@types/node': 22.18.4
-      jsdom: 27.0.0(postcss@8.5.6)
+      jsdom: 27.0.1(postcss@8.5.6)
     transitivePeerDependencies:
       - jiti
       - less
