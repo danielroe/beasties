@@ -70,7 +70,7 @@ export function compile(entry: string, configDecorator: (config: webpack.Configu
         return reject(err)
       const info = stats!.toJson()
       if (stats?.hasErrors()) {
-        return reject(info.errors?.join('\n'))
+        return reject(info.errors?.[0]?.details)
       }
       resolve(info)
     })
