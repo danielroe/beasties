@@ -14,12 +14,13 @@
  * the License.
  */
 
+import type { Options } from 'beasties'
+import type HtmlWebpackPlugin from 'html-webpack-plugin'
+import type { Compilation, Compiler, OutputFileSystem, sources } from 'webpack'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import Beasties from 'beasties'
 import { minimatch } from 'minimatch'
-import log from 'webpack-log'
-import sources from 'webpack-sources'
 import { tap } from './util'
 
 const $require
@@ -31,8 +32,6 @@ const $require
 
 // Used to annotate this plugin's hooks in Tappable invocations
 const PLUGIN_NAME = 'beasties-webpack-plugin'
-
-/** @typedef {import('beasties').Options} Options */
 
 /**
  * Create a Beasties plugin instance with the given options.
@@ -53,42 +52,54 @@ const PLUGIN_NAME = 'beasties-webpack-plugin'
  * }
  */
 export default class BeastiesWebpackPlugin extends Beasties {
-  constructor(options) {
+  declare compilation: Compilation
+  declare compiler: Compiler
+  declare fs: OutputFileSystem
+  declare logger: Required<NonNullable<Options['logger']>>
+  declare options: Options & Required<Pick<Options, 'logLevel' | 'path' | 'publicPath' | 'reduceInlineStyles' | 'pruneSource' | 'additionalStylesheets'>> & { allowRules: Array<string | RegExp> }
+  constructor(options: Options) {
     super(options)
-
-    // TODO: Remove webpack-log
-    this.logger = log({
-      name: 'Beasties',
-      unique: true,
-      level: this.options.logLevel,
-    })
   }
 
   /**
    * Invoked by Webpack during plugin initialization
    */
-  apply(compiler) {
+  apply(compiler: Compiler) {
+    this.compiler = compiler
+    this.logger = Object.assign(compiler.getInfrastructureLogger(PLUGIN_NAME), {
+      silent(_: string): void { },
+    })
     // hook into the compiler to get a Compilation instance...
-    tap(compiler, 'compilation', PLUGIN_NAME, false, (compilation) => {
-      let htmlPluginHooks
+    tap(compiler, 'compilation', PLUGIN_NAME, false, (compilation: Compilation) => {
+      let htmlPluginHooks: HtmlWebpackPlugin.Hooks | undefined
 
-      this.options.path = compiler.options.output.path
-      this.options.publicPath = compiler.options.output.publicPath
+      this.options.path = compiler.options.output.path!
+      this.options.publicPath
+        // from html-webpack-plugin
+        = compiler.options.output.publicPath || typeof compiler.options.output.publicPath === 'function'
+          ? compilation.getAssetPath(compiler.options.output.publicPath!, compilation)
+          : compiler.options.output.publicPath!
 
-      const hasHtmlPlugin = compilation.options.plugins.find(
-        p => p.constructor && p.constructor.name === 'HtmlWebpackPlugin',
+      const hasHtmlPlugin = compilation.options.plugins.some(
+        p => p!.constructor && p!.constructor.name === 'HtmlWebpackPlugin',
       )
       try {
         htmlPluginHooks = $require('html-webpack-plugin').getHooks(compilation)
       }
       catch {}
-
-      const handleHtmlPluginData = (htmlPluginData, callback) => {
-        this.fs = compilation.outputFileSystem
+      /**
+       * @param {{html: string; outputName: string; plugin: HtmlWebpackPlugin}} htmlPluginData
+       * @param callback
+       */
+      const handleHtmlPluginData = (
+        htmlPluginData: { html: string, outputName: string, plugin: HtmlWebpackPlugin },
+        callback: (err?: null | Error, content?: { html: string, outputName: string, plugin: HtmlWebpackPlugin }) => void,
+      ) => {
+        this.fs = compiler.outputFileSystem!
         this.compilation = compilation
         this.process(htmlPluginData.html)
           .then((html) => {
-            callback(null, { html })
+            callback(null, { ...htmlPluginData, html })
           })
           .catch(callback)
       }
@@ -96,6 +107,7 @@ export default class BeastiesWebpackPlugin extends Beasties {
       // get an "after" hook into html-webpack-plugin's HTML generation.
       if (
         compilation.hooks
+        // @ts-expect-error - compat html-webpack-plugin 3.x
         && compilation.hooks.htmlWebpackPluginAfterHtmlProcessing
       ) {
         tap(
@@ -116,11 +128,11 @@ export default class BeastiesWebpackPlugin extends Beasties {
           'optimize-assets',
           PLUGIN_NAME,
           true,
-          (assets, callback) => {
-            this.fs = compilation.outputFileSystem
+          (assets: /* CompilationAssets */{ [id: string]: sources.Source }, callback: (err?: null | Error) => void) => {
+            this.fs = compiler.outputFileSystem!
             this.compilation = compilation
 
-            let htmlAssetName
+            let htmlAssetName: string | undefined
             for (const name in assets) {
               if (name.match(/\.html$/)) {
                 htmlAssetName = name
@@ -130,13 +142,13 @@ export default class BeastiesWebpackPlugin extends Beasties {
             if (!htmlAssetName) {
               return callback(new Error('Could not find HTML asset.'))
             }
-            const html = assets[htmlAssetName].source()
+            const html = assets[htmlAssetName]!.source()
             if (!html)
               return callback(new Error('Empty HTML asset.'))
 
             this.process(String(html))
               .then((html) => {
-                assets[htmlAssetName] = new sources.RawSource(html)
+                assets[htmlAssetName] = new compiler.webpack.sources.RawSource(html)
                 callback()
               })
               .catch(callback)
@@ -149,7 +161,7 @@ export default class BeastiesWebpackPlugin extends Beasties {
   /**
    * Given href, find the corresponding CSS asset
    */
-  async getCssAsset(href, style) {
+  override async getCssAsset(href: string, style: BeastiesStyleElement): Promise<string | undefined> {
     const outputPath = this.options.path
     const publicPath = this.options.publicPath
 
@@ -194,16 +206,19 @@ export default class BeastiesWebpackPlugin extends Beasties {
     style.$$assetName = relativePath
     // style.$$assets = this.compilation.assets;
 
-    return sheet
+    return sheet.toString()
   }
 
-  checkInlineThreshold(link, style, sheet) {
+  /**
+   * Check if the stylesheet should be inlined
+   */
+  override checkInlineThreshold(link: Node, style: BeastiesStyleElement, sheet: string): boolean {
     const inlined = super.checkInlineThreshold(link, style, sheet)
 
     if (inlined) {
       const asset = style.$$asset
       if (asset) {
-        delete this.compilation.assets[style.$$assetName]
+        this.compilation.deleteAsset(style.$$assetName)
       }
       else {
         this.logger.warn(
@@ -218,9 +233,9 @@ export default class BeastiesWebpackPlugin extends Beasties {
   /**
    * Inline the stylesheets from options.additionalStylesheets (assuming it passes `options.filter`)
    */
-  async embedAdditionalStylesheet(document) {
-    const styleSheetsIncluded = [];
-    (this.options.additionalStylesheets || []).forEach((cssFile) => {
+  async embedAdditionalStylesheet(document: Document) {
+    const styleSheetsIncluded: string[] = [];
+    (this.options.additionalStylesheets || []).forEach((cssFile: string) => {
       if (styleSheetsIncluded.includes(cssFile)) {
         return undefined
       }
@@ -229,9 +244,9 @@ export default class BeastiesWebpackPlugin extends Beasties {
         file => minimatch(file, cssFile),
       )
       for (const asset of webpackCssAssets) {
-        const style = document.createElement('style')
+        const style = document.createElement('style') as BeastiesStyleElement
         style.$$external = true
-        style.textContent = this.compilation.assets[asset].source()
+        style.textContent = this.compilation.assets[asset]!.source().toString()
         document.head.appendChild(style)
       }
     })
@@ -240,7 +255,7 @@ export default class BeastiesWebpackPlugin extends Beasties {
   /**
    * Prune the source CSS files
    */
-  pruneSource(style, before, sheetInverse) {
+  override pruneSource(style: BeastiesStyleElement, before: string, sheetInverse: string): boolean {
     const isStyleInlined = super.pruneSource(style, before, sheetInverse)
     const asset = style.$$asset
     const name = style.$$name
@@ -250,10 +265,10 @@ export default class BeastiesWebpackPlugin extends Beasties {
       const minSize = this.options.minimumExternalSize
       if (minSize && sheetInverse.length < minSize) {
         // delete the webpack asset:
-        delete this.compilation.assets[style.$$assetName]
+        this.compilation.deleteAsset(style.$$assetName)
         return true
       }
-      this.compilation.assets[style.$$assetName] = new sources.SourceMapSource(sheetInverse, style.$$assetName, before)
+      this.compilation.assets[style.$$assetName] = new this.compiler.webpack.sources.SourceMapSource(sheetInverse, style.$$assetName, before)
     }
     else {
       this.logger.warn(
@@ -263,4 +278,11 @@ export default class BeastiesWebpackPlugin extends Beasties {
 
     return isStyleInlined
   }
+}
+
+interface BeastiesStyleElement extends HTMLStyleElement {
+  $$name: string
+  $$asset: sources.Source | undefined
+  $$assetName: string
+  $$external: boolean
 }

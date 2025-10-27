@@ -35,7 +35,7 @@ export default class Beasties {
    * Given a stylesheet URL, returns the corresponding CSS asset.
    * Overriding this method requires doing your own URL normalization, so it's generally better to override `readFile()`.
    */
-  getCssAsset(href: string): Promise<string | undefined> | string | undefined
+  getCssAsset(href: string, _style: Node): Promise<string | undefined> | string | undefined
   /**
    * Override this method to customise how beasties prunes the content of source files.
    */

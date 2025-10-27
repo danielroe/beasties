@@ -15,9 +15,11 @@
  */
 
 import type { Configuration } from 'webpack'
+import { writeFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import HtmlWebpackPlugin from 'html-webpack-plugin'
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { compile, compileToHtml, readFile } from './helpers'
 
@@ -199,11 +201,18 @@ describe('options', () => {
 })
 
 describe('accessing file system', () => {
+  beforeEach(async () => {
+    await writeFile(resolve(import.meta.dirname, './fixtures/fs-access/dist/style.css'), 'div.foo{color:red}\n')
+  })
+  afterAll(async () => {
+    await writeFile(resolve(import.meta.dirname, './fixtures/fs-access/dist/style.css'), 'div.foo{color:red}\n')
+  })
   it('works', async () => {
     const output = await compileToHtml('fs-access', configure, {
       path: 'dist',
       publicPath: '',
     })
     expect(output.html).toMatch(/\.foo/)
+    expect(await readFile(resolve(import.meta.dirname, 'fixtures/fs-access/dist/style.css'))).toBe('\n')
   })
 })
