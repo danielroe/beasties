@@ -84,6 +84,9 @@ importers:
       postcss-media-query-parser:
         specifier: ^0.2.3
         version: 0.2.3
+      postcss-safe-parser:
+        specifier: ^7.0.1
+        version: 7.0.1(postcss@8.5.6)
     devDependencies:
       '@types/postcss-media-query-parser':
         specifier: 0.2.4
@@ -1192,41 +1195,49 @@ packages:
     resolution: {integrity: sha512-Fk8BrFBfKzUveCEAXZ6kDhyc5RLWIWOI0+UZGp1G3WQIFo9HDEqnYtsOtUbzLtjifbyMhtaTteElRSGNKTJ3nA==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@oxc-resolver/binding-linux-arm64-musl@11.11.1':
     resolution: {integrity: sha512-jbsO1/VTDRb5FAvWnxEIFOnFHA7dALBn5HPdxdoAbnuvjgjIPYMVvTFEBPNLz3BSFxWdounZasZDYYFhBhFzmQ==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@oxc-resolver/binding-linux-ppc64-gnu@11.11.1':
     resolution: {integrity: sha512-+aY2AjUQkByiOtKUU0RyqB7VV7HIh3SMBh54/9nzUbHN5RiF0As5DApV/IwbQjB2oKc0VywQZzE+/Wj/Ijvd/Q==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@oxc-resolver/binding-linux-riscv64-gnu@11.11.1':
     resolution: {integrity: sha512-HqBogCmIl344en3EAhC9vSm/h52fb5BA0eFxsgsH9HgwYY6qH4th4msBqBAiMRCKcC6hVwjh0fmzHgST2rx4Cw==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@oxc-resolver/binding-linux-riscv64-musl@11.11.1':
     resolution: {integrity: sha512-9dXyIMQMrh76WyMtNDJhsRYqc6KDsQe3/ja9fAPBk28p7kltEvZvHpivq1Xa8Ca/JCa8QgTROgLInChNEF27bQ==}
     cpu: [riscv64]
     os: [linux]
+    libc: [musl]
 
   '@oxc-resolver/binding-linux-s390x-gnu@11.11.1':
     resolution: {integrity: sha512-Ybp/bSJmnl0sr8zh+nIz0cpU077tDZDYRYDhZiWN+f7rcWF7D8Z/pKD9zPxRocvJieZGfzrIwmHiHf9eY47P9w==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@oxc-resolver/binding-linux-x64-gnu@11.11.1':
     resolution: {integrity: sha512-uVWj/UI6+l5/CeV2d4XpjycJNDkk/JfxNzQLAFCsVl5ZbrIfWQ9TzEzAi7xsDgVZYLBuL7iSowQ7YYRp1LQZlA==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@oxc-resolver/binding-linux-x64-musl@11.11.1':
     resolution: {integrity: sha512-Q9kQmiZn4bNnCOqPHvdF4bHdKXBa7Ow6yfeKTWPNOHyoZXdyxIu5C+3jSjo+SJiFNhmnh0hEAN8om6GEuJEYCA==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@oxc-resolver/binding-wasm32-wasi@11.11.1':
     resolution: {integrity: sha512-skGIwjoRwEh2qFIaG/wwa74i5KcoWNTEy1ycB6qdRV+OOSlkosVFIzXPYzjcuwtIL1M6pC7+M+56TgQQEzOUmw==}
@@ -1400,56 +1411,67 @@ packages:
     resolution: {integrity: sha512-9VlPY/BN3AgbukfVHAB8zNFWB/lKEuvzRo1NKev0Po8sYFKx0i+AQlCYftgEjcL43F2h9Ui1ZSdVBc4En/sP2w==}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm-musleabihf@4.50.2':
     resolution: {integrity: sha512-+GdKWOvsifaYNlIVf07QYan1J5F141+vGm5/Y8b9uCZnG/nxoGqgCmR24mv0koIWWuqvFYnbURRqw1lv7IBINw==}
     cpu: [arm]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-arm64-gnu@4.50.2':
     resolution: {integrity: sha512-df0Eou14ojtUdLQdPFnymEQteENwSJAdLf5KCDrmZNsy1c3YaCNaJvYsEUHnrg+/DLBH612/R0xd3dD03uz2dg==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm64-musl@4.50.2':
     resolution: {integrity: sha512-iPeouV0UIDtz8j1YFR4OJ/zf7evjauqv7jQ/EFs0ClIyL+by++hiaDAfFipjOgyz6y6xbDvJuiU4HwpVMpRFDQ==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-loong64-gnu@4.50.2':
     resolution: {integrity: sha512-OL6KaNvBopLlj5fTa5D5bau4W82f+1TyTZRr2BdnfsrnQnmdxh4okMxR2DcDkJuh4KeoQZVuvHvzuD/lyLn2Kw==}
     cpu: [loong64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-ppc64-gnu@4.50.2':
     resolution: {integrity: sha512-I21VJl1w6z/K5OTRl6aS9DDsqezEZ/yKpbqlvfHbW0CEF5IL8ATBMuUx6/mp683rKTK8thjs/0BaNrZLXetLag==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-gnu@4.50.2':
     resolution: {integrity: sha512-Hq6aQJT/qFFHrYMjS20nV+9SKrXL2lvFBENZoKfoTH2kKDOJqff5OSJr4x72ZaG/uUn+XmBnGhfr4lwMRrmqCQ==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-musl@4.50.2':
     resolution: {integrity: sha512-82rBSEXRv5qtKyr0xZ/YMF531oj2AIpLZkeNYxmKNN6I2sVE9PGegN99tYDLK2fYHJITL1P2Lgb4ZXnv0PjQvw==}
     cpu: [riscv64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-s390x-gnu@4.50.2':
     resolution: {integrity: sha512-4Q3S3Hy7pC6uaRo9gtXUTJ+EKo9AKs3BXKc2jYypEcMQ49gDPFU2P1ariX9SEtBzE5egIX6fSUmbmGazwBVF9w==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-gnu@4.50.2':
     resolution: {integrity: sha512-9Jie/At6qk70dNIcopcL4p+1UirusEtznpNtcq/u/C5cC4HBX7qSGsYIcG6bdxj15EYWhHiu02YvmdPzylIZlA==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-musl@4.50.2':
     resolution: {integrity: sha512-HPNJwxPL3EmhzeAnsWQCM3DcoqOz3/IC6de9rWfGR8ZCuEHETi9km66bH/wG3YH0V3nyzyFEGUZeL5PKyy4xvw==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-openharmony-arm64@4.50.2':
     resolution: {integrity: sha512-nMKvq6FRHSzYfKLHZ+cChowlEkR2lj/V0jYj9JnGUVPL2/mIeFGmVM2mLaFeNa5Jev7W7TovXqXIG2d39y1KYA==}
@@ -4816,6 +4838,12 @@ packages:
     engines: {node: ^18.12.0 || ^20.9.0 || >=22.0}
     peerDependencies:
       postcss: ^8.4.32
+
+  postcss-safe-parser@7.0.1:
+    resolution: {integrity: sha512-0AioNCJZ2DPYz5ABT6bddIqlhgwhpHZ/l65YAYo0BCIn0xiDpsnTHz0gnoTGk0OXZW0JRs+cDwL8u/teRdz+8A==}
+    engines: {node: '>=18.0'}
+    peerDependencies:
+      postcss: ^8.4.31
 
   postcss-selector-parser@6.1.2:
     resolution: {integrity: sha512-Q8qQfPiZ+THO/3ZrOrO0cJJKfpYCagtMUkXbnEfmgUjwXg6z/WBeOyS9APBBPCTSiDV+s4SwQGu8yFsiMRIudg==}
@@ -11529,6 +11557,10 @@ snapshots:
     dependencies:
       postcss: 8.5.6
       postcss-value-parser: 4.2.0
+
+  postcss-safe-parser@7.0.1(postcss@8.5.6):
+    dependencies:
+      postcss: 8.5.6
 
   postcss-selector-parser@6.1.2:
     dependencies:
