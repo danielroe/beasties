@@ -101,6 +101,10 @@ export interface Options {
    */
   compress?: boolean
   /**
+   * Use PostCSS safe parser for fault-tolerant CSS parsing _(default: `false`)_
+   */
+  safeParser?: boolean
+  /**
    * Controls {@link LogLevel log level} of the plugin _(default: `"info"`)_
    */
   logLevel?: LogLevel
