@@ -4,3 +4,5 @@ ignoredBuiltDependencies:
   - esbuild
 onlyBuiltDependencies:
   - simple-git-hooks
+trustPolicy: no-downgrade
+
