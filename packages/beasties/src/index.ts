@@ -181,8 +181,28 @@ export default class Beasties {
         .replace(/^\//, '')
     }
 
-    // Ignore remote stylesheets
-    if (/^https?:\/\//.test(normalizedPath) || href.startsWith('//')) {
+    // Handle remote stylesheets
+    const isRemote = /^https?:\/\//.test(href) || href.startsWith('//')
+    if (isRemote) {
+      if (this.options.remote === true) {
+        try {
+          // Normalize protocol-relative URLs
+          const absoluteUrl = href.startsWith('//') ? `https:${href}` : href
+
+          const response = await fetch(absoluteUrl)
+
+          if (!response.ok) {
+            this.logger.warn?.(`Failed to fetch ${absoluteUrl} (${response.status})`)
+            return undefined
+          }
+
+          return await response.text()
+        }
+        catch (error) {
+          this.logger.warn?.(`Error fetching ${href}: ${(error as Error).message}`)
+          return undefined
+        }
+      }
       return undefined
     }
 
@@ -251,7 +271,9 @@ export default class Beasties {
     const href = link.getAttribute('href')
 
     // skip filtered resources, or network resources if no filter is provided
-    if (!href?.endsWith('.css')) {
+    // Strip query params and hashes before checking extension
+    const pathname = href?.split('?')[0].split('#')[0]
+    if (!pathname?.endsWith('.css')) {
       return undefined
     }
 
