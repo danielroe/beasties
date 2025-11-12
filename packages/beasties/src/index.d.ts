@@ -63,6 +63,7 @@ export interface Options {
   fonts?: boolean
   keyframes?: string
   compress?: boolean
+  safeParser?: boolean
   logLevel?: 'info' | 'warn' | 'error' | 'trace' | 'debug' | 'silent'
   reduceInlineStyles?: boolean
   logger?: Logger

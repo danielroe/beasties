@@ -19,6 +19,7 @@ import type { Child, Root } from 'postcss-media-query-parser'
 import type Root_ from 'postcss/lib/root'
 import { parse, stringify } from 'postcss'
 import mediaParser from 'postcss-media-query-parser'
+import safeParser from 'postcss-safe-parser'
 
 /**
  * Parse a textual CSS Stylesheet into a Stylesheet instance.
@@ -26,7 +27,10 @@ import mediaParser from 'postcss-media-query-parser'
  * @see https://github.com/postcss/postcss/
  * @private
  */
-export function parseStylesheet(stylesheet: string) {
+export function parseStylesheet(stylesheet: string, options?: { safeParser?: boolean }) {
+  if (options?.safeParser) {
+    return safeParser(stylesheet)
+  }
   return parse(stylesheet)
 }
 

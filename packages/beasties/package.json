@@ -58,7 +58,8 @@
     "htmlparser2": "^10.0.0",
     "picocolors": "^1.1.1",
     "postcss": "^8.4.49",
-    "postcss-media-query-parser": "^0.2.3"
+    "postcss-media-query-parser": "^0.2.3",
+    "postcss-safe-parser": "^7.0.1"
   },
   "devDependencies": {
     "@types/postcss-media-query-parser": "0.2.4",
