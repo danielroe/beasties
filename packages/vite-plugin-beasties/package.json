@@ -40,6 +40,6 @@
   "devDependencies": {
     "rollup": "4.50.2",
     "unbuild": "3.6.1",
-    "vite": "7.1.12"
+    "vite": "7.2.2"
   }
 }
