@@ -50,6 +50,7 @@ export interface Options {
   path?: string
   publicPath?: string
   external?: boolean
+  remote?: boolean
   inlineThreshold?: number
   minimumExternalSize?: number
   pruneSource?: boolean

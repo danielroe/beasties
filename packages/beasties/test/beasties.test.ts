@@ -383,4 +383,54 @@ describe('beasties', () => {
     expect(loggerWarnSpy).not.toHaveBeenCalled()
     expect(result).toMatchSnapshot()
   })
+
+  it('ignores remote stylesheets by default', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+    })
+
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="https://example.com/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+
+    // Should not contain inlined critical CSS since remote is disabled
+    expect(result).not.toContain('<style>')
+    expect(result).toContain('https://example.com/style.css')
+  })
+
+  it('fetches remote stylesheets when remote: true', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      remote: true,
+    })
+
+    // Mock fetch
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => 'h1 { color: blue; } h2.unused { color: red; }',
+    })
+    globalThis.fetch = mockFetch as any
+
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="https://example.com/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+
+    expect(mockFetch).toHaveBeenCalledWith('https://example.com/style.css')
+    expect(result).toContain('<style>h1{color:blue}</style>')
+    expect(result).toContain('https://example.com/style.css')
+  })
 })
