@@ -28,8 +28,8 @@ importers:
         specifier: 10.2.3
         version: 10.2.3(magicast@0.3.5)
       changelogithub:
-        specifier: 13.16.0
-        version: 13.16.0(magicast@0.3.5)
+        specifier: 14.0.0
+        version: 14.0.0(magicast@0.3.5)
       cheerio:
         specifier: 1.1.2
         version: 1.1.2
@@ -2079,8 +2079,8 @@ packages:
     resolution: {integrity: sha512-cTZXBcJMl3pudE40WENOakXkcVtrbBpbkmSkM20NdRiUqa4+VYRdXdEsgQ0BNQ6JBE2YymTNWtPKVF7UCTN5+g==}
     hasBin: true
 
-  changelogithub@13.16.0:
-    resolution: {integrity: sha512-O+OiuYG/JgUGENXt6M+eyjLBtGYwUPL5SqKU/9sngZS14fJ3LCIU7xPdWJoyzjAixGYwjuVLC1tZFbboxZ7zbQ==}
+  changelogithub@14.0.0:
+    resolution: {integrity: sha512-VBuDqqU2si6tNjraFIuUEIVP++y77w+jt5CMnLCXjdP6OEBWUcbNYgIPq+aKQH4Yp2KkGKAjqP8dDmJutICk6g==}
     engines: {node: '>=12.0.0'}
     hasBin: true
 
@@ -8099,7 +8099,7 @@ snapshots:
     transitivePeerDependencies:
       - magicast
 
-  changelogithub@13.16.0(magicast@0.3.5):
+  changelogithub@14.0.0(magicast@0.3.5):
     dependencies:
       ansis: 4.2.0
       c12: 3.3.2(magicast@0.3.5)
