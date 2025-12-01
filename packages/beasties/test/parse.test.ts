@@ -74,3 +74,28 @@ describe('selector normalisation', () => {
     expect(warnSpy).not.toHaveBeenCalled()
   })
 })
+
+describe('safe parser', () => {
+  it('should handle malformed CSS with safeParser enabled', async () => {
+    const beasties = new Beasties({ safeParser: true })
+    const html = `
+      <html>
+        <head>
+          <style>
+            .test { color: red
+          </style>
+        </head>
+        <body>
+          <div class="test">Test</div>
+        </body>
+      </html>
+    `
+
+    // Should not throw an error with malformed CSS
+    const result = await beasties.process(html)
+
+    // Verify the HTML was processed without throwing
+    expect(result).toContain('Test')
+    expect(result).toContain('data-beasties-container')
+  })
+})
