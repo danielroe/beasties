@@ -741,4 +741,48 @@ describe('beasties', () => {
       globalThis.fetch = originalFetch
     }
   })
+
+  it('works with pruneSource and additionalStylesheets together', async () => {
+    // Regression test for https://github.com/danielroe/beasties/issues/177
+    // Ensure $$name is set on style elements for additionalStylesheets
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beasties-test-'))
+    fs.writeFileSync(path.join(tmpDir, 'reset.css'), 'h1 { margin: 0; } h2.unused { padding: 0; }')
+
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: tmpDir,
+      pruneSource: true,
+      additionalStylesheets: ['/reset.css'],
+    })
+
+    beasties.writeFile = (filename, data) => new Promise((resolve, reject) => {
+      try {
+        fs.writeFileSync(filename, data)
+        resolve()
+      }
+      catch (err) {
+        reject(err)
+      }
+    })
+
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+
+    // Should contain the critical CSS from reset.css
+    expect(result).toContain('<style>h1{margin:0}</style>')
+
+    // The pruned CSS file should only contain non-critical styles
+    const css = fs.readFileSync(path.join(tmpDir, 'reset.css'), 'utf-8')
+    expect(css).toEqual('h2.unused{padding:0}')
+
+    // Clean up temporary directory
+    fs.rmSync(tmpDir, { recursive: true })
+  })
 })

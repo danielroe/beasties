@@ -276,6 +276,7 @@ export default class Beasties {
         styleSheetsIncluded.push(cssFile)
         const style = document.createElement('style')
         style.$$external = true
+        style.$$name = cssFile
         return this.getCssAsset(cssFile, style).then(sheet => [sheet, style] as const)
       }),
     )
