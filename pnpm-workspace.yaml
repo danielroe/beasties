@@ -1,10 +1,10 @@
 shellEmulator: true
 
-trustPolicy: no-downgrade
-
 packages:
   - packages/*
+
 ignoredBuiltDependencies:
   - esbuild
+
 onlyBuiltDependencies:
   - simple-git-hooks
