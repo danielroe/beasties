@@ -494,8 +494,8 @@ export default class Beasties {
     if (!sheet)
       return
 
-    const ast = parseStylesheet(sheet)
-    const astInverse = options.pruneSource ? parseStylesheet(sheet) : null
+    const ast = parseStylesheet(sheet, { safeParser: this.options.safeParser !== false })
+    const astInverse = options.pruneSource ? parseStylesheet(sheet, { safeParser: this.options.safeParser !== false }) : null
 
     // a string to search for font names (very loose)
     let criticalFonts = ''

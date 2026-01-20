@@ -21,6 +21,9 @@ importers:
       '@types/node':
         specifier: 24.10.9
         version: 24.10.9
+      '@types/postcss-safe-parser':
+        specifier: ^5.0.4
+        version: 5.0.4
       '@vitest/coverage-v8':
         specifier: 3.2.4
         version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(jiti@2.6.1)(jsdom@27.4.0)(terser@5.44.1)(yaml@2.8.2))
@@ -84,6 +87,9 @@ importers:
       postcss-media-query-parser:
         specifier: ^0.2.3
         version: 0.2.3
+      postcss-safe-parser:
+        specifier: ^7.0.1
+        version: 7.0.1(postcss@8.5.6)
     devDependencies:
       '@types/postcss-media-query-parser':
         specifier: 0.2.4
@@ -1193,6 +1199,9 @@ packages:
 
   '@types/postcss-media-query-parser@0.2.4':
     resolution: {integrity: sha512-Rv+aNYlPTzMSKajLEMco0Jdy0dZB8ETUJ1I2HIpxlFq3Fk1UGr6GYaW/R8vCIe0IpectqMbWw6YgvwKpKyQeSA==}
+
+  '@types/postcss-safe-parser@5.0.4':
+    resolution: {integrity: sha512-5zGTm1jsW3j4+omgND1SIDbrZOcigTuxa4ihppvKbLkg2INUGBHV/fWNRSRFibK084tU3fxqZ/kVoSIGqRHnrQ==}
 
   '@types/resolve@1.20.2':
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
@@ -3785,6 +3794,12 @@ packages:
     peerDependencies:
       postcss: ^8.4.32
 
+  postcss-safe-parser@7.0.1:
+    resolution: {integrity: sha512-0AioNCJZ2DPYz5ABT6bddIqlhgwhpHZ/l65YAYo0BCIn0xiDpsnTHz0gnoTGk0OXZW0JRs+cDwL8u/teRdz+8A==}
+    engines: {node: '>=18.0'}
+    peerDependencies:
+      postcss: ^8.4.31
+
   postcss-selector-parser@7.1.1:
     resolution: {integrity: sha512-orRsuYpJVw8LdAwqqLykBj9ecS5/cRHlI5+nvTo8LcCKmzDmqVORXtOIYEEQuL9D4BxtA1lm5isAqzQZCoQ6Eg==}
     engines: {node: '>=4'}
@@ -5508,6 +5523,10 @@ snapshots:
   '@types/parse5@6.0.3': {}
 
   '@types/postcss-media-query-parser@0.2.4': {}
+
+  '@types/postcss-safe-parser@5.0.4':
+    dependencies:
+      postcss: 8.5.6
 
   '@types/resolve@1.20.2': {}
 
@@ -8807,6 +8826,10 @@ snapshots:
     dependencies:
       postcss: 8.5.6
       postcss-value-parser: 4.2.0
+
+  postcss-safe-parser@7.0.1(postcss@8.5.6):
+    dependencies:
+      postcss: 8.5.6
 
   postcss-selector-parser@7.1.1:
     dependencies:

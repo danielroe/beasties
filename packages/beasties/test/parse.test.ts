@@ -74,3 +74,75 @@ describe('selector normalisation', () => {
     expect(warnSpy).not.toHaveBeenCalled()
   })
 })
+
+describe('safe parser', () => {
+  it('should handle malformed CSS by default', async () => {
+    const beasties = new Beasties()
+    const html = `
+      <html>
+        <head>
+          <style>
+            .test { color: red
+          </style>
+        </head>
+        <body>
+          <div class="test">Test</div>
+        </body>
+      </html>
+    `
+
+    // Should not throw an error with malformed CSS
+    const result = await beasties.process(html)
+
+    // Verify the HTML was processed without throwing
+    expect(result).toContain('Test')
+    expect(result).toContain('data-beasties-container')
+    // Verify the CSS was recovered and applied
+    expect(result).toContain('color')
+  })
+
+  it('should throw with malformed CSS when safeParser is disabled', async () => {
+    const beasties = new Beasties({ safeParser: false })
+    const html = `
+      <html>
+        <head>
+          <style>
+            .test { color: red
+          </style>
+        </head>
+        <body>
+          <div class="test">Test</div>
+        </body>
+      </html>
+    `
+
+    // Should throw an error with malformed CSS when safeParser is disabled
+    await expect(beasties.process(html)).rejects.toThrow()
+  })
+
+  it('should parse valid CSS correctly with safeParser disabled', async () => {
+    const beasties = new Beasties({ safeParser: false })
+    const html = `
+      <html>
+        <head>
+          <style>
+            .test { color: red; }
+            .unused { color: blue; }
+          </style>
+        </head>
+        <body>
+          <div class="test">Test</div>
+        </body>
+      </html>
+    `
+
+    const result = await beasties.process(html)
+
+    // Verify the HTML was processed correctly
+    expect(result).toContain('Test')
+    expect(result).toContain('data-beasties-container')
+    // Verify only the used CSS is included
+    expect(result).toContain('color:red')
+    expect(result).not.toContain('color:blue')
+  })
+})
