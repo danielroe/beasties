@@ -102,6 +102,13 @@ export interface Options {
   logLevel?: LogLevel
   reduceInlineStyles?: boolean
   /**
+   * Process external stylesheets sequentially to preserve their order _(default: `false`)_
+   *
+   * By default, external stylesheets are processed in parallel for performance.
+   * Enable this option if stylesheet order matters for your CSS specificity.
+   */
+  preserveStylesheetOrder?: boolean
+  /**
    * Provide a custom logger interface {@link Logger logger}
    */
   logger?: Logger

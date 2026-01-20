@@ -109,9 +109,16 @@ export default class Beasties {
     if (this.options.external !== false) {
       const externalSheets = [...document.querySelectorAll('link[rel="stylesheet"]')] as ChildNode[]
 
-      await Promise.all(
-        externalSheets.map(link => this.embedLinkedStylesheet(link, document)),
-      )
+      if (this.options.preserveStylesheetOrder) {
+        for (const link of externalSheets) {
+          await this.embedLinkedStylesheet(link, document)
+        }
+      }
+      else {
+        await Promise.all(
+          externalSheets.map(link => this.embedLinkedStylesheet(link, document)),
+        )
+      }
     }
 
     // go through all the style tags in the document and reduce them to only critical CSS

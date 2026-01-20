@@ -65,6 +65,7 @@ export interface Options {
   compress?: boolean
   logLevel?: 'info' | 'warn' | 'error' | 'trace' | 'debug' | 'silent'
   reduceInlineStyles?: boolean
+  preserveStylesheetOrder?: boolean
   logger?: Logger
 }
 

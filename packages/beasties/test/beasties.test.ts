@@ -89,6 +89,19 @@ describe('beasties', () => {
     expect(result).toMatchSnapshot()
   })
 
+  it('should preserve order of external stylesheets', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: fixtureDir,
+      preserveStylesheetOrder: true,
+    })
+
+    const html = fs.readFileSync(path.join(fixtureDir, 'multiple-stylesheets.html'), 'utf-8')
+
+    const result = await beasties.process(html)
+    expect(result).toMatchSnapshot()
+  })
+
   it('does not encode HTML', async () => {
     const beasties = new Beasties({
       reduceInlineStyles: false,
