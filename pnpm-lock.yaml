@@ -21,6 +21,9 @@ importers:
       '@types/node':
         specifier: 24.10.9
         version: 24.10.9
+      '@types/postcss-safe-parser':
+        specifier: ^5.0.4
+        version: 5.0.4
       '@vitest/coverage-v8':
         specifier: 3.2.4
         version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(jiti@2.6.1)(jsdom@27.4.0)(terser@5.44.1)(yaml@2.8.2))
@@ -1196,6 +1199,9 @@ packages:
 
   '@types/postcss-media-query-parser@0.2.4':
     resolution: {integrity: sha512-Rv+aNYlPTzMSKajLEMco0Jdy0dZB8ETUJ1I2HIpxlFq3Fk1UGr6GYaW/R8vCIe0IpectqMbWw6YgvwKpKyQeSA==}
+
+  '@types/postcss-safe-parser@5.0.4':
+    resolution: {integrity: sha512-5zGTm1jsW3j4+omgND1SIDbrZOcigTuxa4ihppvKbLkg2INUGBHV/fWNRSRFibK084tU3fxqZ/kVoSIGqRHnrQ==}
 
   '@types/resolve@1.20.2':
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
@@ -5517,6 +5523,10 @@ snapshots:
   '@types/parse5@6.0.3': {}
 
   '@types/postcss-media-query-parser@0.2.4': {}
+
+  '@types/postcss-safe-parser@5.0.4':
+    dependencies:
+      postcss: 8.5.6
 
   '@types/resolve@1.20.2': {}
 
