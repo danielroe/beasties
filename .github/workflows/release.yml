@@ -1,16 +1,23 @@
-name: Release
-
-permissions:
-  contents: write
+name: release
 
 on:
   push:
     tags:
       - 'v*'
 
+# Remove default permissions of GITHUB_TOKEN for security
+# https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
+permissions: {}
+
 jobs:
   release:
+    concurrency:
+      group: release
+    permissions:
+      contents: write
+      id-token: write
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
         with:
@@ -19,11 +26,18 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: lts/*
-          cache: pnpm
+          registry-url: 'https://registry.npmjs.org'
 
       - name: 📦 Install dependencies
         run: pnpm install
 
-      - run: pnpm changelogithub
+      - name: 🛠 Build project
+        run: pnpm build
+
+      - name: 📦 Publish to npm
+        run: pnpm -r publish --access public --no-git-checks
+
+      - name: 📝 Create GitHub release
+        run: pnpm changelogithub
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

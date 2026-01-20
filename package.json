@@ -27,7 +27,7 @@
     "postinstall": "simple-git-hooks && pnpm -r build:stub",
     "docs": "pnpm -r docs",
     "lint": "eslint .",
-    "release": "bumpp -r && pnpm -r publish",
+    "release": "bumpp -r",
     "test": "vitest --coverage",
     "test:types": "tsc --noEmit",
     "test:knip": "knip",
