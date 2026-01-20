@@ -785,4 +785,227 @@ describe('beasties', () => {
     // Clean up temporary directory
     fs.rmSync(tmpDir, { recursive: true })
   })
+
+  it('removes empty @media blocks when pruneSource is enabled', async () => {
+    // Regression test for https://github.com/danielroe/beasties/issues/172
+    // Empty @media blocks should be removed after pruning, not left behind
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beasties-test-'))
+    fs.writeFileSync(path.join(tmpDir, 'style.css'), trim`
+      h1 { color: blue; }
+      @media (min-width: 768px) {
+        h1 { padding: 48px; }
+      }
+      h2.unused { color: red; }
+    `)
+
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: tmpDir,
+      pruneSource: true,
+    })
+
+    let writtenCss = ''
+    beasties.writeFile = (filename, data) => new Promise((resolve, reject) => {
+      try {
+        writtenCss = data
+        fs.writeFileSync(filename, data)
+        resolve()
+      }
+      catch (err) {
+        reject(err)
+      }
+    })
+
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+
+    // Critical CSS should include both the base h1 rule and the @media rule
+    expect(result).toContain('h1{color:blue}')
+    expect(result).toContain('@media (min-width: 768px)')
+    expect(result).toContain('h1{padding:48px}')
+
+    // The pruned CSS file should NOT contain empty @media blocks
+    expect(writtenCss).not.toContain('@media (min-width: 768px){}')
+    expect(writtenCss).not.toContain('@media (min-width: 768px) {}')
+    // It should only contain the unused h2 rule
+    expect(writtenCss).toEqual('h2.unused{color:red}')
+
+    // Clean up temporary directory
+    fs.rmSync(tmpDir, { recursive: true })
+  })
+
+  it('removes empty @media blocks from critical CSS when rules go to pruned source', async () => {
+    // Regression test for https://github.com/danielroe/beasties/issues/172
+    // Test the inverse case: empty @media in critical CSS
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beasties-test-'))
+    fs.writeFileSync(path.join(tmpDir, 'style.css'), trim`
+      h1 { color: blue; }
+      @media (min-width: 768px) {
+        h2.unused { padding: 48px; }
+      }
+    `)
+
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: tmpDir,
+      pruneSource: true,
+    })
+
+    let writtenCss = ''
+    beasties.writeFile = (filename, data) => new Promise((resolve, reject) => {
+      try {
+        writtenCss = data
+        fs.writeFileSync(filename, data)
+        resolve()
+      }
+      catch (err) {
+        reject(err)
+      }
+    })
+
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+
+    // Critical CSS should NOT contain empty @media blocks
+    expect(result).not.toContain('@media (min-width: 768px){}')
+    expect(result).not.toContain('@media (min-width: 768px) {}')
+    expect(result).toContain('h1{color:blue}')
+
+    // The pruned CSS should contain the @media block with the unused rule
+    expect(writtenCss).toContain('@media (min-width: 768px)')
+    expect(writtenCss).toContain('h2.unused{padding:48px}')
+
+    // Clean up temporary directory
+    fs.rmSync(tmpDir, { recursive: true })
+  })
+
+  it('removes empty @supports blocks when pruneSource is enabled', async () => {
+    // Similar to @media, @supports blocks should be removed when empty
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beasties-test-'))
+    fs.writeFileSync(path.join(tmpDir, 'style.css'), trim`
+      h1 { color: blue; }
+      @supports (display: grid) {
+        h1 { display: grid; }
+      }
+      h2.unused { color: red; }
+    `)
+
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: tmpDir,
+      pruneSource: true,
+    })
+
+    let writtenCss = ''
+    beasties.writeFile = (filename, data) => new Promise((resolve, reject) => {
+      try {
+        writtenCss = data
+        fs.writeFileSync(filename, data)
+        resolve()
+      }
+      catch (err) {
+        reject(err)
+      }
+    })
+
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+
+    // Critical CSS should include the @supports block with h1 rule
+    expect(result).toContain('h1{color:blue}')
+    expect(result).toContain('@supports (display: grid)')
+    expect(result).toContain('h1{display:grid}')
+
+    // The pruned CSS file should NOT contain empty @supports blocks
+    expect(writtenCss).not.toContain('@supports')
+    // It should only contain the unused h2 rule
+    expect(writtenCss).toEqual('h2.unused{color:red}')
+
+    // Clean up temporary directory
+    fs.rmSync(tmpDir, { recursive: true })
+  })
+
+  it('preserves @keyframes when pruneSource is enabled', async () => {
+    // @keyframes should be handled as a whole, not recursively walked
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beasties-test-'))
+    fs.writeFileSync(path.join(tmpDir, 'style.css'), trim`
+      h1 {
+        color: blue;
+        animation: fadeIn 1s;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes unused {
+        0% { transform: scale(0); }
+        100% { transform: scale(1); }
+      }
+    `)
+
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: tmpDir,
+      pruneSource: true,
+      keyframes: 'critical',
+    })
+
+    let writtenCss = ''
+    beasties.writeFile = (filename, data) => new Promise((resolve, reject) => {
+      try {
+        writtenCss = data
+        fs.writeFileSync(filename, data)
+        resolve()
+      }
+      catch (err) {
+        reject(err)
+      }
+    })
+
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+
+    // Critical CSS should include the used @keyframes
+    expect(result).toContain('@keyframes fadeIn')
+    expect(result).toContain('from{opacity:0}')
+    expect(result).toContain('to{opacity:1}')
+
+    // Unused @keyframes should be in the pruned source
+    expect(writtenCss).toContain('@keyframes unused')
+
+    // Clean up temporary directory
+    fs.rmSync(tmpDir, { recursive: true })
+  })
 })

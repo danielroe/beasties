@@ -171,12 +171,24 @@ export function walkStyleRulesWithReverseMirror(node: Rule | Root_, node2: Rule 
       const rule2 = rules2?.[index]
       if (hasNestedRules(rule)) {
         walkStyleRulesWithReverseMirror(rule, rule2 as Rule, iterator)
+        if ('nodes' in rule && rule.nodes?.length === 0 && isRemovableIfEmpty(rule)) {
+          return false
+        }
       }
       rule._other = rule2 as Rule
       rule.filterSelectors = filterSelectors
       return iterator(rule) !== false
     },
   )
+
+  if (node2.nodes) {
+    node2.nodes = node2.nodes.filter((rule) => {
+      if ('nodes' in rule && rule.nodes?.length === 0 && isRemovableIfEmpty(rule)) {
+        return false
+      }
+      return true
+    })
+  }
 }
 
 // Checks if a node has nested rules, like @media
@@ -190,10 +202,20 @@ function hasNestedRules(rule: ChildNode): rule is Rule {
   )
 }
 
+// Checks if an empty container rule should be removed
+// `@media` and `@supports` blocks are safe to remove when empty
+// `@layer` blocks should be preserved (even empty) as they establish cascade order
+function isRemovableIfEmpty(rule: ChildNode): boolean {
+  if (!('name' in rule) || rule.type !== 'atrule') {
+    return false
+  }
+  return rule.name === 'media' || rule.name === 'supports'
+}
+
 // Like [].filter(), but applies the opposite filtering result to a second copy of the Array without a second pass.
 // This is just a quicker version of generating the compliment of the set returned from a filter operation.
 type SplitIterator<T> = (item: T, index: number, a: T[], b?: T[]) => boolean
-function splitFilter<T>(a: T[], b: T[], predicate: SplitIterator<T>) {
+function splitFilter<T>(a: T[], b: T[] | undefined, predicate: SplitIterator<T>) {
   const aOut: T[] = []
   const bOut: T[] = []
   for (let index = 0; index < a.length; index++) {
@@ -202,7 +224,8 @@ function splitFilter<T>(a: T[], b: T[], predicate: SplitIterator<T>) {
       aOut.push(item)
     }
     else {
-      bOut.push(item)
+      // Push from b if available (for mirrored trees), otherwise from a
+      bOut.push(b?.[index] ?? item)
     }
   }
   return [aOut, bOut] as const
