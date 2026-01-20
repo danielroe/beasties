@@ -296,7 +296,7 @@ export default class Beasties {
 
     // skip filtered resources, or network resources if no filter is provided
     // Strip query params and hashes before checking extension
-    const pathname = href?.split('?')[0].split('#')[0]
+    const pathname = href?.split('?')[0]?.split('#')[0]
     if (!pathname?.endsWith('.css')) {
       return undefined
     }
