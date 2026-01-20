@@ -93,7 +93,6 @@ describe('beasties', () => {
     const beasties = new Beasties({
       reduceInlineStyles: false,
       path: fixtureDir,
-      preserveStylesheetOrder: true,
     })
 
     const html = fs.readFileSync(path.join(fixtureDir, 'multiple-stylesheets.html'), 'utf-8')
