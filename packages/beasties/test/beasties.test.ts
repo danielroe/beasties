@@ -513,6 +513,81 @@ describe('beasties', () => {
     fs.rmSync(tmpDir, { recursive: true })
   })
 
+  it('handles stylesheets with query strings', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+    })
+    const assets: Record<string, string> = {
+      '/style.css': 'h1 { color: blue; } h2.unused { color: red; }',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css?v=123">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+
+    expect(result).toContain('<style>h1{color:blue}</style>')
+    expect(result).toContain('/style.css?v=123')
+  })
+
+  it('handles stylesheets with hash fragments', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+    })
+    const assets: Record<string, string> = {
+      '/style.css': 'h1 { color: green; } h2.unused { color: red; }',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css#section">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+
+    expect(result).toContain('<style>h1{color:green}</style>')
+    expect(result).toContain('/style.css#section')
+  })
+
+  it('handles stylesheets with both query strings and hash fragments', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+    })
+    const assets: Record<string, string> = {
+      '/style.css': 'h1 { color: purple; } h2.unused { color: red; }',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css?v=456#section">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+
+    expect(result).toContain('<style>h1{color:purple}</style>')
+    expect(result).toContain('/style.css?v=456#section')
+  })
+
   it('ignores remote stylesheets by default', async () => {
     const beasties = new Beasties({
       reduceInlineStyles: false,

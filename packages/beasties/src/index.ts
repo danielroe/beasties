@@ -197,7 +197,7 @@ export default class Beasties {
 
     // CHECK - the output path
     // path on disk (with output.publicPath removed)
-    let normalizedPath = href.replace(/^\//, '')
+    let normalizedPath = href.replace(/^\/|[?#].*$/g, '')
     const pathPrefix = `${(publicPath || '').replace(/(^\/|\/$)/g, '')}/`
     if (normalizedPath.startsWith(pathPrefix)) {
       normalizedPath = normalizedPath
