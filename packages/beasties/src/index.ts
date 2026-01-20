@@ -381,6 +381,7 @@ export default class Beasties {
         // @see http://filamentgroup.github.io/loadCSS/test/new-high.html
         link.setAttribute('rel', 'alternate stylesheet preload')
         link.setAttribute('title', 'styles')
+        link.setAttribute('as', 'style')
         link.setAttribute('onload', `this.title='';this.rel='stylesheet'`)
         noscriptFallback = true
       }

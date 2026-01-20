@@ -154,7 +154,7 @@ describe('preload modes', () => {
       </html>
     `)
     expect(result).toContain('<style>h1{color:blue}</style>')
-    expect(result).toContain(`<link rel="alternate stylesheet preload" href="/style.css" title="styles" onload="this.title='';this.rel='stylesheet'">`)
+    expect(result).toContain(`<link rel="alternate stylesheet preload" href="/style.css" title="styles" as="style" onload="this.title='';this.rel='stylesheet'">`)
     expect(result).toContain('<noscript><link rel="stylesheet" href="/style.css"></noscript>')
     expect(result).toMatchSnapshot()
   })
