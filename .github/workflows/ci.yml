@@ -56,9 +56,10 @@ jobs:
 
       - name: Run benchmarks
         if: matrix.os != 'windows-latest'
-        uses: CodSpeedHQ/action@v3
+        uses: CodSpeedHQ/action@v4
         with:
           run: pnpm vitest bench
+          mode: simulation
           token: ${{ secrets.CODSPEED_TOKEN }}
 
       - name: ⚙️ Check engine ranges
