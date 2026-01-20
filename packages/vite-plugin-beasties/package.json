@@ -2,7 +2,7 @@
   "name": "vite-plugin-beasties",
   "type": "module",
   "version": "0.3.5",
-  "packageManager": "pnpm@10.16.1",
+  "packageManager": "pnpm@10.28.1",
   "description": "",
   "license": "MIT",
   "repository": {
@@ -38,7 +38,7 @@
     "beasties": "workspace:^"
   },
   "devDependencies": {
-    "rollup": "4.50.2",
+    "rollup": "4.55.2",
     "unbuild": "3.6.1",
     "vite": "7.3.1"
   }
