@@ -520,31 +520,37 @@ describe('beasties', () => {
   })
 
   it('fetches remote stylesheets when remote: true', async () => {
-    const beasties = new Beasties({
-      reduceInlineStyles: false,
-      remote: true,
-    })
+    const originalFetch = globalThis.fetch
+    try {
+      const beasties = new Beasties({
+        reduceInlineStyles: false,
+        remote: true,
+      })
 
-    // Mock fetch
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      text: async () => 'h1 { color: blue; } h2.unused { color: red; }',
-    })
-    globalThis.fetch = mockFetch as any
+      // Mock fetch
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => 'h1 { color: blue; } h2.unused { color: red; }',
+      })
+      globalThis.fetch = mockFetch as any
 
-    const result = await beasties.process(trim`
-      <html>
-        <head>
-          <link rel="stylesheet" href="https://example.com/style.css">
-        </head>
-        <body>
-          <h1>Hello World!</h1>
-        </body>
-      </html>
-    `)
+      const result = await beasties.process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="https://example.com/style.css">
+          </head>
+          <body>
+            <h1>Hello World!</h1>
+          </body>
+        </html>
+      `)
 
-    expect(mockFetch).toHaveBeenCalledWith('https://example.com/style.css')
-    expect(result).toContain('<style>h1{color:blue}</style>')
-    expect(result).toContain('https://example.com/style.css')
+      expect(mockFetch).toHaveBeenCalledWith('https://example.com/style.css')
+      expect(result).toContain('<style>h1{color:blue}</style>')
+      expect(result).toContain('https://example.com/style.css')
+    }
+    finally {
+      globalThis.fetch = originalFetch
+    }
   })
 })
