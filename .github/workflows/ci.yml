@@ -59,6 +59,7 @@ jobs:
         uses: CodSpeedHQ/action@v4
         with:
           run: pnpm vitest bench
+          mode: 'simulation'
           token: ${{ secrets.CODSPEED_TOKEN }}
 
       - name: ⚙️ Check engine ranges
