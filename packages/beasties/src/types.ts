@@ -41,6 +41,10 @@ export interface Options {
    */
   external?: boolean
   /**
+   * Download and inline remote stylesheets _(default: `false`)_
+   */
+  remote?: boolean
+  /**
    * Inline external stylesheets smaller than a given size _(default: `0`)_
    */
   inlineThreshold?: number

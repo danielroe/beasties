@@ -16,6 +16,7 @@
 
 import type { Logger } from '../src/util'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
 import { fileURLToPath } from 'node:url'
@@ -87,6 +88,120 @@ describe('beasties', () => {
 
     const result = await beasties.process(html)
     expect(result).toMatchSnapshot()
+  })
+
+  it('should preserve order of external stylesheets', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: fixtureDir,
+    })
+
+    const html = fs.readFileSync(path.join(fixtureDir, 'multiple-stylesheets.html'), 'utf-8')
+
+    const result = await beasties.process(html)
+    expect(result).toMatchSnapshot()
+  })
+
+  it('should preserve order of external stylesheets with variable load times', async () => {
+    vi.useFakeTimers()
+
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+      mergeStylesheets: false, // Keep separate to verify order
+    })
+
+    // Simulate variable latency - second file loads fastest
+    const assets: Record<string, { content: string, delay: number }> = {
+      '/first.css': { content: 'h1 { color: red; }', delay: 50 },
+      '/second.css': { content: 'h2 { color: blue; }', delay: 10 },
+      '/third.css': { content: 'h3 { color: green; }', delay: 30 },
+    }
+
+    beasties.readFile = (filename) => {
+      const key = filename.replace(/^\w:/, '').replace(/\\/g, '/')
+      const asset = assets[key]
+      if (!asset)
+        return Promise.resolve('')
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(asset.content), asset.delay)
+      })
+    }
+
+    const processPromise = beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/first.css">
+          <link rel="stylesheet" href="/second.css">
+          <link rel="stylesheet" href="/third.css">
+        </head>
+        <body>
+          <h1>First</h1>
+          <h2>Second</h2>
+          <h3>Third</h3>
+        </body>
+      </html>
+    `)
+
+    // Advance all timers
+    await vi.runAllTimersAsync()
+    const result = await processPromise
+
+    vi.useRealTimers()
+
+    // Verify style tags are in correct order (first, second, third)
+    const styleOrder = [...result.matchAll(/<style>([^<]+)<\/style>/g)].map(m => m[1])
+    expect(styleOrder).toEqual([
+      'h1{color:red}',
+      'h2{color:blue}',
+      'h3{color:green}',
+    ])
+
+    // Verify body links are in correct order
+    const bodyLinkMatches = result.match(/<body>[\s\S]*<\/body>/)?.[0] || ''
+    const linkOrder = [...bodyLinkMatches.matchAll(/href="\/([^"]+)\.css"/g)].map(m => m[1])
+    expect(linkOrder).toEqual(['first', 'second', 'third'])
+  })
+
+  it('should use custom embedLinkedStylesheet when overridden', async () => {
+    const embeddedLinks: string[] = []
+
+    class CustomBeasties extends Beasties {
+      override async embedLinkedStylesheet(link: Parameters<Beasties['embedLinkedStylesheet']>[0], document: Parameters<Beasties['embedLinkedStylesheet']>[1]) {
+        const href = link.getAttribute('href')
+        if (href) {
+          embeddedLinks.push(href)
+        }
+        return super.embedLinkedStylesheet(link, document)
+      }
+    }
+
+    const beasties = new CustomBeasties({
+      reduceInlineStyles: false,
+      path: '/',
+    })
+
+    const assets: Record<string, string> = {
+      '/a.css': 'h1 { color: red; }',
+      '/b.css': 'h2 { color: blue; }',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+
+    await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/a.css">
+          <link rel="stylesheet" href="/b.css">
+        </head>
+        <body>
+          <h1>Hello</h1>
+          <h2>World</h2>
+        </body>
+      </html>
+    `)
+
+    // Verify that our custom embedLinkedStylesheet was called for each stylesheet
+    expect(embeddedLinks).toEqual(['/a.css', '/b.css'])
   })
 
   it('does not encode HTML', async () => {
@@ -347,6 +462,17 @@ describe('beasties', () => {
   })
 
   it('css file is updated when pruneSource is enabled', async () => {
+    // Create a temporary directory with copies of the fixture files
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beasties-test-'))
+    fs.copyFileSync(
+      path.join(fixtureDir, 'prune-source.html'),
+      path.join(tmpDir, 'prune-source.html'),
+    )
+    fs.copyFileSync(
+      path.join(fixtureDir, 'prune-source.css'),
+      path.join(tmpDir, 'prune-source.css'),
+    )
+
     const logger: Logger = {
       warn: () => {},
       info: () => {},
@@ -357,7 +483,7 @@ describe('beasties', () => {
 
     const beasties = new Beasties({
       reduceInlineStyles: false,
-      path: fixtureDir,
+      path: tmpDir,
       logLevel: 'warn',
       logger,
       pruneSource: true,
@@ -373,14 +499,246 @@ describe('beasties', () => {
       }
     })
 
-    const html = fs.readFileSync(path.join(fixtureDir, 'prune-source.html'), 'utf-8')
+    const html = fs.readFileSync(path.join(tmpDir, 'prune-source.html'), 'utf-8')
     const result = await beasties.process(html)
     expect(result).toContain('<style>h1{color:blue}p{color:purple}.contents{padding:50px;text-align:center}.input-field{padding:10px}div:is(:hover,.active){color:#000}div:is(.selected,:hover){color:#fff}</style>')
 
-    const css = fs.readFileSync(path.join(fixtureDir, 'prune-source.css'), 'utf-8')
+    const css = fs.readFileSync(path.join(tmpDir, 'prune-source.css'), 'utf-8')
     expect(css).toEqual('h2.unused{color:red}p.unused{color:orange}header{padding:0 50px}.banner{font-family:sans-serif}footer{margin-top:10px}.container{border:1px solid}.custom-element::part(tab){color:#0c0dcc;border-bottom:transparent solid 2px}.other-element::part(tab){color:#0c0dcc;border-bottom:transparent solid 2px}.custom-element::part(tab):hover{background-color:#0c0d19;color:#ffffff;border-color:#0c0d33}.custom-element::part(tab):hover:active{background-color:#0c0d33;color:#ffffff}.custom-element::part(tab):focus{box-shadow:0 0 0 1px #0a84ff inset, 0 0 0 1px #0a84ff, 0 0 0 4px rgba(10, 132, 255, 0.3)}.custom-element::part(active){color:#0060df;border-color:#0a84ff !important}')
 
     expect(loggerWarnSpy).not.toHaveBeenCalled()
     expect(result).toMatchSnapshot()
+
+    // Clean up temporary directory
+    fs.rmSync(tmpDir, { recursive: true })
+  })
+
+  it('handles stylesheets with query strings', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+    })
+    const assets: Record<string, string> = {
+      '/style.css': 'h1 { color: blue; } h2.unused { color: red; }',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css?v=123">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+
+    expect(result).toContain('<style>h1{color:blue}</style>')
+    expect(result).toContain('/style.css?v=123')
+  })
+
+  it('handles stylesheets with hash fragments', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+    })
+    const assets: Record<string, string> = {
+      '/style.css': 'h1 { color: green; } h2.unused { color: red; }',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css#section">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+
+    expect(result).toContain('<style>h1{color:green}</style>')
+    expect(result).toContain('/style.css#section')
+  })
+
+  it('handles stylesheets with both query strings and hash fragments', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+    })
+    const assets: Record<string, string> = {
+      '/style.css': 'h1 { color: purple; } h2.unused { color: red; }',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css?v=456#section">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+
+    expect(result).toContain('<style>h1{color:purple}</style>')
+    expect(result).toContain('/style.css?v=456#section')
+  })
+
+  it('ignores remote stylesheets by default', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+    })
+
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="https://example.com/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+
+    // Should not contain inlined critical CSS since remote is disabled
+    expect(result).not.toContain('<style>')
+    expect(result).toContain('https://example.com/style.css')
+  })
+
+  it('fetches remote stylesheets when remote: true', async () => {
+    const originalFetch = globalThis.fetch
+    try {
+      const beasties = new Beasties({
+        reduceInlineStyles: false,
+        remote: true,
+      })
+
+      // Mock fetch
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => 'h1 { color: blue; } h2.unused { color: red; }',
+      })
+      globalThis.fetch = mockFetch as any
+
+      const result = await beasties.process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="https://example.com/style.css">
+          </head>
+          <body>
+            <h1>Hello World!</h1>
+          </body>
+        </html>
+      `)
+
+      expect(mockFetch).toHaveBeenCalledWith('https://example.com/style.css')
+      expect(result).toContain('<style>h1{color:blue}</style>')
+      expect(result).toContain('https://example.com/style.css')
+    }
+    finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  it('handles protocol-relative URLs when remote: true', async () => {
+    const originalFetch = globalThis.fetch
+    try {
+      const beasties = new Beasties({
+        reduceInlineStyles: false,
+        remote: true,
+      })
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => 'h1 { color: green; }',
+      })
+      globalThis.fetch = mockFetch as any
+
+      const result = await beasties.process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="//example.com/style.css">
+          </head>
+          <body>
+            <h1>Hello World!</h1>
+          </body>
+        </html>
+      `)
+
+      expect(mockFetch).toHaveBeenCalledWith('https://example.com/style.css')
+      expect(result).toContain('<style>h1{color:green}</style>')
+    }
+    finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  it('handles fetch 404 responses gracefully', async () => {
+    const originalFetch = globalThis.fetch
+    try {
+      const beasties = new Beasties({
+        reduceInlineStyles: false,
+        remote: true,
+      })
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+      })
+      globalThis.fetch = mockFetch as any
+
+      const result = await beasties.process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="https://example.com/missing.css">
+          </head>
+          <body>
+            <h1>Hello World!</h1>
+          </body>
+        </html>
+      `)
+
+      expect(mockFetch).toHaveBeenCalledWith('https://example.com/missing.css')
+      // Should still produce valid HTML, just without inlined styles
+      expect(result).toContain('<h1>Hello World!</h1>')
+    }
+    finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  it('handles fetch network errors gracefully', async () => {
+    const originalFetch = globalThis.fetch
+    try {
+      const beasties = new Beasties({
+        reduceInlineStyles: false,
+        remote: true,
+      })
+
+      const mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
+      globalThis.fetch = mockFetch as any
+
+      const result = await beasties.process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="https://example.com/style.css">
+          </head>
+          <body>
+            <h1>Hello World!</h1>
+          </body>
+        </html>
+      `)
+
+      expect(mockFetch).toHaveBeenCalledWith('https://example.com/style.css')
+      // Should still produce valid HTML, just without inlined styles
+      expect(result).toContain('<h1>Hello World!</h1>')
+    }
+    finally {
+      globalThis.fetch = originalFetch
+    }
   })
 })

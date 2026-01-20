@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - run: corepack enable
       - uses: actions/setup-node@v6
         with:
@@ -35,7 +35,7 @@ jobs:
       CI: true
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - run: corepack enable
       - uses: actions/setup-node@v6
         with:
@@ -56,9 +56,10 @@ jobs:
 
       - name: Run benchmarks
         if: matrix.os != 'windows-latest'
-        uses: CodSpeedHQ/action@v3
+        uses: CodSpeedHQ/action@v4
         with:
           run: pnpm vitest bench
+          mode: simulation
           token: ${{ secrets.CODSPEED_TOKEN }}
 
       - name: ⚙️ Check engine ranges

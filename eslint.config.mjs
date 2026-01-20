@@ -6,4 +6,8 @@ export default antfu().append({
   rules: {
     'no-console': 'off',
   },
+}).append({
+  rules: {
+    'pnpm/yaml-enforce-settings': 'off',
+  },
 })

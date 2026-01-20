@@ -33,13 +33,16 @@
     "performance"
   ],
   "exports": {
-    "import": "./dist/beasties-webpack-plugin.mjs",
-    "require": "./dist/beasties-webpack-plugin.js",
-    "default": "./dist/beasties-webpack-plugin.mjs"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.mjs"
+    }
   },
-  "main": "dist/beasties-webpack-plugin.js",
-  "module": "dist/beasties-webpack-plugin.mjs",
-  "source": "src/index.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
   "files": [
     "dist",
     "src"
@@ -48,7 +51,7 @@
     "node": "^20.0.0 || >=22.0.0"
   },
   "scripts": {
-    "build": "microbundle --target node --no-sourcemap -f cjs,esm",
+    "build": "unbuild",
     "docs": "documentation readme src -q --no-markdown-toc -a public -s Usage --sort-order alpha",
     "prepack": "npm run -s build"
   },
@@ -62,19 +65,16 @@
   },
   "dependencies": {
     "beasties": "workspace:*",
-    "minimatch": "^10.0.1",
-    "webpack-log": "^3.0.2",
-    "webpack-sources": "^3.2.3"
+    "minimatch": "^10.0.1"
   },
   "devDependencies": {
     "@types/jsdom": "27.0.0",
-    "@types/webpack-sources": "3.2.3",
     "css-loader": "7.1.2",
     "documentation": "14.0.3",
     "file-loader": "6.2.0",
-    "html-webpack-plugin": "5.6.4",
-    "microbundle": "0.15.1",
-    "mini-css-extract-plugin": "2.9.4",
-    "webpack": "5.101.3"
+    "html-webpack-plugin": "5.6.6",
+    "mini-css-extract-plugin": "2.10.0",
+    "unbuild": "3.6.1",
+    "webpack": "5.104.1"
   }
 }
