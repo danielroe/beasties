@@ -101,6 +101,108 @@ describe('beasties', () => {
     expect(result).toMatchSnapshot()
   })
 
+  it('should preserve order of external stylesheets with variable load times', async () => {
+    vi.useFakeTimers()
+
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+      mergeStylesheets: false, // Keep separate to verify order
+    })
+
+    // Simulate variable latency - second file loads fastest
+    const assets: Record<string, { content: string, delay: number }> = {
+      '/first.css': { content: 'h1 { color: red; }', delay: 50 },
+      '/second.css': { content: 'h2 { color: blue; }', delay: 10 },
+      '/third.css': { content: 'h3 { color: green; }', delay: 30 },
+    }
+
+    beasties.readFile = (filename) => {
+      const key = filename.replace(/^\w:/, '').replace(/\\/g, '/')
+      const asset = assets[key]
+      if (!asset)
+        return Promise.resolve('')
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(asset.content), asset.delay)
+      })
+    }
+
+    const processPromise = beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/first.css">
+          <link rel="stylesheet" href="/second.css">
+          <link rel="stylesheet" href="/third.css">
+        </head>
+        <body>
+          <h1>First</h1>
+          <h2>Second</h2>
+          <h3>Third</h3>
+        </body>
+      </html>
+    `)
+
+    // Advance all timers
+    await vi.runAllTimersAsync()
+    const result = await processPromise
+
+    vi.useRealTimers()
+
+    // Verify style tags are in correct order (first, second, third)
+    const styleOrder = [...result.matchAll(/<style>([^<]+)<\/style>/g)].map(m => m[1])
+    expect(styleOrder).toEqual([
+      'h1{color:red}',
+      'h2{color:blue}',
+      'h3{color:green}',
+    ])
+
+    // Verify body links are in correct order
+    const bodyLinkMatches = result.match(/<body>[\s\S]*<\/body>/)?.[0] || ''
+    const linkOrder = [...bodyLinkMatches.matchAll(/href="\/([^"]+)\.css"/g)].map(m => m[1])
+    expect(linkOrder).toEqual(['first', 'second', 'third'])
+  })
+
+  it('should use custom embedLinkedStylesheet when overridden', async () => {
+    const embeddedLinks: string[] = []
+
+    class CustomBeasties extends Beasties {
+      override async embedLinkedStylesheet(link: Parameters<Beasties['embedLinkedStylesheet']>[0], document: Parameters<Beasties['embedLinkedStylesheet']>[1]) {
+        const href = link.getAttribute('href')
+        if (href) {
+          embeddedLinks.push(href)
+        }
+        return super.embedLinkedStylesheet(link, document)
+      }
+    }
+
+    const beasties = new CustomBeasties({
+      reduceInlineStyles: false,
+      path: '/',
+    })
+
+    const assets: Record<string, string> = {
+      '/a.css': 'h1 { color: red; }',
+      '/b.css': 'h2 { color: blue; }',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+
+    await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/a.css">
+          <link rel="stylesheet" href="/b.css">
+        </head>
+        <body>
+          <h1>Hello</h1>
+          <h2>World</h2>
+        </body>
+      </html>
+    `)
+
+    // Verify that our custom embedLinkedStylesheet was called for each stylesheet
+    expect(embeddedLinks).toEqual(['/a.css', '/b.css'])
+  })
+
   it('does not encode HTML', async () => {
     const beasties = new Beasties({
       reduceInlineStyles: false,
