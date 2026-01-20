@@ -81,7 +81,7 @@ export default class BeastiesWebpackPlugin extends Beasties {
           : compiler.options.output.publicPath!
 
       const hasHtmlPlugin = compilation.options.plugins.some(
-        p => p!.constructor && p!.constructor.name === 'HtmlWebpackPlugin',
+        p => p?.constructor?.name === 'HtmlWebpackPlugin',
       )
       try {
         htmlPluginHooks = $require('html-webpack-plugin').getHooks(compilation)
