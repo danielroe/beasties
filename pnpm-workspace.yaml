@@ -1,6 +1,10 @@
+shellEmulator: true
+
 packages:
   - packages/*
+
 ignoredBuiltDependencies:
   - esbuild
+
 onlyBuiltDependencies:
   - simple-git-hooks
