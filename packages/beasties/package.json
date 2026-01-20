@@ -1,6 +1,6 @@
 {
   "name": "beasties",
-  "version": "0.3.5",
+  "version": "0.4.0",
   "description": "Inline critical CSS and lazy-load the rest.",
   "author": "The Chromium Authors",
   "contributors": [
