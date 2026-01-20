@@ -553,4 +553,102 @@ describe('beasties', () => {
       globalThis.fetch = originalFetch
     }
   })
+
+  it('handles protocol-relative URLs when remote: true', async () => {
+    const originalFetch = globalThis.fetch
+    try {
+      const beasties = new Beasties({
+        reduceInlineStyles: false,
+        remote: true,
+      })
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => 'h1 { color: green; }',
+      })
+      globalThis.fetch = mockFetch as any
+
+      const result = await beasties.process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="//example.com/style.css">
+          </head>
+          <body>
+            <h1>Hello World!</h1>
+          </body>
+        </html>
+      `)
+
+      expect(mockFetch).toHaveBeenCalledWith('https://example.com/style.css')
+      expect(result).toContain('<style>h1{color:green}</style>')
+    }
+    finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  it('handles fetch 404 responses gracefully', async () => {
+    const originalFetch = globalThis.fetch
+    try {
+      const beasties = new Beasties({
+        reduceInlineStyles: false,
+        remote: true,
+      })
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+      })
+      globalThis.fetch = mockFetch as any
+
+      const result = await beasties.process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="https://example.com/missing.css">
+          </head>
+          <body>
+            <h1>Hello World!</h1>
+          </body>
+        </html>
+      `)
+
+      expect(mockFetch).toHaveBeenCalledWith('https://example.com/missing.css')
+      // Should still produce valid HTML, just without inlined styles
+      expect(result).toContain('<h1>Hello World!</h1>')
+    }
+    finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  it('handles fetch network errors gracefully', async () => {
+    const originalFetch = globalThis.fetch
+    try {
+      const beasties = new Beasties({
+        reduceInlineStyles: false,
+        remote: true,
+      })
+
+      const mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
+      globalThis.fetch = mockFetch as any
+
+      const result = await beasties.process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="https://example.com/style.css">
+          </head>
+          <body>
+            <h1>Hello World!</h1>
+          </body>
+        </html>
+      `)
+
+      expect(mockFetch).toHaveBeenCalledWith('https://example.com/style.css')
+      // Should still produce valid HTML, just without inlined styles
+      expect(result).toContain('<h1>Hello World!</h1>')
+    }
+    finally {
+      globalThis.fetch = originalFetch
+    }
+  })
 })
