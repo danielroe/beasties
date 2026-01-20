@@ -31,6 +31,13 @@ const implicitUniversalPattern = /([>+~])\s*(?!\1)([>+~])/g
 const emptyCombinatorPattern = /([>+~])\s*(?=\1|$)/g
 const removeTrailingCommasPattern = /\(\s*,|,\s*\)/g
 
+interface PreFetchedStylesheet {
+  link: ChildNode
+  href: string
+  sheet: string
+  style: Node
+}
+
 export default class Beasties {
   #selectorCache = new Map<string, string>()
   options: Options & Required<Pick<Options, 'logLevel' | 'path' | 'publicPath' | 'reduceInlineStyles' | 'pruneSource' | 'additionalStylesheets'>> & { allowRules: Array<string | RegExp> }
@@ -109,9 +116,26 @@ export default class Beasties {
     if (this.options.external !== false) {
       const externalSheets = [...document.querySelectorAll('link[rel="stylesheet"]')] as ChildNode[]
 
-      await Promise.all(
-        externalSheets.map(link => this.embedLinkedStylesheet(link, document)),
-      )
+      const hasCustomEmbed = this.embedLinkedStylesheet !== Beasties.prototype.embedLinkedStylesheet
+
+      if (hasCustomEmbed) {
+        // fall back to sequential processing if embedLinkedStylesheet is overridden
+        for (const link of externalSheets) {
+          await this.embedLinkedStylesheet(link, document)
+        }
+      }
+      else {
+        const sheets = await Promise.all(
+          externalSheets.map(link => this.fetchStylesheet(link, document)),
+        )
+
+        // embed stylesheets sequentially to preserve order
+        for (const sheet of sheets) {
+          if (sheet) {
+            this.embedFetchedStylesheet(sheet, document)
+          }
+        }
+      }
     }
 
     // go through all the style tags in the document and reduce them to only critical CSS
@@ -265,9 +289,9 @@ export default class Beasties {
   }
 
   /**
-   * Inline the target stylesheet referred to by a <link rel="stylesheet"> (assuming it passes `options.filter`)
+   * Fetch CSS content for a linked stylesheet
    */
-  async embedLinkedStylesheet(link: ChildNode, document: HTMLDocument) {
+  private async fetchStylesheet(link: ChildNode, document: HTMLDocument): Promise<PreFetchedStylesheet | undefined> {
     const href = link.getAttribute('href')
 
     // skip filtered resources, or network resources if no filter is provided
@@ -277,19 +301,29 @@ export default class Beasties {
       return undefined
     }
 
-    // the reduced critical CSS gets injected into a new <style> tag
+    // dreate style element early so subclasses can use it in getCssAsset
     const style = document.createElement('style')
     style.$$external = true
+
     const sheet = await this.getCssAsset(href, style)
 
     if (!sheet) {
-      return
+      return undefined
     }
+
+    return { link, href, sheet, style }
+  }
+
+  /**
+   * Embed a fetched stylesheet into the document
+   */
+  private embedFetchedStylesheet(data: PreFetchedStylesheet, document: HTMLDocument) {
+    const { link, href, sheet, style } = data
 
     style.textContent = sheet
     style.$$name = href
     style.$$links = [link]
-    link.parentNode?.insertBefore(style, link)
+    link.parentNode?.insertBefore(style as ChildNode, link)
 
     if (this.checkInlineThreshold(link, style, sheet)) {
       return
@@ -392,6 +426,16 @@ export default class Beasties {
       // Switch the current link tag to preload
       link.setAttribute('rel', 'preload')
       link.setAttribute('as', 'style')
+    }
+  }
+
+  /**
+   * Inline the target stylesheet referred to by a <link rel="stylesheet"> (assuming it passes `options.filter`)
+   */
+  async embedLinkedStylesheet(link: ChildNode, document: HTMLDocument) {
+    const sheet = await this.fetchStylesheet(link, document)
+    if (sheet) {
+      this.embedFetchedStylesheet(sheet, document)
     }
   }
 
