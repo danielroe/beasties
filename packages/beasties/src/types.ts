@@ -101,7 +101,7 @@ export interface Options {
    */
   compress?: boolean
   /**
-   * Use PostCSS safe parser for fault-tolerant CSS parsing _(default: `false`)_
+   * Use PostCSS safe parser for fault-tolerant CSS parsing _(default: `true`)_
    */
   safeParser?: boolean
   /**
