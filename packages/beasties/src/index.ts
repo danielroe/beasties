@@ -197,16 +197,17 @@ export default class Beasties {
 
     // CHECK - the output path
     // path on disk (with output.publicPath removed)
-    let normalizedPath = href.replace(/^\/|[?#].*$/g, '')
-    const pathPrefix = `${(publicPath || '').replace(/(^\/|\/$)/g, '')}/`
-    if (normalizedPath.startsWith(pathPrefix)) {
+    let normalizedPath = href.replace(/^\/(?!\/)|[?#].*$/g, '')
+    const pathPrefix = `${(publicPath || '').replace(/(^\/(?!\/)|\/$)/g, '')}/`
+
+    if (normalizedPath.startsWith(pathPrefix) && !(pathPrefix === '/' && normalizedPath.startsWith('//'))) {
       normalizedPath = normalizedPath
         .substring(pathPrefix.length)
         .replace(/^\//, '')
     }
 
     // Handle remote stylesheets
-    const isRemote = /^https?:\/\//.test(href) || href.startsWith('//')
+    const isRemote = /^https?:\/\//.test(normalizedPath) || normalizedPath.startsWith('//')
     if (isRemote) {
       if (this.options.remote === true) {
         try {

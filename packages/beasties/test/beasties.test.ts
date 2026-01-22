@@ -588,6 +588,60 @@ describe('beasties', () => {
     expect(result).toContain('/style.css?v=456#section')
   })
 
+  it('handles remote publicPath', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+      publicPath: 'https://example.com/',
+    })
+
+    const assets: Record<string, string> = {
+      '/style.css': 'h1{color:blue}',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="https://example.com/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+
+    expect(result).toContain('<style>h1{color:blue}</style>')
+    expect(result).toContain('https://example.com/style.css')
+  })
+
+  it('handles remote publicPath with protocol relative', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+      publicPath: '//example.com/',
+    })
+
+    const assets: Record<string, string> = {
+      '/style.css': 'h1{color:blue}',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="//example.com/style.css">
+        </head>
+        <body>
+          <h1>Hello World!</h1>
+        </body>
+      </html>
+    `)
+
+    expect(result).toContain('<style>h1{color:blue}</style>')
+    expect(result).toContain('//example.com/style.css')
+  })
+
   it('ignores remote stylesheets by default', async () => {
     const beasties = new Beasties({
       reduceInlineStyles: false,
