@@ -22,7 +22,7 @@ importers:
         specifier: 24.10.9
         version: 24.10.9
       '@types/postcss-safe-parser':
-        specifier: ^5.0.4
+        specifier: 5.0.4
         version: 5.0.4
       '@vitest/coverage-v8':
         specifier: 3.2.4
