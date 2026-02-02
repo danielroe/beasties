@@ -38,7 +38,7 @@
     "beasties": "workspace:^"
   },
   "devDependencies": {
-    "rollup": "4.56.0",
+    "rollup": "4.57.1",
     "unbuild": "3.6.1",
     "vite": "7.3.1"
   }
