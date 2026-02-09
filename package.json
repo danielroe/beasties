@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "7.3.0",
-    "@codspeed/vitest-plugin": "5.1.0",
+    "@codspeed/vitest-plugin": "5.2.0",
     "@types/node": "24.10.12",
     "@types/postcss-safe-parser": "5.0.4",
     "@vitest/coverage-v8": "4.0.18",
