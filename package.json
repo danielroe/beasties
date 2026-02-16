@@ -43,7 +43,7 @@
     "changelogithub": "14.0.0",
     "cheerio": "1.2.0",
     "eslint": "10.0.0",
-    "installed-check": "9.3.0",
+    "installed-check": "10.0.0",
     "jsdom": "28.1.0",
     "knip": "5.83.1",
     "lint-staged": "16.2.7",
