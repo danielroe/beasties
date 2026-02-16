@@ -44,7 +44,7 @@
     "cheerio": "1.2.0",
     "eslint": "9.39.2",
     "installed-check": "9.3.0",
-    "jsdom": "28.0.0",
+    "jsdom": "28.1.0",
     "knip": "5.83.1",
     "lint-staged": "16.2.7",
     "simple-git-hooks": "2.13.1",
