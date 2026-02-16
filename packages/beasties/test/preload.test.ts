@@ -158,4 +158,39 @@ describe('preload modes', () => {
     expect(result).toContain('<noscript><link rel="stylesheet" href="/style.css"></noscript>')
     expect(result).toMatchSnapshot()
   })
+
+  it('should inline CSS from stylesheet link that already has media="print" and onload attributes', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+      preload: 'media',
+    })
+    const assets: Record<string, string> = {
+      '/_next/static/chunks/0b481e7bfe75fdf6.css': '.index-module__KWKY6G__home{color:#000;background:orange}',
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+    const result = await beasties.process(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" data-next-head="">
+          <meta name="viewport" content="width=device-width" data-next-head="">
+          <script src="/_next/static/chunks/c9872c0d3f7adbd6.js" defer=""></script><script src="/_next/static/chunks/e49b8d8eed7bdf02.js" defer=""></script><script src="/_next/static/chunks/turbopack-b6eba5dc4c176f46.js" defer=""></script><script src="/_next/static/chunks/2576e3f2bbbd2e2b.js" defer=""></script><script src="/_next/static/chunks/turbopack-3e091ce771ea6376.js" defer=""></script><script src="/_next/static/_rktnP6PYGKbH9vXrO3Ac/_buildManifest.js" defer=""></script><script src="/_next/static/_rktnP6PYGKbH9vXrO3Ac/_ssgManifest.js" defer=""></script><script src="/_next/static/_rktnP6PYGKbH9vXrO3Ac/_clientMiddlewareManifest.js" defer=""></script>
+          <link rel="stylesheet" href="/_next/static/chunks/0b481e7bfe75fdf6.css" data-n-p="" media="print" onload="this.media='all'">
+          <noscript>
+            <link rel="stylesheet" href="/_next/static/chunks/0b481e7bfe75fdf6.css">
+          </noscript>
+          <noscript data-n-css=""></noscript>
+        </head>
+        <body>
+          <div id="__next">
+            <p class="index-module__KWKY6G__home">hello world</p>
+          </div>
+          <script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{}},"page":"/","query":{},"buildId":"_rktnP6PYGKbH9vXrO3Ac","nextExport":true,"autoExport":true,"isFallback":false,"scriptLoader":[]}</script>
+        </body>
+      </html>
+    `)
+    expect(result).toContain('<style>.index-module__KWKY6G__home{color:#000;background:orange}</style>')
+    expect(result).toMatchSnapshot()
+  })
 })

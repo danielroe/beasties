@@ -31,6 +31,20 @@ const implicitUniversalPattern = /([>+~])\s*(?!\1)([>+~])/g
 const emptyCombinatorPattern = /([>+~])\s*(?=\1|$)/g
 const removeTrailingCommasPattern = /\(\s*,|,\s*\)/g
 
+/**
+ * Check if a node is inside a noscript tag
+ */
+function isInsideNoscript(node: ChildNode): boolean {
+  let current: Node | null = node
+  while (current) {
+    if ('tagName' in current && (current.tagName as string).toLowerCase() === 'noscript') {
+      return true
+    }
+    current = 'parent' in current ? (current.parent as Node | null) : null
+  }
+  return false
+}
+
 interface PreFetchedStylesheet {
   link: ChildNode
   href: string
@@ -114,7 +128,7 @@ export default class Beasties {
 
     // `external:false` skips processing of external sheets
     if (this.options.external !== false) {
-      const externalSheets = [...document.querySelectorAll('link[rel="stylesheet"]')] as ChildNode[]
+      const externalSheets = [...document.querySelectorAll('link[rel="stylesheet"]')].filter(link => !isInsideNoscript(link as ChildNode)) as ChildNode[]
 
       const hasCustomEmbed = this.embedLinkedStylesheet !== Beasties.prototype.embedLinkedStylesheet
 
