@@ -68,7 +68,7 @@
     "minimatch": "^10.0.1"
   },
   "devDependencies": {
-    "@types/jsdom": "27.0.0",
+    "@types/jsdom": "28.0.0",
     "css-loader": "7.1.4",
     "documentation": "14.0.3",
     "file-loader": "6.2.0",
