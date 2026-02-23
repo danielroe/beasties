@@ -1,7 +1,7 @@
 {
   "name": "beasties-root",
   "private": true,
-  "packageManager": "pnpm@10.29.3",
+  "packageManager": "pnpm@10.30.1",
   "description": "Inline critical CSS and lazy-load the rest.",
   "author": "The Chromium Authors",
   "contributors": [
@@ -45,7 +45,7 @@
     "eslint": "10.0.0",
     "installed-check": "9.3.0",
     "jsdom": "28.1.0",
-    "knip": "5.83.1",
+    "knip": "5.85.0",
     "lint-staged": "16.2.7",
     "simple-git-hooks": "2.13.1",
     "typescript": "5.9.3",
