@@ -56,7 +56,7 @@ jobs:
 
       - name: Run benchmarks
         if: matrix.os != 'windows-latest'
-        uses: CodSpeedHQ/action@4deb3275dd364fb96fb074c953133d29ec96f80f # v4
+        uses: CodSpeedHQ/action@2ac572851726409c88c02a307f1ea2632a9ea59b # v4
         with:
           run: pnpm vitest bench
           mode: simulation
