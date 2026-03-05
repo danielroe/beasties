@@ -5,7 +5,7 @@
 
 > Beasties is a plugin that inlines your app's [critical CSS] and lazy-loads the rest. It is a maintained fork of [GoogleChromeLabs/critters](https://github.com/GoogleChromeLabs/critters)
 
-## beasties [![npm](https://img.shields.io/npm/v/beasties.svg)](https://www.npmjs.org/package/beasties)
+## beasties [![npm](https://npmx.dev/api/registry/badge/version/beasties)](https://www.npmjs.org/package/beasties)
 
 It's a little different from [other options](#similar-libraries), because it **doesn't use a headless browser** to render content. This tradeoff allows Beasties to be very **fast and lightweight**. It also means Beasties inlines all CSS rules used by your document, rather than only those needed for above-the-fold content. For alternatives, see [Similar Libraries](#similar-libraries).
 
@@ -58,7 +58,7 @@ console.log(inlined)
 
 ## Usage with Vite
 
-Beasties can be used with Vite through [vite-plugin-beasties](https://www.npmjs.org/package/vite-plugin-beasties). [![npm](https://img.shields.io/npm/v/vite-plugin-beasties.svg)](https://www.npmjs.org/package/vite-plugin-beasties)
+Beasties can be used with Vite through [vite-plugin-beasties](https://www.npmjs.org/package/vite-plugin-beasties). [![npm](https://npmx.dev/api/registry/badge/version/vite-plugin-beasties)](https://www.npmjs.org/package/vite-plugin-beasties)
 
 Just add it to your Vite configuration:
 
@@ -83,7 +83,7 @@ The plugin will process the output for your `index.html` and inline critical CSS
 
 ## Usage with webpack
 
-Beasties is also available as a Webpack plugin called [beasties-webpack-plugin](https://www.npmjs.org/package/beasties-webpack-plugin). [![npm](https://img.shields.io/npm/v/beasties-webpack-plugin.svg)](https://www.npmjs.org/package/beasties-webpack-plugin)
+Beasties is also available as a Webpack plugin called [beasties-webpack-plugin](https://www.npmjs.org/package/beasties-webpack-plugin). [![npm](https://npmx.dev/api/registry/badge/version/beasties-webpack-plugin)](https://www.npmjs.org/package/beasties-webpack-plugin)
 
 The Webpack plugin supports the same configuration options as the main `beasties` package:
 
