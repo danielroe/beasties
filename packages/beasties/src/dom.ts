@@ -26,6 +26,7 @@ import { DomUtils, parseDocument } from 'htmlparser2'
 
 type ParsedDocument = ReturnType<typeof parseDocument>
 
+/** Builds class and id caches on the given container node for fast selector lookups. */
 function buildCache(container: Node) {
   container._classCache = new Set()
   container._idCache = new Set()
@@ -119,6 +120,7 @@ declare module 'domhandler' {
  * @private
  */
 let extended = false
+/** Extends Element.prototype with DOM manipulation methods and query helpers. */
 function extendElement(element: typeof Element.prototype) {
   if (extended) {
     return
@@ -262,6 +264,7 @@ export interface HTMLDocument extends ParsedDocument {
   beastiesContainer: HTMLDocument | Node
 }
 
+/** Extends a parsed document with standard Document properties and query methods. */
 function extendDocument(document: ParsedDocument): asserts document is HTMLDocument {
   Object.defineProperties(document, {
     // document is just an Element in htmlparser2, giving it a nodeType of ELEMENT_NODE.
@@ -345,6 +348,7 @@ function extendDocument(document: ParsedDocument): asserts document is HTMLDocum
 // so that it's disposed with it.
 const selectorTokensCache = new Map<string, null | AttributeSelector[]>()
 
+/** Checks if a selector matches within a node, using class/id caches when possible. */
 function cachedQuerySelector(sel: string, node: Node) {
   let selectorTokens = selectorTokensCache.get(sel)
   if (selectorTokens === undefined) {
@@ -352,13 +356,13 @@ function cachedQuerySelector(sel: string, node: Node) {
     selectorTokensCache.set(sel, selectorTokens)
   }
 
-  if (selectorTokens) {
+  if (selectorTokens && node._classCache && node._idCache) {
     for (const token of selectorTokens) {
       if (token.name === 'class') {
-        return node._classCache!.has(token.value)
+        return node._classCache.has(token.value)
       }
       if (token.name === 'id') {
-        return node._idCache!.has(token.value)
+        return node._idCache.has(token.value)
       }
     }
   }
@@ -366,6 +370,7 @@ function cachedQuerySelector(sel: string, node: Node) {
   return !!selectOne(sel, node)
 }
 
+/** Parses a CSS selector and returns class/id attribute tokens if the selector is simple enough to cache. */
 function parseRelevantSelectors(sel: string): AttributeSelector[] | null {
   const tokens = selectorParser(sel)
   const relevantTokens: AttributeSelector[] = []
