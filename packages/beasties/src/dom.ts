@@ -26,12 +26,10 @@ import { DomUtils, parseDocument } from 'htmlparser2'
 
 type ParsedDocument = ReturnType<typeof parseDocument>
 
-let classCache: null | Set<string> = null
-let idCache: null | Set<string> = null
-
-function buildCache(container: Node | HTMLDocument) {
-  classCache = new Set()
-  idCache = new Set()
+/** Builds class and id caches on the given container node for fast selector lookups. */
+function buildCache(container: Node) {
+  container._classCache = new Set()
+  container._idCache = new Set()
   const queue = [container]
 
   while (queue.length) {
@@ -40,17 +38,17 @@ function buildCache(container: Node | HTMLDocument) {
     if (node.hasAttribute?.('class')) {
       const classList = node.getAttribute('class').trim().split(' ')
       classList.forEach((cls) => {
-        classCache!.add(cls)
+        container._classCache!.add(cls)
       })
     }
 
     if (node.hasAttribute?.('id')) {
       const id = node.getAttribute('id').trim()
-      idCache.add(id)
+      container._idCache!.add(id)
     }
 
     if ('children' in node) {
-      queue.push(...node.children.filter(child => child.type === 'tag'))
+      queue.push(...(node as NodeWithChildren).children.filter(child => child.type === 'tag'))
     }
   }
 }
@@ -112,6 +110,8 @@ declare module 'domhandler' {
     $$name?: string
     $$reduce?: boolean
     $$links?: ChildNode[]
+    _classCache?: Set<string>
+    _idCache?: Set<string>
   }
 }
 
@@ -120,6 +120,7 @@ declare module 'domhandler' {
  * @private
  */
 let extended = false
+/** Extends Element.prototype with DOM manipulation methods and query helpers. */
 function extendElement(element: typeof Element.prototype) {
   if (extended) {
     return
@@ -263,6 +264,7 @@ export interface HTMLDocument extends ParsedDocument {
   beastiesContainer: HTMLDocument | Node
 }
 
+/** Extends a parsed document with standard Document properties and query methods. */
 function extendDocument(document: ParsedDocument): asserts document is HTMLDocument {
   Object.defineProperties(document, {
     // document is just an Element in htmlparser2, giving it a nodeType of ELEMENT_NODE.
@@ -346,21 +348,21 @@ function extendDocument(document: ParsedDocument): asserts document is HTMLDocum
 // so that it's disposed with it.
 const selectorTokensCache = new Map<string, null | AttributeSelector[]>()
 
-function cachedQuerySelector(sel: string, node: Node | Node[]) {
+/** Checks if a selector matches within a node, using class/id caches when possible. */
+function cachedQuerySelector(sel: string, node: Node) {
   let selectorTokens = selectorTokensCache.get(sel)
   if (selectorTokens === undefined) {
     selectorTokens = parseRelevantSelectors(sel)
     selectorTokensCache.set(sel, selectorTokens)
   }
 
-  if (selectorTokens) {
+  if (selectorTokens && node._classCache && node._idCache) {
     for (const token of selectorTokens) {
-      // Check if the selector is a class selector
       if (token.name === 'class') {
-        return classCache!.has(token.value)
+        return node._classCache.has(token.value)
       }
       if (token.name === 'id') {
-        return idCache!.has(token.value)
+        return node._idCache.has(token.value)
       }
     }
   }
@@ -368,6 +370,7 @@ function cachedQuerySelector(sel: string, node: Node | Node[]) {
   return !!selectOne(sel, node)
 }
 
+/** Parses a CSS selector and returns class/id attribute tokens if the selector is simple enough to cache. */
 function parseRelevantSelectors(sel: string): AttributeSelector[] | null {
   const tokens = selectorParser(sel)
   const relevantTokens: AttributeSelector[] = []
