@@ -358,13 +358,14 @@ function cachedQuerySelector(sel: string, node: Node) {
 
   if (selectorTokens && node._classCache && node._idCache) {
     for (const token of selectorTokens) {
-      if (token.name === 'class') {
-        return node._classCache.has(token.value)
+      if (token.name === 'class' && !node._classCache.has(token.value)) {
+        return false
       }
-      if (token.name === 'id') {
-        return node._idCache.has(token.value)
+      if (token.name === 'id' && !node._idCache.has(token.value)) {
+        return false
       }
     }
+    return true
   }
 
   return !!selectOne(sel, node)
@@ -378,7 +379,7 @@ function parseRelevantSelectors(sel: string): AttributeSelector[] | null {
   for (let i = 0; i < tokens.length; i++) {
     const tokenGroup = tokens[i]
     if (tokenGroup?.length !== 1) {
-      continue
+      return null
     }
 
     const token = tokenGroup[0]
