@@ -39,7 +39,7 @@
     "@types/node": "24.10.13",
     "@types/postcss-safe-parser": "5.0.4",
     "@vitest/coverage-v8": "4.0.18",
-    "bumpp": "10.4.1",
+    "bumpp": "11.0.1",
     "changelogithub": "14.0.0",
     "cheerio": "1.2.0",
     "eslint": "10.0.3",
