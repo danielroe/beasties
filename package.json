@@ -45,7 +45,7 @@
     "eslint": "10.1.0",
     "installed-check": "10.0.1",
     "jsdom": "29.0.1",
-    "knip": "5.85.0",
+    "knip": "6.0.2",
     "lint-staged": "16.2.7",
     "simple-git-hooks": "2.13.1",
     "typescript": "5.9.3",
