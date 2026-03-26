@@ -38,7 +38,7 @@
     "@codspeed/vitest-plugin": "5.2.0",
     "@types/node": "24.10.13",
     "@types/postcss-safe-parser": "5.0.4",
-    "@vitest/coverage-v8": "4.1.0",
+    "@vitest/coverage-v8": "4.1.1",
     "bumpp": "11.0.1",
     "changelogithub": "14.0.0",
     "cheerio": "1.2.0",
@@ -48,8 +48,8 @@
     "knip": "6.0.2",
     "lint-staged": "16.2.7",
     "simple-git-hooks": "2.13.1",
-    "typescript": "5.9.3",
-    "vitest": "4.1.0"
+    "typescript": "6.0.2",
+    "vitest": "4.1.1"
   },
   "resolutions": {
     "beasties": "workspace:*",
