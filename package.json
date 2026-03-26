@@ -48,7 +48,7 @@
     "knip": "6.0.2",
     "lint-staged": "16.2.7",
     "simple-git-hooks": "2.13.1",
-    "typescript": "5.9.3",
+    "typescript": "6.0.2",
     "vitest": "4.1.0"
   },
   "resolutions": {
