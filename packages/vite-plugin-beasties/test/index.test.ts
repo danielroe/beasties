@@ -1,3 +1,4 @@
+import type { RolldownOutput } from 'rolldown'
 import type { RollupOutput } from 'rollup'
 import type { UserConfig } from 'vite'
 import type { ViteBeastiesOptions } from '../src'
@@ -26,7 +27,7 @@ describe('vite-plugin-beasties', () => {
       plugins: [
         beasties(options),
       ],
-    }) as RollupOutput
+    }) as RollupOutput | RolldownOutput
 
     return {
       readOutput(filename: string) {
