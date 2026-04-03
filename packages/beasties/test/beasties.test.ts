@@ -1062,4 +1062,28 @@ describe('beasties', () => {
     // Clean up temporary directory
     fs.rmSync(tmpDir, { recursive: true })
   })
+
+  it('should not share class/id caches between concurrent process() calls', async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beasties-concurrent-'))
+    fs.mkdirSync(path.join(tmpDir, 'static'), { recursive: true })
+    fs.writeFileSync(path.join(tmpDir, 'static', 'style.css'), '.foo{color:red}#bar{color:blue}#missing{color:green}')
+
+    const html1 = '<html><head><link rel="stylesheet" href="/static/style.css"></head><body><div class="foo" id="bar">hello</div></body></html>'
+    const html2 = '<html><head></head><body><p>no css</p></body></html>'
+
+    const b1 = new Beasties({ path: tmpDir, logLevel: 'silent' })
+    const b2 = new Beasties({ path: tmpDir, logLevel: 'silent' })
+
+    const [result1] = await Promise.all([
+      b1.process(html1),
+      b2.process(html2),
+    ])
+
+    expect(result1).toContain('<style>')
+    expect(result1).toContain('.foo{color:red}')
+    expect(result1).toContain('#bar{color:blue}')
+    expect(result1).not.toContain('#missing{color:green}')
+
+    fs.rmSync(tmpDir, { recursive: true })
+  })
 })

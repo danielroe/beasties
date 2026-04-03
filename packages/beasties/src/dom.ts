@@ -26,12 +26,9 @@ import { DomUtils, parseDocument } from 'htmlparser2'
 
 type ParsedDocument = ReturnType<typeof parseDocument>
 
-let classCache: null | Set<string> = null
-let idCache: null | Set<string> = null
-
-function buildCache(container: Node | HTMLDocument) {
-  classCache = new Set()
-  idCache = new Set()
+function buildCache(container: Node) {
+  container._classCache = new Set()
+  container._idCache = new Set()
   const queue = [container]
 
   while (queue.length) {
@@ -40,17 +37,17 @@ function buildCache(container: Node | HTMLDocument) {
     if (node.hasAttribute?.('class')) {
       const classList = node.getAttribute('class').trim().split(' ')
       classList.forEach((cls) => {
-        classCache!.add(cls)
+        container._classCache!.add(cls)
       })
     }
 
     if (node.hasAttribute?.('id')) {
       const id = node.getAttribute('id').trim()
-      idCache.add(id)
+      container._idCache!.add(id)
     }
 
     if ('children' in node) {
-      queue.push(...node.children.filter(child => child.type === 'tag'))
+      queue.push(...(node as NodeWithChildren).children.filter(child => child.type === 'tag'))
     }
   }
 }
@@ -112,6 +109,8 @@ declare module 'domhandler' {
     $$name?: string
     $$reduce?: boolean
     $$links?: ChildNode[]
+    _classCache?: Set<string>
+    _idCache?: Set<string>
   }
 }
 
@@ -346,23 +345,23 @@ function extendDocument(document: ParsedDocument): asserts document is HTMLDocum
 // so that it's disposed with it.
 const selectorTokensCache = new Map<string, null | AttributeSelector[]>()
 
-function cachedQuerySelector(sel: string, node: Node | Node[]) {
+function cachedQuerySelector(sel: string, node: Node) {
   let selectorTokens = selectorTokensCache.get(sel)
   if (selectorTokens === undefined) {
     selectorTokens = parseRelevantSelectors(sel)
     selectorTokensCache.set(sel, selectorTokens)
   }
 
-  if (selectorTokens) {
+  if (selectorTokens && node._classCache && node._idCache) {
     for (const token of selectorTokens) {
-      // Check if the selector is a class selector
-      if (token.name === 'class') {
-        return classCache!.has(token.value)
+      if (token.name === 'class' && !node._classCache.has(token.value)) {
+        return false
       }
-      if (token.name === 'id') {
-        return idCache!.has(token.value)
+      if (token.name === 'id' && !node._idCache.has(token.value)) {
+        return false
       }
     }
+    return true
   }
 
   return !!selectOne(sel, node)
@@ -375,7 +374,7 @@ function parseRelevantSelectors(sel: string): AttributeSelector[] | null {
   for (let i = 0; i < tokens.length; i++) {
     const tokenGroup = tokens[i]
     if (tokenGroup?.length !== 1) {
-      continue
+      return null
     }
 
     const token = tokenGroup[0]
