@@ -32,6 +32,10 @@ const $require
 
 // Used to annotate this plugin's hooks in Tappable invocations
 const PLUGIN_NAME = 'beasties-webpack-plugin'
+const HTML_EXT_RE = /\.html$/
+const LEADING_SLASH_RE = /^\//
+const PUBLIC_PATH_RE = /(^\/|\/$)/g
+const DOT_SLASH_RE = /^\.\//
 
 /**
  * Create a Beasties plugin instance with the given options.
@@ -134,7 +138,7 @@ export default class BeastiesWebpackPlugin extends Beasties {
 
             let htmlAssetName: string | undefined
             for (const name in assets) {
-              if (name.match(/\.html$/)) {
+              if (HTML_EXT_RE.test(name)) {
                 htmlAssetName = name
                 break
               }
@@ -167,19 +171,19 @@ export default class BeastiesWebpackPlugin extends Beasties {
 
     // CHECK - the output path
     // path on disk (with output.publicPath removed)
-    let normalizedPath = href.replace(/^\//, '')
-    const pathPrefix = `${(publicPath || '').replace(/(^\/|\/$)/g, '')}/`
+    let normalizedPath = href.replace(LEADING_SLASH_RE, '')
+    const pathPrefix = `${(publicPath || '').replace(PUBLIC_PATH_RE, '')}/`
     if (normalizedPath.indexOf(pathPrefix) === 0) {
       normalizedPath = normalizedPath
         .substring(pathPrefix.length)
-        .replace(/^\//, '')
+        .replace(LEADING_SLASH_RE, '')
     }
     const filename = path.resolve(outputPath, normalizedPath)
 
     // try to find a matching asset by filename in webpack's output (not yet written to disk)
     const relativePath = path
       .relative(outputPath, filename)
-      .replace(/^\.\//, '')
+      .replace(DOT_SLASH_RE, '')
     const asset = this.compilation.assets[relativePath] // compilation.assets[relativePath];
 
     // Attempt to read from assets, falling back to a disk read

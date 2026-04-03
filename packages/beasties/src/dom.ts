@@ -191,10 +191,8 @@ function extendElement(element: typeof Element.prototype) {
 
     setAttribute: {
       value(name: string, value: string) {
-        if (this.attribs == null)
-          this.attribs = {}
-        if (value == null)
-          value = ''
+        this.attribs ??= {}
+        value ??= ''
         this.attribs[name] = value
       },
     },
