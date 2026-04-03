@@ -88,6 +88,14 @@ exports[`inline <style> pruning > should remove entire unused stylesheets 1`] = 
     "
 `;
 
+exports[`inline <style> pruning > should remove entire unused stylesheets 2`] = `
+"
+      h1 {
+        color: green;
+      }
+    "
+`;
+
 exports[`inline <style> pruning > should remove unused rules 1`] = `
 "<!DOCTYPE html>
 <html data-beasties-container>
