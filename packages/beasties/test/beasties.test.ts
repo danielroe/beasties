@@ -124,7 +124,7 @@ describe('beasties', () => {
       if (!asset)
         return Promise.resolve('')
       return new Promise((resolve) => {
-        setTimeout(() => resolve(asset.content), asset.delay)
+        setTimeout(resolve, asset.delay, asset.content)
       })
     }
 
@@ -150,7 +150,7 @@ describe('beasties', () => {
     vi.useRealTimers()
 
     // Verify style tags are in correct order (first, second, third)
-    const styleOrder = [...result.matchAll(/<style>([^<]+)<\/style>/g)].map(m => m[1])
+    const styleOrder = Array.from(result.matchAll(/<style>([^<]+)<\/style>/g), m => m[1])
     expect(styleOrder).toEqual([
       'h1{color:red}',
       'h2{color:blue}',
@@ -159,7 +159,7 @@ describe('beasties', () => {
 
     // Verify body links are in correct order
     const bodyLinkMatches = result.match(/<body>[\s\S]*<\/body>/)?.[0] || ''
-    const linkOrder = [...bodyLinkMatches.matchAll(/href="\/([^"]+)\.css"/g)].map(m => m[1])
+    const linkOrder = Array.from(bodyLinkMatches.matchAll(/href="\/([^"]+)\.css"/g), m => m[1])
     expect(linkOrder).toEqual(['first', 'second', 'third'])
   })
 

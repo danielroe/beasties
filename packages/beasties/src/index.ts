@@ -30,6 +30,17 @@ const removePseudoClassesAndElementsPattern = /(?<!\\)::?[a-z-]+(?:\(.+\))?/gi
 const implicitUniversalPattern = /([>+~])\s*(?!\1)([>+~])/g
 const emptyCombinatorPattern = /([>+~])\s*(?=\1|$)/g
 const removeTrailingCommasPattern = /\(\s*,|,\s*\)/g
+const LEADING_SLASH_OR_QUERY_RE = /^\/(?!\/)|[?#].*$/g
+const PUBLIC_PATH_RE = /(^\/(?!\/)|\/$)/g
+const REMOTE_URL_RE = /^https?:\/\//
+const BEFORE_AFTER_PSEUDO_RE = /^::?(?:before|after)$/
+const FONT_FAMILY_RE = /\bfont(?:-family)?\b/i
+// eslint-disable-next-line regexp/no-useless-assertions
+const BEASTIES_COMMENT_RE = /^(?<!! )beasties:(.*)/
+const LEADING_SLASH_RE = /^\//
+const WHITESPACE_RE = /\s+/
+// eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
+const URL_RE = /url\s*\(\s*(['"]?)(.+?)\1\s*\)/
 
 interface PreFetchedStylesheet {
   link: ChildNode
@@ -197,17 +208,17 @@ export default class Beasties {
 
     // CHECK - the output path
     // path on disk (with output.publicPath removed)
-    let normalizedPath = href.replace(/^\/(?!\/)|[?#].*$/g, '')
-    const pathPrefix = `${(publicPath || '').replace(/(^\/(?!\/)|\/$)/g, '')}/`
+    let normalizedPath = href.replace(LEADING_SLASH_OR_QUERY_RE, '')
+    const pathPrefix = `${(publicPath || '').replace(PUBLIC_PATH_RE, '')}/`
 
     if (normalizedPath.startsWith(pathPrefix) && !(pathPrefix === '/' && normalizedPath.startsWith('//'))) {
       normalizedPath = normalizedPath
         .substring(pathPrefix.length)
-        .replace(/^\//, '')
+        .replace(LEADING_SLASH_RE, '')
     }
 
     // Handle remote stylesheets
-    const isRemote = /^https?:\/\//.test(normalizedPath) || normalizedPath.startsWith('//')
+    const isRemote = REMOTE_URL_RE.test(normalizedPath) || normalizedPath.startsWith('//')
     if (isRemote) {
       if (this.options.remote === true) {
         try {
@@ -476,7 +487,7 @@ export default class Beasties {
     if (style.$$reduce === false)
       return
 
-    const name = style.$$name ? style.$$name.replace(/^\//, '') : 'inline CSS'
+    const name = style.$$name ? style.$$name.replace(LEADING_SLASH_RE, '') : 'inline CSS'
     const options = this.options
     const beastiesContainer = document.beastiesContainer!
     let keyframesMode = options.keyframes ?? 'critical'
@@ -520,10 +531,8 @@ export default class Beasties {
       markOnly((rule) => {
         if (rule.type === 'comment') {
           // we might want to remove a leading ! on comment blocks
-          // beasties can be part of "legal comments" which aren't striped on build
-          // TODO: address regexp
-          // eslint-disable-next-line regexp/no-useless-assertions
-          const beastiesComment = rule.text.match(/^(?<!! )beasties:(.*)/)
+          // beasties can be part of "legal comments" which aren't stripped on build
+          const beastiesComment = rule.text.match(BEASTIES_COMMENT_RE)
           const command = beastiesComment && beastiesComment[1]
 
           if (command) {
@@ -588,7 +597,7 @@ export default class Beasties {
               sel === ':root'
               || sel === 'html'
               || sel === 'body'
-              || (sel[0] === ':' && /^::?(?:before|after)$/.test(sel))
+              || (sel[0] === ':' && BEFORE_AFTER_PSEUDO_RE.test(sel))
             ) {
               return true
             }
@@ -618,13 +627,13 @@ export default class Beasties {
                 continue
               }
               // detect used fonts
-              if (shouldInlineFonts && /\bfont(?:-family)?\b/i.test(decl.prop)) {
+              if (shouldInlineFonts && FONT_FAMILY_RE.test(decl.prop)) {
                 criticalFonts += ` ${decl.value}`
               }
 
               // detect used keyframes
               if (decl.prop === 'animation' || decl.prop === 'animation-name') {
-                for (const name of decl.value.split(/\s+/)) {
+                for (const name of decl.value.split(WHITESPACE_RE)) {
                   // @todo: parse animation declarations and extract only the name. for now we'll do a lazy match.
                   const nameTrimmed = name.trim()
                   if (nameTrimmed)
@@ -681,8 +690,7 @@ export default class Beasties {
             }
             if (decl.prop === 'src') {
               // TODO: parse this properly and generate multiple preloads with type="font/woff2" etc
-              // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
-              src = (decl.value.match(/url\s*\(\s*(['"]?)(.+?)\1\s*\)/) || [])[2]
+              src = (decl.value.match(URL_RE) || [])[2]
             }
             else if (decl.prop === 'font-family') {
               family = decl.value

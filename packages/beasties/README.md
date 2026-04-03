@@ -312,4 +312,3 @@ This is not an official Google product.
 
 [beasties-webpack-plugin]: https://github.com/danielroe/beasties/tree/main/packages/beasties-webpack-plugin
 [critical css]: https://www.smashingmagazine.com/2015/08/understanding-critical-css/
-[html-webpack-plugin]: https://github.com/jantimon/html-webpack-plugin

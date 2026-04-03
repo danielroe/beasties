@@ -5,6 +5,9 @@ import { relative } from 'node:path'
 
 import Beasties from 'beasties'
 
+const BACKSLASH_RE = /\\/g
+const LEADING_SLASH_RE = /^\//
+
 export interface ViteBeastiesOptions {
   /**
    * Options passed directly through to beasties
@@ -42,7 +45,7 @@ export function beasties(options: ViteBeastiesOptions = {}): Plugin {
       }
 
       beastiesInstance.readFile = (filename: string) => {
-        const path = relative(config.build.outDir, filename).replace(/\\/g, '/')
+        const path = relative(config.build.outDir, filename).replace(BACKSLASH_RE, '/')
         const chunk = bundle[path] ?? { type: 'asset', source: readFileSync(filename, 'utf-8') }
         if (!chunk) {
           throw new Error(`Failed to read file: ${filename}`)
@@ -56,7 +59,7 @@ export function beasties(options: ViteBeastiesOptions = {}): Plugin {
       beastiesInstance.pruneSource = function pruneSource(style, before, sheetInverse) {
         const isStyleInlined = originalPrune(style, before, sheetInverse)
         // @ts-expect-error internal property
-        const name = style.$$name.replace(/^\//, '') as string
+        const name = style.$$name.replace(LEADING_SLASH_RE, '') as string
 
         if (name in bundle && bundle[name]!.type === 'asset') {
           const minSize = options.options?.minimumExternalSize
@@ -85,7 +88,7 @@ export function beasties(options: ViteBeastiesOptions = {}): Plugin {
 
         if (isStyleInlined || !sheetInverse.length) {
           // @ts-expect-error internal property
-          const name = style.$$name.replace(/^\//, '') as string
+          const name = style.$$name.replace(LEADING_SLASH_RE, '') as string
           if (name in bundle && bundle[name]!.type === 'asset') {
             delete bundle[name]
           }
