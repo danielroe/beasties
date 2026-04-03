@@ -1,7 +1,7 @@
 {
   "name": "beasties-root",
   "private": true,
-  "packageManager": "pnpm@10.30.1",
+  "packageManager": "pnpm@10.33.0",
   "description": "Inline critical CSS and lazy-load the rest.",
   "author": "The Chromium Authors",
   "contributors": [
@@ -34,9 +34,9 @@
     "test:versions": "installed-check --no-include-workspace-root --ignore-dev"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "7.4.3",
+    "@antfu/eslint-config": "7.7.3",
     "@codspeed/vitest-plugin": "5.2.0",
-    "@types/node": "24.10.13",
+    "@types/node": "24.12.2",
     "@types/postcss-safe-parser": "5.0.4",
     "@vitest/coverage-v8": "4.1.2",
     "bumpp": "11.0.1",
@@ -45,8 +45,8 @@
     "eslint": "10.1.0",
     "installed-check": "10.0.1",
     "jsdom": "29.0.1",
-    "knip": "6.0.2",
-    "lint-staged": "16.2.7",
+    "knip": "6.3.0",
+    "lint-staged": "16.4.0",
     "simple-git-hooks": "2.13.1",
     "typescript": "6.0.2",
     "vitest": "4.1.2"
