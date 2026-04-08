@@ -1,7 +1,7 @@
 {
   "name": "vite-plugin-beasties",
   "type": "module",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "packageManager": "pnpm@10.33.0",
   "description": "",
   "license": "MIT",
