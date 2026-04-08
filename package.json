@@ -34,7 +34,7 @@
     "test:versions": "installed-check --no-include-workspace-root --ignore-dev"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "7.7.3",
+    "@antfu/eslint-config": "8.1.0",
     "@codspeed/vitest-plugin": "5.2.0",
     "@types/node": "24.12.2",
     "@types/postcss-safe-parser": "5.0.4",
