@@ -83,10 +83,10 @@ export function beasties(options: ViteBeastiesOptions = {}): Plugin {
       }
 
       const originalCheckInline = beastiesInstance.checkInlineThreshold.bind(beastiesInstance)
-      beastiesInstance.checkInlineThreshold = function checkInlineThreshold(style, before, sheetInverse) {
-        const isStyleInlined = originalCheckInline(style, before, sheetInverse)
+      beastiesInstance.checkInlineThreshold = function checkInlineThreshold(link, style, sheet) {
+        const isStyleInlined = originalCheckInline(link, style, sheet)
 
-        if (isStyleInlined || !sheetInverse.length) {
+        if (isStyleInlined || !sheet.length) {
           // @ts-expect-error internal property
           const name = style.$$name.replace(LEADING_SLASH_RE, '') as string
           if (name in bundle && bundle[name]!.type === 'asset') {
