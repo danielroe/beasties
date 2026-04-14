@@ -34,7 +34,7 @@
     "test:versions": "installed-check --no-include-workspace-root --ignore-dev"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "8.1.0",
+    "@antfu/eslint-config": "8.2.0",
     "@codspeed/vitest-plugin": "5.2.0",
     "@types/node": "24.12.2",
     "@types/postcss-safe-parser": "5.0.4",
@@ -45,7 +45,7 @@
     "eslint": "10.2.0",
     "installed-check": "10.0.1",
     "jsdom": "29.0.1",
-    "knip": "6.3.0",
+    "knip": "6.4.1",
     "lint-staged": "16.4.0",
     "simple-git-hooks": "2.13.1",
     "typescript": "6.0.2",
