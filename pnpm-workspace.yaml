@@ -3,12 +3,11 @@ shellEmulator: true
 packages:
   - packages/*
 
+overrides:
+  beasties: 'workspace:*'
+  vite-plugin-beasties: 'link:.'
 ignoredBuiltDependencies:
   - esbuild
 
 onlyBuiltDependencies:
   - simple-git-hooks
-
-overrides:
-  beasties: "workspace:*"
-  vite-plugin-beasties: "link:."
