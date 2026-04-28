@@ -8,3 +8,7 @@ ignoredBuiltDependencies:
 
 onlyBuiltDependencies:
   - simple-git-hooks
+
+overrides:
+  beasties: "workspace:*"
+  vite-plugin-beasties: "link:."
