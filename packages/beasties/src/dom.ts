@@ -14,8 +14,6 @@
  * the License.
  */
 
-import type { AttributeSelector } from 'css-what'
-
 import type { ChildNode, Node, NodeWithChildren } from 'domhandler'
 
 import { selectAll, selectOne } from 'css-select'
@@ -47,7 +45,11 @@ function buildCache(container: Node) {
     }
 
     if ('children' in node) {
-      queue.push(...(node as NodeWithChildren).children.filter(child => child.type === 'tag'))
+      queue.push(
+        ...(node as NodeWithChildren).children.filter(
+          child => child.type === 'tag',
+        ),
+      )
     }
   }
 }
@@ -66,7 +68,7 @@ export function createDocument(html: string) {
   extendElement(Element.prototype)
 
   // Beasties container is the viewport to evaluate critical CSS
-  let beastiesContainer: Node | HTMLDocument = document.querySelector('[data-beasties-container]') as Node
+  let beastiesContainer: Node | HTMLDocument = document.querySelector('[data-beasties-container]')
 
   if (!beastiesContainer) {
     document.documentElement?.setAttribute('data-beasties-container', '')
@@ -339,47 +341,97 @@ function extendDocument(document: ParsedDocument): asserts document is HTMLDocum
   })
 }
 
+interface RelevantTokens {
+  groups: Array<{
+    classes: string[]
+    ids: string[]
+    canAccept: boolean
+  }>
+}
+
 // TODO: we sould probable move this case as part of the class
 // so that it's disposed with it.
-const selectorTokensCache = new Map<string, null | AttributeSelector[]>()
+const selectorTokensCache = new Map<string, null | RelevantTokens>()
 
 function cachedQuerySelector(sel: string, node: Node) {
-  let selectorTokens = selectorTokensCache.get(sel)
-  if (selectorTokens === undefined) {
-    selectorTokens = parseRelevantSelectors(sel)
-    selectorTokensCache.set(sel, selectorTokens)
+  let relevant = selectorTokensCache.get(sel)
+  if (relevant === undefined) {
+    relevant = parseRelevantSelectors(sel)
+    selectorTokensCache.set(sel, relevant)
   }
 
-  if (selectorTokens && node._classCache && node._idCache) {
-    for (const token of selectorTokens) {
-      if (token.name === 'class' && !node._classCache.has(token.value)) {
-        return false
+  if (relevant && node._classCache && node._idCache) {
+    let canRejectAll = true
+    let canAcceptAny = false
+
+    for (const group of relevant.groups) {
+      let missingToken = false
+      for (const cls of group.classes) {
+        if (!node._classCache.has(cls)) {
+          missingToken = true
+          break
+        }
       }
-      if (token.name === 'id' && !node._idCache.has(token.value)) {
-        return false
+      if (!missingToken) {
+        for (const id of group.ids) {
+          if (!node._idCache.has(id)) {
+            missingToken = true
+            break
+          }
+        }
+      }
+
+      if (!missingToken) {
+        // This group could match!
+        canRejectAll = false
+        if (group.canAccept) {
+          canAcceptAny = true
+          break
+        }
       }
     }
-    return true
+
+    if (canRejectAll) {
+      return false
+    }
+    if (canAcceptAny) {
+      return true
+    }
   }
 
   return !!selectOne(sel, node)
 }
 
-function parseRelevantSelectors(sel: string): AttributeSelector[] | null {
+function parseRelevantSelectors(sel: string): RelevantTokens | null {
   const tokens = selectorParser(sel)
-  const relevantTokens: AttributeSelector[] = []
+  const groups: RelevantTokens['groups'] = []
 
-  for (let i = 0; i < tokens.length; i++) {
-    const tokenGroup = tokens[i]
-    if (tokenGroup?.length !== 1) {
-      return null
+  for (const tokenGroup of tokens) {
+    const classes: string[] = []
+    const ids: string[] = []
+    let canAccept = tokenGroup.length === 1
+
+    for (const token of tokenGroup) {
+      if (token.type === 'attribute' && token.name === 'class') {
+        classes.push(token.value)
+      }
+      else if (token.type === 'attribute' && token.name === 'id') {
+        ids.push(token.value)
+      }
+      else if (token.type === 'universal' || token.type === 'tag') {
+        canAccept = false
+      }
+      else {
+        canAccept = false
+      }
     }
 
-    const token = tokenGroup[0]
-    if (token?.type === 'attribute' && (token.name === 'class' || token.name === 'id')) {
-      relevantTokens.push(token)
-    }
+    groups.push({
+      classes,
+      ids,
+      canAccept: canAccept && (classes.length === 1 || ids.length === 1),
+    })
   }
 
-  return relevantTokens.length > 0 ? relevantTokens : null
+  return groups.length > 0 ? { groups } : null
 }
