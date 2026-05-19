@@ -86,9 +86,18 @@ export function serializeStylesheet(ast: AnyNode, options: SerializeStylesheetOp
       return
     }
 
-    if (type === 'end' && result === '}' && node?.raws?.semicolon) {
+    if (
+      type === 'end'
+      && result === '}'
+      && node?.raws?.semicolon
+      && (node.type === 'rule' || node.type === 'atrule')
+    ) {
+      // Only drop the trailing `;` when it terminates a declaration body — for
+      // a nested at-rule statement (e.g. `@layer parent { @layer a, b; }`) the
+      // `;` is the statement terminator and stripping it produces invalid CSS.
+      const lastChild = node.nodes?.[node.nodes.length - 1]
       const lastItemIdx = cssParts.length - 2
-      if (lastItemIdx >= 0 && cssParts[lastItemIdx]) {
+      if (lastChild?.type === 'decl' && lastItemIdx >= 0 && cssParts[lastItemIdx]) {
         cssParts[lastItemIdx] = cssParts[lastItemIdx].slice(0, -1)
       }
     }
