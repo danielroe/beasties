@@ -35,10 +35,10 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "9.0.0",
-    "@codspeed/vitest-plugin": "5.4.0",
+    "@codspeed/vitest-plugin": "5.5.0",
     "@types/node": "24.12.4",
     "@types/postcss-safe-parser": "5.0.4",
-    "@vitest/coverage-v8": "4.1.7",
+    "@vitest/coverage-v8": "4.1.8",
     "bumpp": "11.1.0",
     "changelogithub": "14.0.0",
     "cheerio": "1.2.0",
@@ -49,7 +49,7 @@
     "lint-staged": "17.0.7",
     "simple-git-hooks": "2.13.1",
     "typescript": "6.0.3",
-    "vitest": "4.1.7"
+    "vitest": "4.1.8"
   },
   "simple-git-hooks": {
     "pre-commit": "npx lint-staged"
