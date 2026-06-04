@@ -244,6 +244,24 @@ You can estimate the contents of your viewport roughly and add a <div `data-beas
 </html>
 ```
 
+You can mark more than one element with `data-beasties-container`. CSS is then inlined if it matches inside _any_ of the containers, which is useful when the above-the-fold content is spread across multiple disconnected regions.
+
+```html
+<html>
+  <body>
+    <header data-beasties-container>
+      /* evaluated */
+    </header>
+    <main>
+      /* ignored */
+    </main>
+    <aside data-beasties-container>
+      /* evaluated */
+    </aside>
+  </body>
+</html>
+```
+
 _Note: This is an easy way to improve the performance of Beasties_
 
 ### Logger
