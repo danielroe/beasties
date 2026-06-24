@@ -78,6 +78,96 @@ describe('beasties', () => {
     `)
   })
 
+  it('should inline critical CSS from multiple beasties containers', async () => {
+    const beasties = new Beasties()
+    const result = await beasties.process(trim`
+      <html>
+        <body>
+          <style>
+            .a { color: red }
+            .b { color: blue }
+            .c { color: green }
+          </style>
+          <div data-beasties-container>
+            <div class="a">A</div>
+          </div>
+          <div>
+            <div class="b">B</div>
+          </div>
+          <div data-beasties-container>
+            <div class="c">C</div>
+          </div>
+        </body>
+      </html>
+    `)
+    expect(result).toContain('.a{color:red}')
+    expect(result).toContain('.c{color:green}')
+    expect(result).not.toContain('.b{color:blue}')
+  })
+
+  it('should inline remote stylesheets from multiple beasties containers', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+    })
+    const assets: Record<string, string> = {
+      '/style.css': trim`
+        .a { color: red }
+        .b { color: blue }
+        .c { color: green }
+      `,
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css">
+        </head>
+        <body>
+          <div data-beasties-container>
+            <div class="a">A</div>
+          </div>
+          <div>
+            <div class="b">B</div>
+          </div>
+          <div data-beasties-container>
+            <div class="c">C</div>
+          </div>
+        </body>
+      </html>
+    `)
+    expect(result).toContain('<style>.a{color:red}.c{color:green}</style>')
+    expect(result).not.toContain('.b{color:blue}')
+    expect(result).toContain('<link rel="stylesheet" href="/style.css">')
+  })
+
+  it('should inline critical CSS from nested beasties containers', async () => {
+    const beasties = new Beasties()
+    const result = await beasties.process(trim`
+      <html>
+        <body>
+          <style>
+            .outer { color: red }
+            .inner { color: green }
+            .b { color: blue }
+          </style>
+          <div data-beasties-container>
+            <div class="outer">outer</div>
+            <div data-beasties-container>
+              <div class="inner">inner</div>
+            </div>
+          </div>
+          <div>
+            <div class="b">B</div>
+          </div>
+        </body>
+      </html>
+    `)
+    expect(result).toContain('.outer{color:red}')
+    expect(result).toContain('.inner{color:green}')
+    expect(result).not.toContain('.b{color:blue}')
+  })
+
   it('run on HTML file', async () => {
     const beasties = new Beasties({
       reduceInlineStyles: false,

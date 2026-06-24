@@ -11,7 +11,7 @@ describe('dom', () => {
           </body>
         </html>
       `)
-      const container = doc.beastiesContainer
+      const container = doc.beastiesContainers[0]!
 
       /*
        ".parent .child" (descendant combinator) can't be resolved by the
@@ -29,7 +29,7 @@ describe('dom', () => {
           </body>
         </html>
       `)
-      const container = doc.beastiesContainer
+      const container = doc.beastiesContainers[0]!
 
       /*
         CSS comma means OR — both selectors are logically equivalent,
@@ -43,28 +43,32 @@ describe('dom', () => {
       const doc = createDocument(`
         <html><body><div class="hero">text</div></body></html>
       `)
-      expect(doc.beastiesContainer.exists('.hero')).toBe(true)
+      const container = doc.beastiesContainers[0]!
+      expect(container.exists('.hero')).toBe(true)
     })
 
     it('returns false for simple class selector that does not exist', () => {
       const doc = createDocument(`
         <html><body><div class="hero">text</div></body></html>
       `)
-      expect(doc.beastiesContainer.exists('.missing')).toBe(false)
+      const container = doc.beastiesContainers[0]!
+      expect(container.exists('.missing')).toBe(false)
     })
 
     it('returns true for simple id selector that exists', () => {
       const doc = createDocument(`
         <html><body><div id="main">text</div></body></html>
       `)
-      expect(doc.beastiesContainer.exists('#main')).toBe(true)
+      const container = doc.beastiesContainers[0]!
+      expect(container.exists('#main')).toBe(true)
     })
 
     it('returns false for simple id selector that does not exist', () => {
       const doc = createDocument(`
         <html><body><div id="main">text</div></body></html>
       `)
-      expect(doc.beastiesContainer.exists('#nope')).toBe(false)
+      const container = doc.beastiesContainers[0]!
+      expect(container.exists('#nope')).toBe(false)
     })
   })
 })

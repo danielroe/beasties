@@ -489,7 +489,7 @@ export default class Beasties {
 
     const name = style.$$name ? style.$$name.replace(LEADING_SLASH_RE, '') : 'inline CSS'
     const options = this.options
-    const beastiesContainer = document.beastiesContainer!
+    const beastiesContainers = document.beastiesContainers!
     let keyframesMode = options.keyframes ?? 'critical'
     // we also accept a boolean value for options.keyframes
     if (keyframesMode === true)
@@ -608,7 +608,7 @@ export default class Beasties {
               return false
 
             try {
-              return beastiesContainer.exists(sel)
+              return beastiesContainers.some(container => container.exists(sel))
             }
             catch (e) {
               failedSelectors.push(`${sel} -> ${(e as Error).message || (e as Error).toString()}`)
