@@ -53,7 +53,7 @@
   "dependencies": {
     "css-select": "^6.0.0",
     "css-what": "^7.0.0",
-    "dom-serializer": "^2.0.0",
+    "dom-serializer": "^3.0.0",
     "domhandler": "^5.0.3",
     "htmlparser2": "^10.0.0",
     "picocolors": "^1.1.1",
