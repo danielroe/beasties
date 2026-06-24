@@ -1086,4 +1086,79 @@ describe('beasties', () => {
 
     fs.rmSync(tmpDir, { recursive: true })
   })
+
+  describe('data-beasties-skip', () => {
+    const assets: Record<string, string> = {
+      '/styles.css': 'h1 { color: blue; }',
+      '/theme.css': 'body { background: red; }',
+    }
+
+    function makeBeasties(opts = {}) {
+      const b = new Beasties({ reduceInlineStyles: false, path: '/', ...opts })
+      b.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+      return b
+    }
+
+    it('leaves the skipped link tag completely untouched', async () => {
+      const result = await makeBeasties().process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/styles.css">
+            <link rel="stylesheet" href="/theme.css" data-beasties-skip>
+          </head>
+          <body><h1>Hello</h1></body>
+        </html>
+      `)
+      expect(result).toContain('<link rel="stylesheet" href="/theme.css" data-beasties-skip>')
+      expect(result).not.toMatch(/theme\.css[^>]*onload/)
+      expect(result).not.toMatch(/theme\.css[^>]*rel="preload"/)
+    })
+
+    it('still processes other links normally', async () => {
+      const result = await makeBeasties().process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/styles.css">
+            <link rel="stylesheet" href="/theme.css" data-beasties-skip>
+          </head>
+          <body><h1>Hello</h1></body>
+        </html>
+      `)
+      expect(result).toContain('<style>')
+      expect(result).toContain('color:blue')
+      expect(result).not.toContain('background:red')
+    })
+
+    it('respects the skip attribute even when a preload strategy is active', async () => {
+      for (const preload of ['media', 'swap'] as const) {
+        const result = await makeBeasties({ preload }).process(trim`
+          <html>
+            <head>
+              <link rel="stylesheet" href="/styles.css">
+              <link rel="stylesheet" href="/theme.css" data-beasties-skip>
+            </head>
+            <body><h1>Hello</h1></body>
+          </html>
+        `)
+        expect(result).toContain('<link rel="stylesheet" href="/theme.css" data-beasties-skip>')
+        expect(result).not.toMatch(/theme\.css[^>]*onload/)
+        expect(result).not.toMatch(/theme\.css[^>]*rel="preload"/)
+      }
+    })
+
+    it('does not inject a noscript fallback for the skipped link', async () => {
+      const result = await makeBeasties({ preload: 'media' }).process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/styles.css">
+            <link rel="stylesheet" href="/theme.css" data-beasties-skip>
+          </head>
+          <body><h1>Hello</h1></body>
+        </html>
+      `)
+      const noscriptMatches = result.match(/<noscript>/g) ?? []
+      expect(noscriptMatches.length).toBe(1)
+      expect(result).not.toMatch(/noscript[^>]*theme/)
+    })
+  })
 })

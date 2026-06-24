@@ -246,6 +246,20 @@ You can estimate the contents of your viewport roughly and add a <div `data-beas
 
 _Note: This is an easy way to improve the performance of Beasties_
 
+### Skipping individual stylesheets
+
+If a stylesheet should not be processed by Beasties — for example a file that is injected or replaced at runtime (e.g. multi-tenant theming via Docker volume mounts) — add the `data-beasties-skip` boolean attribute to its `<link>` tag:
+
+```html
+<!-- processed normally -->
+<link rel="stylesheet" href="styles.css">
+
+<!-- skipped entirely — tag is left untouched in the final HTML -->
+<link rel="stylesheet" href="custom-theme.css" data-beasties-skip>
+```
+
+Beasties will not read, inline, prune, or mutate that tag regardless of the active preload strategy. This is useful when disabling `inlineCritical` globally would sacrifice Core Web Vitals optimizations for the rest of your stylesheets.
+
 ### Logger
 
 Custom logger interface:
