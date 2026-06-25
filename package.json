@@ -1,7 +1,7 @@
 {
   "name": "beasties-root",
   "private": true,
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@11.8.0",
   "description": "Inline critical CSS and lazy-load the rest.",
   "author": "The Chromium Authors",
   "contributors": [
@@ -34,26 +34,22 @@
     "test:versions": "installed-check --no-include-workspace-root --ignore-dev"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "8.1.0",
-    "@codspeed/vitest-plugin": "5.2.0",
-    "@types/node": "24.12.2",
+    "@antfu/eslint-config": "9.0.0",
+    "@codspeed/vitest-plugin": "5.5.0",
+    "@types/node": "24.13.2",
     "@types/postcss-safe-parser": "5.0.4",
-    "@vitest/coverage-v8": "4.1.2",
-    "bumpp": "11.0.1",
+    "@vitest/coverage-v8": "4.1.8",
+    "bumpp": "11.1.0",
     "changelogithub": "14.0.0",
     "cheerio": "1.2.0",
-    "eslint": "10.2.0",
+    "eslint": "10.5.0",
     "installed-check": "10.0.1",
-    "jsdom": "29.0.1",
-    "knip": "6.3.0",
-    "lint-staged": "16.4.0",
+    "jsdom": "29.1.1",
+    "knip": "6.17.1",
+    "lint-staged": "17.0.8",
     "simple-git-hooks": "2.13.1",
-    "typescript": "6.0.2",
-    "vitest": "4.1.2"
-  },
-  "resolutions": {
-    "beasties": "workspace:*",
-    "vite-plugin-beasties": "link:."
+    "typescript": "6.0.3",
+    "vitest": "4.1.8"
   },
   "simple-git-hooks": {
     "pre-commit": "npx lint-staged"

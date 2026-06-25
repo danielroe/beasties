@@ -3,8 +3,10 @@ shellEmulator: true
 packages:
   - packages/*
 
-ignoredBuiltDependencies:
-  - esbuild
+overrides:
+  beasties: 'workspace:*'
+  vite-plugin-beasties: 'link:.'
 
-onlyBuiltDependencies:
-  - simple-git-hooks
+allowBuilds:
+  esbuild: false
+  simple-git-hooks: true
