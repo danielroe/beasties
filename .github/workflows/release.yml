@@ -19,8 +19,8 @@ jobs:
     if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-latest
     permissions:
-      contents: write       # push the `release/vX.Y.Z` branch and delete superseded ones
-      pull-requests: write  # create a release PR, update its body, close superseded PRs
+      contents: write # push the `release/vX.Y.Z` branch and delete superseded ones
+      pull-requests: write # create a release PR, update its body, close superseded PRs
     steps:
       - uses: danielroe/uppt/pr@7bcfb5397c37202ef882363f755423130419d28a # v0.5.5
         with:
@@ -42,8 +42,8 @@ jobs:
       group: release-${{ github.event.pull_request.number }}
       cancel-in-progress: false
     permissions:
-      contents: write       # push the `vX.Y.Z` tag and create the GitHub release
-      actions: write        # `gh workflow run release.yml --ref vX.Y.Z` chained dispatch
+      contents: write # push the `vX.Y.Z` tag and create the GitHub release
+      actions: write # `gh workflow run release.yml --ref vX.Y.Z` chained dispatch
     steps:
       - uses: danielroe/uppt/release@7bcfb5397c37202ef882363f755423130419d28a # v0.5.5
         with:
@@ -81,8 +81,8 @@ jobs:
       group: publish-${{ github.ref }}
       cancel-in-progress: false
     permissions:
-      id-token: write       # OIDC claim for npm trusted publisher
-    environment: npm        # must match the trusted-publisher entry on npmjs.com
+      id-token: write # OIDC claim for npm trusted publisher
+    environment: npm # must match the trusted-publisher entry on npmjs.com
     steps:
       - uses: danielroe/uppt/publish@7bcfb5397c37202ef882363f755423130419d28a # v0.5.5
         with:
