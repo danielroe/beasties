@@ -78,6 +78,96 @@ describe('beasties', () => {
     `)
   })
 
+  it('should inline critical CSS from multiple beasties containers', async () => {
+    const beasties = new Beasties()
+    const result = await beasties.process(trim`
+      <html>
+        <body>
+          <style>
+            .a { color: red }
+            .b { color: blue }
+            .c { color: green }
+          </style>
+          <div data-beasties-container>
+            <div class="a">A</div>
+          </div>
+          <div>
+            <div class="b">B</div>
+          </div>
+          <div data-beasties-container>
+            <div class="c">C</div>
+          </div>
+        </body>
+      </html>
+    `)
+    expect(result).toContain('.a{color:red}')
+    expect(result).toContain('.c{color:green}')
+    expect(result).not.toContain('.b{color:blue}')
+  })
+
+  it('should inline remote stylesheets from multiple beasties containers', async () => {
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+    })
+    const assets: Record<string, string> = {
+      '/style.css': trim`
+        .a { color: red }
+        .b { color: blue }
+        .c { color: green }
+      `,
+    }
+    beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+    const result = await beasties.process(trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/style.css">
+        </head>
+        <body>
+          <div data-beasties-container>
+            <div class="a">A</div>
+          </div>
+          <div>
+            <div class="b">B</div>
+          </div>
+          <div data-beasties-container>
+            <div class="c">C</div>
+          </div>
+        </body>
+      </html>
+    `)
+    expect(result).toContain('<style>.a{color:red}.c{color:green}</style>')
+    expect(result).not.toContain('.b{color:blue}')
+    expect(result).toContain('<link rel="stylesheet" href="/style.css">')
+  })
+
+  it('should inline critical CSS from nested beasties containers', async () => {
+    const beasties = new Beasties()
+    const result = await beasties.process(trim`
+      <html>
+        <body>
+          <style>
+            .outer { color: red }
+            .inner { color: green }
+            .b { color: blue }
+          </style>
+          <div data-beasties-container>
+            <div class="outer">outer</div>
+            <div data-beasties-container>
+              <div class="inner">inner</div>
+            </div>
+          </div>
+          <div>
+            <div class="b">B</div>
+          </div>
+        </body>
+      </html>
+    `)
+    expect(result).toContain('.outer{color:red}')
+    expect(result).toContain('.inner{color:green}')
+    expect(result).not.toContain('.b{color:blue}')
+  })
+
   it('run on HTML file', async () => {
     const beasties = new Beasties({
       reduceInlineStyles: false,
@@ -1085,5 +1175,80 @@ describe('beasties', () => {
     expect(result1).not.toContain('#missing{color:green}')
 
     fs.rmSync(tmpDir, { recursive: true })
+  })
+
+  describe('data-beasties-skip', () => {
+    const assets: Record<string, string> = {
+      '/styles.css': 'h1 { color: blue; }',
+      '/theme.css': 'body { background: red; }',
+    }
+
+    function makeBeasties(opts = {}) {
+      const b = new Beasties({ reduceInlineStyles: false, path: '/', ...opts })
+      b.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+      return b
+    }
+
+    it('leaves the skipped link tag completely untouched', async () => {
+      const result = await makeBeasties().process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/styles.css">
+            <link rel="stylesheet" href="/theme.css" data-beasties-skip>
+          </head>
+          <body><h1>Hello</h1></body>
+        </html>
+      `)
+      expect(result).toContain('<link rel="stylesheet" href="/theme.css" data-beasties-skip>')
+      expect(result).not.toMatch(/theme\.css[^>]*onload/)
+      expect(result).not.toMatch(/theme\.css[^>]*rel="preload"/)
+    })
+
+    it('still processes other links normally', async () => {
+      const result = await makeBeasties().process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/styles.css">
+            <link rel="stylesheet" href="/theme.css" data-beasties-skip>
+          </head>
+          <body><h1>Hello</h1></body>
+        </html>
+      `)
+      expect(result).toContain('<style>')
+      expect(result).toContain('color:blue')
+      expect(result).not.toContain('background:red')
+    })
+
+    it('respects the skip attribute even when a preload strategy is active', async () => {
+      for (const preload of ['media', 'swap'] as const) {
+        const result = await makeBeasties({ preload }).process(trim`
+          <html>
+            <head>
+              <link rel="stylesheet" href="/styles.css">
+              <link rel="stylesheet" href="/theme.css" data-beasties-skip>
+            </head>
+            <body><h1>Hello</h1></body>
+          </html>
+        `)
+        expect(result).toContain('<link rel="stylesheet" href="/theme.css" data-beasties-skip>')
+        expect(result).not.toMatch(/theme\.css[^>]*onload/)
+        expect(result).not.toMatch(/theme\.css[^>]*rel="preload"/)
+      }
+    })
+
+    it('does not inject a noscript fallback for the skipped link', async () => {
+      const result = await makeBeasties({ preload: 'media' }).process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/styles.css">
+            <link rel="stylesheet" href="/theme.css" data-beasties-skip>
+          </head>
+          <body><h1>Hello</h1></body>
+        </html>
+      `)
+      const noscriptMatches = result.match(/<noscript>/g) ?? []
+      expect(noscriptMatches.length).toBe(1)
+      expect(result).not.toMatch(/noscript[^>]*theme/)
+    })
   })
 })

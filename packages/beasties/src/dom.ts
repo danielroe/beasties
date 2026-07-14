@@ -65,16 +65,18 @@ export function createDocument(html: string) {
   // Extend Element.prototype with DOM manipulation methods.
   extendElement(Element.prototype)
 
-  // Beasties container is the viewport to evaluate critical CSS
-  let beastiesContainer: Node | HTMLDocument = document.querySelector('[data-beasties-container]') as Node
+  // Beasties containers are the viewport to evaluate critical CSS.
+  let beastiesContainers: (Node | HTMLDocument)[] = document.querySelectorAll('[data-beasties-container]') as Node[]
 
-  if (!beastiesContainer) {
+  if (!beastiesContainers.length) {
     document.documentElement?.setAttribute('data-beasties-container', '')
-    beastiesContainer = document.documentElement || document
+    beastiesContainers = [document.documentElement || document]
   }
 
-  document.beastiesContainer = beastiesContainer
-  buildCache(beastiesContainer)
+  document.beastiesContainers = beastiesContainers
+  for (const container of beastiesContainers) {
+    buildCache(container)
+  }
 
   return document
 }
@@ -257,7 +259,11 @@ export interface HTMLDocument extends ParsedDocument {
   exists: (sel: string) => boolean
   querySelector: (sel: string) => Node
   querySelectorAll: (sel: string) => Node[]
+  /**
+   * @deprecated
+   */
   beastiesContainer: HTMLDocument | Node
+  beastiesContainers: (HTMLDocument | Node)[]
 }
 
 function extendDocument(document: ParsedDocument): asserts document is HTMLDocument {
@@ -334,6 +340,12 @@ function extendDocument(document: ParsedDocument): asserts document is HTMLDocum
           return this
         }
         return selectAll(sel, this)
+      },
+    },
+
+    beastiesContainer: {
+      get() {
+        return this.beastiesContainers?.[0]
       },
     },
   })

@@ -305,6 +305,10 @@ export default class Beasties {
    * Fetch CSS content for a linked stylesheet
    */
   private async fetchStylesheet(link: ChildNode, document: HTMLDocument): Promise<PreFetchedStylesheet | undefined> {
+    if (link.hasAttribute('data-beasties-skip')) {
+      return undefined
+    }
+
     const href = link.getAttribute('href')
 
     // skip filtered resources, or network resources if no filter is provided
@@ -489,7 +493,7 @@ export default class Beasties {
 
     const name = style.$$name ? style.$$name.replace(LEADING_SLASH_RE, '') : 'inline CSS'
     const options = this.options
-    const beastiesContainer = document.beastiesContainer!
+    const beastiesContainers = document.beastiesContainers!
     let keyframesMode = options.keyframes ?? 'critical'
     // we also accept a boolean value for options.keyframes
     if (keyframesMode === true)
@@ -608,7 +612,7 @@ export default class Beasties {
               return false
 
             try {
-              return beastiesContainer.exists(sel)
+              return beastiesContainers.some(container => container.exists(sel))
             }
             catch (e) {
               failedSelectors.push(`${sel} -> ${(e as Error).message || (e as Error).toString()}`)
