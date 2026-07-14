@@ -100,6 +100,27 @@ describe('vite-plugin-beasties', () => {
     expect(otherHtml).not.toContain('<style>.test-content')
   })
 
+  it('inlines entire stylesheet when below inlineThreshold', async () => {
+    const { readOutput, output } = await runViteBuild({
+      options: {
+        inlineThreshold: 131072,
+      },
+    })
+    const html = readOutput('index.html')
+
+    // CSS should be fully inlined
+    expect(html).toContain('<style>')
+    const hasCssColor = html?.includes('color: blue') || html?.includes('color:#00f')
+    expect(hasCssColor).toBe(true)
+
+    // No external CSS file should remain in the bundle
+    const cssFile = output.find(file => file.fileName.endsWith('.css'))
+    expect(cssFile).toBeUndefined()
+
+    // No stylesheet link should remain in the HTML
+    expect(html).not.toContain('<link rel="stylesheet"')
+  })
+
   it('handles errors gracefully', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const errorSpy = vi.spyOn(Beasties.prototype, 'process').mockImplementation(() => {

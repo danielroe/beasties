@@ -305,6 +305,10 @@ export default class Beasties {
    * Fetch CSS content for a linked stylesheet
    */
   private async fetchStylesheet(link: ChildNode, document: HTMLDocument): Promise<PreFetchedStylesheet | undefined> {
+    if (link.hasAttribute('data-beasties-skip')) {
+      return undefined
+    }
+
     const href = link.getAttribute('href')
 
     // skip filtered resources, or network resources if no filter is provided
