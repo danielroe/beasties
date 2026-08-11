@@ -40,7 +40,7 @@
     "@vitest/coverage-v8": "4.1.10",
     "cheerio": "1.2.0",
     "eslint": "10.8.0",
-    "installed-check": "10.0.1",
+    "installed-check": "11.0.0",
     "jsdom": "30.0.1",
     "knip": "6.31.0",
     "lint-staged": "17.3.0",
