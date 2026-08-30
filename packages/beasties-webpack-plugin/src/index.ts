@@ -23,12 +23,7 @@ import Beasties from 'beasties'
 import { minimatch } from 'minimatch'
 import { tap } from './util'
 
-const $require
-  = typeof require !== 'undefined'
-    ? require
-    // TODO remove this
-    // eslint-disable-next-line no-eval
-    : createRequire(eval('import.meta.url'))
+const $require = createRequire(import.meta.url)
 
 // Used to annotate this plugin's hooks in Tappable invocations
 const PLUGIN_NAME = 'beasties-webpack-plugin'
