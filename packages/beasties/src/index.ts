@@ -41,10 +41,8 @@ const LEADING_SLASH_RE = /^\//
 const WHITESPACE_RE = /\s+/
 // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
 const URL_RE = /url\s*\(\s*(['"]?)(.+?)\1\s*\)/
-// eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
-const URL_RE_G = /url\s*\(\s*(['"]?)(.+?)\1\s*\)/gi
+const URL_RE_G = /url\((?:'([^']*)'|"([^"]*)"|([^)]*))\)/gi
 const ABSOLUTE_URL_RE = /^(?:[a-z][\w+.-]*:|\/\/|\/|#)/i
-const QUERY_OR_HASH_RE = /[?#].*$/
 
 interface PreFetchedStylesheet {
   link: ChildNode
@@ -810,7 +808,7 @@ function resolveCssUrl(url: string, baseHref: string): string {
     return url
   }
 
-  const base = baseHref.replace(QUERY_OR_HASH_RE, '')
+  const base = baseHref.split('?')[0]!.split('#')[0]!
 
   if (REMOTE_URL_RE.test(base) || base.startsWith('//')) {
     try {
@@ -832,7 +830,9 @@ function resolveCssUrl(url: string, baseHref: string): string {
 }
 
 function rewriteCssUrls(css: string, baseHref: string): string {
-  return css.replace(URL_RE_G, (match, quote: string, url: string) => {
+  return css.replace(URL_RE_G, (match, singleQuoted?: string, doubleQuoted?: string, bare?: string) => {
+    const quote = singleQuoted !== undefined ? '\'' : doubleQuoted !== undefined ? '"' : ''
+    const url = singleQuoted ?? doubleQuoted ?? bare?.trim() ?? ''
     const resolved = resolveCssUrl(url, baseHref)
     return resolved === url ? match : `url(${quote}${resolved}${quote})`
   })
