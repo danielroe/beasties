@@ -71,6 +71,9 @@ export function createHelpers<Config = webpack.Configuration>(bundle: Bundle, ou
         module: {
           rules: [],
         },
+        optimization: {
+          minimize: false,
+        },
         plugins: [],
       } as Config
       if (configDecorator) {
