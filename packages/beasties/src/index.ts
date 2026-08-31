@@ -41,7 +41,9 @@ const LEADING_SLASH_RE = /^\//
 const WHITESPACE_RE = /\s+/
 // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
 const URL_RE = /url\s*\(\s*(['"]?)(.+?)\1\s*\)/
-const URL_RE_G = /url\((?:'([^']*)'|"([^"]*)"|([^)]*))\)/gi
+// unquoted urls cannot contain unescaped parentheses, and excluding them keeps
+// backtracking linear on input like `url((((...`
+const URL_RE_G = /url\((?:'([^']*)'|"([^"]*)"|([^()]*))\)/gi
 const ABSOLUTE_URL_RE = /^(?:[a-z][\w+.-]*:|\/\/|\/|#)/i
 
 interface PreFetchedStylesheet {

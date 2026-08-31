@@ -1189,6 +1189,7 @@ describe('beasties', () => {
         h3 { background: url(data:image/gif;base64,AAAA); }
       `,
       '/styles.css': 'h1 { background: url(./images/bg.png); }',
+      '/assets/parens.css': 'h1 { background: url("../img/a(1).png") }',
     }
 
     function makeBeasties(opts = {}) {
@@ -1223,6 +1224,18 @@ describe('beasties', () => {
         </html>
       `)
       expect(result).toContain('url(./images/bg.png)')
+    })
+
+    it('should rebase quoted urls containing parentheses', async () => {
+      const result = await makeBeasties().process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/assets/parens.css">
+          </head>
+          <body><h1>Hello</h1></body>
+        </html>
+      `)
+      expect(result).toContain('url("/img/a(1).png")')
     })
 
     it('should make root-relative urls explicit for stylesheets at the root', async () => {
