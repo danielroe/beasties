@@ -38,7 +38,9 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs",
       "default": "./dist/index.mjs"
-    }
+    },
+    "./compiler": "./dist/compiler.mjs",
+    "./runtime": "./dist/runtime.mjs"
   },
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
