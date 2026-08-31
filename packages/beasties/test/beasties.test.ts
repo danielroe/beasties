@@ -1177,6 +1177,93 @@ describe('beasties', () => {
     fs.rmSync(tmpDir, { recursive: true })
   })
 
+  describe('relative urls in inlined stylesheets', () => {
+    const assets: Record<string, string> = {
+      '/_next/static/chunks/main.css': trim`
+        @font-face {
+          font-family: 'Inter';
+          src: url(../media/inter.woff2) format('woff2');
+        }
+        h1 { font-family: 'Inter'; background: url("./bg.png"); }
+        h2 { background: url(/absolute.png); }
+        h3 { background: url(data:image/gif;base64,AAAA); }
+      `,
+      '/styles.css': 'h1 { background: url(./images/bg.png); }',
+      '/assets/parens.css': 'h1 { background: url("../img/a(1).png") }',
+    }
+
+    function makeBeasties(opts = {}) {
+      const b = new Beasties({ reduceInlineStyles: false, path: '/', inlineFonts: true, preloadFonts: true, ...opts })
+      b.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+      return b
+    }
+
+    it('should rebase relative urls against the stylesheet location', async () => {
+      const result = await makeBeasties().process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/_next/static/chunks/main.css">
+          </head>
+          <body><h1>Hello</h1><h2></h2><h3></h3></body>
+        </html>
+      `)
+      expect(result).toContain('url(/_next/static/media/inter.woff2)')
+      expect(result).toContain('url("/_next/static/chunks/bg.png")')
+      expect(result).toContain('url(/absolute.png)')
+      expect(result).toContain('url(data:image/gif;base64,AAAA)')
+      expect(result).toContain('href="/_next/static/media/inter.woff2"')
+    })
+
+    it('should leave urls alone when the stylesheet sits alongside the document', async () => {
+      const result = await makeBeasties().process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="styles.css">
+          </head>
+          <body><h1>Hello</h1></body>
+        </html>
+      `)
+      expect(result).toContain('url(./images/bg.png)')
+    })
+
+    it('should rebase quoted urls containing parentheses', async () => {
+      const result = await makeBeasties().process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/assets/parens.css">
+          </head>
+          <body><h1>Hello</h1></body>
+        </html>
+      `)
+      expect(result).toContain('url("/img/a(1).png")')
+    })
+
+    it('should make root-relative urls explicit for stylesheets at the root', async () => {
+      const result = await makeBeasties().process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/styles.css">
+          </head>
+          <body><h1>Hello</h1></body>
+        </html>
+      `)
+      expect(result).toContain('url(/images/bg.png)')
+    })
+
+    it('should rebase relative urls when the whole stylesheet is inlined', async () => {
+      const result = await makeBeasties({ inlineThreshold: 1000 }).process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/_next/static/chunks/main.css">
+          </head>
+          <body><h1>Hello</h1></body>
+        </html>
+      `)
+      expect(result).toContain('url(/_next/static/media/inter.woff2)')
+      expect(result).toContain('url("/_next/static/chunks/bg.png")')
+    })
+  })
+
   describe('data-beasties-skip', () => {
     const assets: Record<string, string> = {
       '/styles.css': 'h1 { color: blue; }',
