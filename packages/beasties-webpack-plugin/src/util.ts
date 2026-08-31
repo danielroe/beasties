@@ -15,22 +15,34 @@ export function tap(inst: Compiler | Compilation, hook: string, pluginName: stri
   }
 }
 
-interface HtmlPluginConstructor {
-  getHooks?: (compilation: Compilation) => HtmlWebpackPlugin.Hooks
+/**
+ * Rspack exposes `compilation.hooks` as a proxy that throws on unsupported webpack
+ * hooks, so unknown hooks must be probed with `in` rather than by reading them.
+ */
+export function hasHook(inst: Compiler | Compilation, hook: string): boolean {
+  return !!inst.hooks && hook in inst.hooks
 }
 
+interface HtmlPluginConstructor {
+  getHooks?: (compilation: Compilation) => HtmlWebpackPlugin.Hooks
+  getCompilationHooks?: (compilation: Compilation) => HtmlWebpackPlugin.Hooks
+}
+
+const HTML_PLUGIN_NAMES = new Set(['HtmlWebpackPlugin', 'HtmlRspackPlugin'])
+
 /**
- * Resolve html-webpack-plugin's compilation hooks from the plugin instance registered
- * in the configuration, so the plugin does not have to resolve the module itself.
+ * Resolve the html plugin's compilation hooks from the plugin instance registered in
+ * the configuration, covering html-webpack-plugin, html-rspack-plugin and rspack's
+ * builtin `HtmlRspackPlugin` (which names the accessor `getCompilationHooks`).
  */
 export function getHtmlPluginHooks(compilation: Compilation): HtmlWebpackPlugin.Hooks | undefined {
   for (const plugin of compilation.options.plugins) {
     const ctor = (plugin as { constructor?: HtmlPluginConstructor & { name?: string } })?.constructor
-    if (ctor?.name !== 'HtmlWebpackPlugin') {
+    if (!ctor?.name || !HTML_PLUGIN_NAMES.has(ctor.name)) {
       continue
     }
     try {
-      const hooks = ctor.getHooks?.(compilation)
+      const hooks = ctor.getHooks?.(compilation) ?? ctor.getCompilationHooks?.(compilation)
       if (hooks?.beforeEmit) {
         return hooks
       }

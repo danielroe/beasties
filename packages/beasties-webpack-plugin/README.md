@@ -15,6 +15,7 @@ Beasties' design makes it a good fit when inlining critical CSS for prerendered/
 
 *   Fast - no browser, few dependencies
 *   Integrates with [html-webpack-plugin]
+*   Works with [Rspack], including `html-rspack-plugin` and Rspack's builtin `HtmlRspackPlugin`
 *   Works with `webpack-dev-server` / `webpack serve`
 *   Supports preloading and/or inlining critical fonts
 *   Prunes unused CSS keyframes and media queries
@@ -44,6 +45,10 @@ module.exports = {
 ```
 
 That's it! Now when you run Webpack, the CSS used by your HTML will be inlined and the imports for your full CSS will be converted to load asynchronously.
+
+### Rspack
+
+The same plugin works with [Rspack] - add it to `plugins` in `rspack.config.js` exactly as above. It will hook into `html-rspack-plugin` or Rspack's builtin `HtmlRspackPlugin` if either is present, and otherwise process the first emitted HTML asset.
 
 ## Usage
 
@@ -94,5 +99,7 @@ There are a number of other libraries that can inline Critical CSS, each with a 
 This is not an official Google product.
 
 [critical css]: https://www.smashingmagazine.com/2015/08/understanding-critical-css/
+
+[Rspack]: https://rspack.dev/
 
 [html-webpack-plugin]: https://github.com/jantimon/html-webpack-plugin

@@ -20,7 +20,7 @@ import type { Compilation, Compiler, OutputFileSystem, sources } from 'webpack'
 import path from 'node:path'
 import Beasties from 'beasties'
 import { minimatch } from 'minimatch'
-import { getHtmlPluginHooks, tap } from './util'
+import { getHtmlPluginHooks, hasHook, tap } from './util'
 
 // Used to annotate this plugin's hooks in Tappable invocations
 const PLUGIN_NAME = 'beasties-webpack-plugin'
@@ -71,7 +71,7 @@ export default class BeastiesWebpackPlugin extends Beasties {
       this.options.publicPath
         // from html-webpack-plugin
         = compiler.options.output.publicPath || typeof compiler.options.output.publicPath === 'function'
-          ? compilation.getAssetPath(compiler.options.output.publicPath!, compilation)
+          ? compilation.getAssetPath(compiler.options.output.publicPath!, compilation.hash ? { hash: compilation.hash } : {})
           : compiler.options.output.publicPath!
 
       const htmlPluginHooks = getHtmlPluginHooks(compilation)
@@ -93,11 +93,7 @@ export default class BeastiesWebpackPlugin extends Beasties {
       }
 
       // get an "after" hook into html-webpack-plugin's HTML generation.
-      if (
-        compilation.hooks
-        // @ts-expect-error - compat html-webpack-plugin 3.x
-        && compilation.hooks.htmlWebpackPluginAfterHtmlProcessing
-      ) {
+      if (hasHook(compilation, 'htmlWebpackPluginAfterHtmlProcessing')) {
         tap(
           compilation,
           'html-webpack-plugin-after-html-processing',
@@ -110,10 +106,10 @@ export default class BeastiesWebpackPlugin extends Beasties {
         htmlPluginHooks.beforeEmit.tapAsync(PLUGIN_NAME, handleHtmlPluginData)
       }
       else {
-        // If html-webpack-plugin isn't used, process the first HTML asset as an optimize step
+        // If an html plugin isn't used, process the first HTML asset as an optimize step
         tap(
           compilation,
-          'optimize-assets',
+          hasHook(compilation, 'optimizeAssets') || !hasHook(compilation, 'processAssets') ? 'optimize-assets' : 'process-assets',
           PLUGIN_NAME,
           true,
           (assets: /* CompilationAssets */{ [id: string]: sources.Source }, callback: (err?: null | Error) => void) => {
@@ -256,7 +252,7 @@ export default class BeastiesWebpackPlugin extends Beasties {
         this.compilation.deleteAsset(style.$$assetName)
         return true
       }
-      this.compilation.assets[style.$$assetName] = new this.compiler.webpack.sources.SourceMapSource(sheetInverse, style.$$assetName, before)
+      this.compilation.assets[style.$$assetName] = new this.compiler.webpack.sources.RawSource(sheetInverse)
     }
     else {
       this.logger.warn(
