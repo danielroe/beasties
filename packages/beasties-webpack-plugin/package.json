@@ -68,13 +68,13 @@
   "devDependencies": {
     "@rspack/core": "2.2.1",
     "@types/jsdom": "30.0.0",
-    "css-loader": "7.1.4",
+    "css-loader": "7.1.5",
     "documentation": "14.0.3",
     "file-loader": "6.2.0",
     "html-rspack-plugin": "6.1.9",
     "html-webpack-plugin": "5.6.8",
     "mini-css-extract-plugin": "2.10.2",
     "tsdown": "0.22.14",
-    "webpack": "5.109.2"
+    "webpack": "5.110.1"
   }
 }

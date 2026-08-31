@@ -43,8 +43,8 @@
     "installed-check": "11.0.0",
     "jsdom": "30.0.1",
     "knip": "6.33.0",
-    "lint-staged": "17.3.0",
-    "simple-git-hooks": "2.13.1",
+    "lint-staged": "17.4.1",
+    "simple-git-hooks": "2.14.0",
     "typescript": "6.0.3",
     "vitest": "4.1.11"
   },
