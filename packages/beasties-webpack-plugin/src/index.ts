@@ -17,18 +17,10 @@
 import type { Options } from 'beasties'
 import type HtmlWebpackPlugin from 'html-webpack-plugin'
 import type { Compilation, Compiler, OutputFileSystem, sources } from 'webpack'
-import { createRequire } from 'node:module'
 import path from 'node:path'
 import Beasties from 'beasties'
 import { minimatch } from 'minimatch'
-import { tap } from './util'
-
-const $require
-  = typeof require !== 'undefined'
-    ? require
-    // TODO remove this
-    // eslint-disable-next-line no-eval
-    : createRequire(eval('import.meta.url'))
+import { getHtmlPluginHooks, tap } from './util'
 
 // Used to annotate this plugin's hooks in Tappable invocations
 const PLUGIN_NAME = 'beasties-webpack-plugin'
@@ -75,8 +67,6 @@ export default class BeastiesWebpackPlugin extends Beasties {
     })
     // hook into the compiler to get a Compilation instance...
     tap(compiler, 'compilation', PLUGIN_NAME, false, (compilation: Compilation) => {
-      let htmlPluginHooks: HtmlWebpackPlugin.Hooks | undefined
-
       this.options.path = compiler.options.output.path!
       this.options.publicPath
         // from html-webpack-plugin
@@ -84,13 +74,7 @@ export default class BeastiesWebpackPlugin extends Beasties {
           ? compilation.getAssetPath(compiler.options.output.publicPath!, compilation)
           : compiler.options.output.publicPath!
 
-      const hasHtmlPlugin = compilation.options.plugins.some(
-        p => p?.constructor?.name === 'HtmlWebpackPlugin',
-      )
-      try {
-        htmlPluginHooks = $require('html-webpack-plugin').getHooks(compilation)
-      }
-      catch {}
+      const htmlPluginHooks = getHtmlPluginHooks(compilation)
       /**
        * @param {{html: string; outputName: string; plugin: HtmlWebpackPlugin}} htmlPluginData
        * @param callback
@@ -122,7 +106,7 @@ export default class BeastiesWebpackPlugin extends Beasties {
           handleHtmlPluginData,
         )
       }
-      else if (hasHtmlPlugin && htmlPluginHooks) {
+      else if (htmlPluginHooks) {
         htmlPluginHooks.beforeEmit.tapAsync(PLUGIN_NAME, handleHtmlPluginData)
       }
       else {
