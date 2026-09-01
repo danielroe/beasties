@@ -1,3 +1,4 @@
+import { DomUtils, parseDocument } from 'htmlparser2'
 import { describe, expect, it } from 'vitest'
 
 import { compileSheet } from '../src/compiler'
@@ -7,6 +8,11 @@ import { createProcessor } from '../src/runtime'
 const CSS = 'h1 { color: blue; }'
 
 const DEFERRED_SCRIPT = `document.querySelectorAll('link[data-beasties-media]').forEach(function(l){l.media=l.getAttribute('data-beasties-media');l.removeAttribute('data-beasties-media')})`
+
+function scriptContents(html: string): string[] {
+  const document = parseDocument(html)
+  return DomUtils.findAll(node => node.tagName === 'script', document.children).map(node => DomUtils.textContent(node))
+}
 
 function classic(options: ConstructorParameters<typeof Beasties>[0] = {}) {
   const beasties = new Beasties({
@@ -115,7 +121,7 @@ describe('"media-script" preload mode (classic)', () => {
       html(`<link rel="stylesheet" href="/style.css" media="all';alert(1);'">`),
     )
     expect(result).toContain('data-beasties-media="all"')
-    expect(result.match(/<script[^>]*>[\s\S]*?<\/script>/gi)).toEqual([`<script>${DEFERRED_SCRIPT}</script>`])
+    expect(scriptContents(result)).toEqual([DEFERRED_SCRIPT])
   })
 })
 
@@ -167,6 +173,6 @@ describe('"media-script" preload mode (compiled)', () => {
       html(`<link rel="stylesheet" href="/style.css" media="all';alert(1);'">`),
     )
     expect(result).toContain('data-beasties-media="all"')
-    expect(result.match(/<script[^>]*>[\s\S]*?<\/script>/gi)).toEqual([`<script>${DEFERRED_SCRIPT}</script>`])
+    expect(scriptContents(result)).toEqual([DEFERRED_SCRIPT])
   })
 })
