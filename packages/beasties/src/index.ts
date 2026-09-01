@@ -25,6 +25,7 @@ import path from 'node:path'
 import { applyMarkedSelectors, markOnly, parseStylesheet, serializeStylesheet, validateMediaQuery, walkStyleRules, walkStyleRulesWithReverseMirror } from './css'
 import { CRITTERS_DEPRECATION_WARNING, parseDirective } from './directives'
 import { createDocument, serializeDocument } from './dom'
+import { isSafeMediaValue } from './media'
 import { isAlwaysCriticalSelector, normalizeCssSelector } from './selectors'
 import { REMOTE_URL_RE, resolveCssUrl, rewriteCssUrls } from './urls'
 import { createLogger, isSubpath } from './util'
@@ -343,7 +344,7 @@ export default class Beasties {
 
     let media: string | undefined = link.getAttribute('media')
 
-    if (media && !validateMediaQuery(media)) {
+    if (media && (!validateMediaQuery(media) || !isSafeMediaValue(media))) {
       media = undefined
     }
     const preloadMode = this.options.preload

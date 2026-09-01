@@ -65,4 +65,20 @@ describe('beasties', () => {
     `)
     expect(hasEvilScript(html)).toBeFalsy()
   })
+
+  it('should not let a quote-bearing media value break out of the onload handler', async () => {
+    const beasties = new Beasties({ preload: 'media', logLevel: 'silent' })
+    beasties.readFile = () => `h1 { color: red }`
+    const html = await beasties.process(`
+        <html>
+            <head>
+                <link rel=stylesheet href="/style.css" media="all';alert(1);'">
+            </head>
+            <body>
+                <h1>hi</h1>
+            </body>
+    `)
+    expect(html).toContain(`onload="this.media='all'"`)
+    expect(html).not.toMatch(/onload="[^"]*alert/)
+  })
 })
