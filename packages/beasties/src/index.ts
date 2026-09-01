@@ -26,7 +26,7 @@ import { applyMarkedSelectors, markOnly, parseStylesheet, serializeStylesheet, v
 import { CRITTERS_DEPRECATION_WARNING, parseDirective } from './directives'
 import { createDocument, serializeDocument } from './dom'
 import { isSafeMediaValue } from './media'
-import { isAlwaysCriticalSelector, normalizeCssSelector } from './selectors'
+import { isAlwaysCriticalSelector, isUnevaluableSelectorError, normalizeCssSelector } from './selectors'
 import { REMOTE_URL_RE, resolveCssUrl, rewriteCssUrls } from './urls'
 import { createDeduplicatingLogger, createLogger, isSubpath } from './util'
 
@@ -559,7 +559,7 @@ export default class Beasties {
     // a string to search for font names (very loose)
     let criticalFonts = ''
 
-    const failedSelectors: string[] = []
+    const unparseableSelectors: string[] = []
 
     const criticalKeyframeNames = new Set()
 
@@ -662,7 +662,13 @@ export default class Beasties {
               return beastiesContainers.some(container => container.exists(sel))
             }
             catch (e) {
-              failedSelectors.push(`${sel} -> ${(e as Error).message || (e as Error).toString()}`)
+              const message = (e as Error).message || String(e)
+              if (isUnevaluableSelectorError(message)) {
+                this.logger.debug?.(`Cannot statically evaluate selector, excluding it from critical CSS: ${sel} (${message})`)
+              }
+              else {
+                unparseableSelectors.push(`${sel} (${message})`)
+              }
               return false
             }
           })
@@ -705,9 +711,10 @@ export default class Beasties {
       }),
     )
 
-    if (failedSelectors.length !== 0) {
+    if (unparseableSelectors.length !== 0) {
+      const single = unparseableSelectors.length === 1
       this.logger.warn?.(
-        `${failedSelectors.length} rules skipped due to selector errors:\n  ${failedSelectors.join('\n  ')}`,
+        `Could not parse ${single ? '1 selector' : `${unparseableSelectors.length} selectors`} in ${style.$$name || 'inline styles'}; ${single ? 'its rule was' : 'their rules were'} left out of the critical CSS but still ${single ? 'applies' : 'apply'} once the full stylesheet loads:\n  ${unparseableSelectors.join('\n  ')}`,
       )
     }
 

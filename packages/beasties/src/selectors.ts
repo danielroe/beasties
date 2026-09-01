@@ -3,6 +3,15 @@ const implicitUniversalPattern = /([>+~])\s*(?!\1)([>+~])/g
 const emptyCombinatorPattern = /([>+~])\s*(?=\1|$)/g
 const removeTrailingCommasPattern = /\(\s*,|,\s*\)/g
 const BEFORE_AFTER_PSEUDO_RE = /^::?(?:before|after)$/
+const UNEVALUABLE_SELECTOR_ERROR_RE = /^(?:unknown pseudo-class|pseudo-elements are not supported)/i
+
+/**
+ * Whether a selector matching error means the selector is valid CSS that cannot
+ * be evaluated statically (rather than a selector we failed to parse).
+ */
+export function isUnevaluableSelectorError(message: string): boolean {
+  return UNEVALUABLE_SELECTOR_ERROR_RE.test(message)
+}
 
 /**
  * Selectors that are considered critical regardless of whether they match an element in the document.
