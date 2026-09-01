@@ -115,7 +115,7 @@ describe('"media-script" preload mode (classic)', () => {
       html(`<link rel="stylesheet" href="/style.css" media="all';alert(1);'">`),
     )
     expect(result).toContain('data-beasties-media="all"')
-    expect(result.match(/<script[^>]*>[\s\S]*?<\/script>/g)).toEqual([`<script>${DEFERRED_SCRIPT}</script>`])
+    expect(result.match(/<script[^>]*>[\s\S]*?<\/script>/gi)).toEqual([`<script>${DEFERRED_SCRIPT}</script>`])
   })
 })
 
@@ -167,6 +167,6 @@ describe('"media-script" preload mode (compiled)', () => {
       html(`<link rel="stylesheet" href="/style.css" media="all';alert(1);'">`),
     )
     expect(result).toContain('data-beasties-media="all"')
-    expect(result.match(/<script[^>]*>[\s\S]*?<\/script>/g)).toEqual([`<script>${DEFERRED_SCRIPT}</script>`])
+    expect(result.match(/<script[^>]*>[\s\S]*?<\/script>/gi)).toEqual([`<script>${DEFERRED_SCRIPT}</script>`])
   })
 })
