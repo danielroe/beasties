@@ -113,7 +113,7 @@ export default class Beasties {
     const start = Date.now()
 
     // Parse the generated HTML in a DOM we can mutate
-    const document = createDocument(html)
+    const document = createDocument(html, this.logger)
 
     if (this.options.additionalStylesheets.length > 0) {
       await this.embedAdditionalStylesheet(document)
