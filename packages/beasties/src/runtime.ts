@@ -764,7 +764,7 @@ function ruleText(rule: CompiledRule, tokens: DocumentTokens, invert = false): s
  * The mechanism to use for lazy-loading stylesheets, mirroring the classic
  * beasties `preload` option.
  */
-export type PreloadStrategy = 'body' | 'media' | 'swap' | 'swap-high' | 'swap-low' | 'js' | 'js-lazy'
+export type PreloadStrategy = 'body' | 'media' | 'media-script' | 'swap' | 'swap-high' | 'swap-low' | 'js' | 'js-lazy'
 
 export interface ProcessorOptions extends RuntimeOptions {
   /**
@@ -776,6 +776,10 @@ export interface ProcessorOptions extends RuntimeOptions {
    * Add `<noscript>` fallback to JS-based strategies _(default: `true`)_
    */
   noscriptFallback?: boolean
+  /**
+   * CSP nonce to set on every `<style>` and `<script>` element beasties injects
+   */
+  nonce?: string
   /**
    * Cache rendered critical CSS keyed by the set of tokens found in the
    * document, so pages with the same shape don't re-evaluate the compiled
@@ -826,12 +830,16 @@ function fingerprintTokens(tokens: DocumentTokens): string {
 const CSS_HREF_RE = /\.css(?:[?#]|$)/i
 const LINK_TAG_RE = /<link\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi
 const REL_STYLESHEET_RE = /\brel\s*=\s*(?:"stylesheet"|'stylesheet'|stylesheet(?=[\s>]))/i
+
 const CSS_LOADER_PREAMBLE = 'function $loadcss(u,m,l){(l=document.createElement(\'link\')).rel=\'stylesheet\';l.href=u;document.head.appendChild(l)}'
 const CSS_LOADER_LAZY_PREAMBLE = CSS_LOADER_PREAMBLE.replace(
   'l.href',
   'l.media=\'print\';l.onload=function(){l.media=m};l.href',
 )
 const CSS_LOADER_INVOKE = '$loadcss(document.currentScript.dataset.href,document.currentScript.dataset.media)'
+
+const DEFERRED_MEDIA_ATTR = 'data-beasties-media'
+const DEFERRED_MEDIA_SCRIPT = `document.querySelectorAll('link[${DEFERRED_MEDIA_ATTR}]').forEach(function(l){l.media=l.getAttribute('${DEFERRED_MEDIA_ATTR}');l.removeAttribute('${DEFERRED_MEDIA_ATTR}')})`
 
 function attrValueRegex(name: string): RegExp {
   return new RegExp(`(^|\\s)(${name})\\s*=\\s*("[^"]*"|'[^']*'|[^\\s>]+)`, 'i')
@@ -964,6 +972,7 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
   // the inverse is only needed to compare against `minimumExternalSize`
   const renderOptions = { ...options, inverse: !!options.minimumExternalSize }
   const fullCssCache = new Map<CompiledSheet, string>()
+  const nonceAttr = options.nonce ? ` nonce="${escapeAttr(options.nonce)}"` : ''
 
   function fullCss(sheet: CompiledSheet): string {
     let css = fullCssCache.get(sheet)
@@ -1055,6 +1064,7 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
     let firstLinkIndex = -1
     const edits: Edit[] = []
     const bodyAppends: string[] = []
+    let deferredMedia = false
     const criticalParts: string[] = []
     const fontPreloads = new Set<string>()
     let isFirstSheet = true
@@ -1112,6 +1122,11 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
         bodyAppends.push(tag)
         newTag = ''
       }
+      else if (strategy === 'media-script') {
+        newTag = setAttr(setAttr(tag, 'media', 'print'), DEFERRED_MEDIA_ATTR, media || 'all')
+        deferredMedia = true
+        noscriptFallback = true
+      }
       else if (strategy === 'media') {
         newTag = setAttr(setAttr(tag, 'media', 'print'), 'onload', `this.media='${media || 'all'}'`)
         noscriptFallback = true
@@ -1130,7 +1145,7 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
       }
       else if (strategy === 'js' || strategy === 'js-lazy') {
         const preamble = isFirstSheet ? (strategy === 'js-lazy' ? CSS_LOADER_LAZY_PREAMBLE : CSS_LOADER_PREAMBLE) : ''
-        scriptAfter = `<script data-href="${escapeAttr(href)}" data-media="${escapeAttr(media || 'all')}">${preamble}${CSS_LOADER_INVOKE}</script>`
+        scriptAfter = `<script${nonceAttr} data-href="${escapeAttr(href)}" data-media="${escapeAttr(media || 'all')}">${preamble}${CSS_LOADER_INVOKE}</script>`
         newTag = toPreload(tag)
         noscriptFallback = true
       }
@@ -1170,7 +1185,11 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
       headInsertions.push(`<link rel="preload" as="font" crossorigin="anonymous" href="${escapeAttr(preload)}">`)
     }
     if (critical) {
-      headInsertions.push(`<style>${critical}</style>`)
+      headInsertions.push(`<style${nonceAttr}>${critical}</style>`)
+    }
+
+    if (deferredMedia) {
+      bodyAppends.push(`<script${nonceAttr}>${DEFERRED_MEDIA_SCRIPT}</script>`)
     }
 
     if (headInsertions.length > 0) {
