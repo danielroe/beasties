@@ -1,4 +1,4 @@
-import type { Logger, LogLevel } from './util'
+import type { DedupeScope, Logger, LogLevel } from './util'
 
 /**
  * The mechanism to use for lazy-loading stylesheets.
@@ -118,6 +118,10 @@ export interface Options {
    * Provide a custom logger interface {@link Logger logger}
    */
   logger?: Logger
+  /**
+   * Suppress repeated identical warnings and errors, within the given {@link DedupeScope scope} _(default: `"process"`)_
+   */
+  dedupeWarnings?: DedupeScope | true
 }
 
 export type { Logger }

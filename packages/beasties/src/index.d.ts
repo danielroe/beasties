@@ -69,6 +69,7 @@ export interface Options {
   logLevel?: 'info' | 'warn' | 'error' | 'trace' | 'debug' | 'silent'
   reduceInlineStyles?: boolean
   logger?: Logger
+  dedupeWarnings?: 'process' | 'instance' | false | true
 }
 
 export interface Logger {

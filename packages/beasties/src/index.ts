@@ -28,7 +28,7 @@ import { createDocument, serializeDocument } from './dom'
 import { isSafeMediaValue } from './media'
 import { isAlwaysCriticalSelector, normalizeCssSelector } from './selectors'
 import { REMOTE_URL_RE, resolveCssUrl, rewriteCssUrls } from './urls'
-import { createLogger, isSubpath } from './util'
+import { createDeduplicatingLogger, createLogger, isSubpath } from './util'
 
 const LEADING_SLASH_OR_QUERY_RE = /^\/(?!\/)|[?#].*$/g
 const PUBLIC_PATH_RE = /(^\/(?!\/)|\/$)/g
@@ -50,7 +50,7 @@ interface PreFetchedStylesheet {
 
 export default class Beasties {
   #selectorCache = new Map<string, string>()
-  options: Options & Required<Pick<Options, 'logLevel' | 'path' | 'publicPath' | 'reduceInlineStyles' | 'pruneSource' | 'additionalStylesheets'>> & { allowRules: Array<string | RegExp> }
+  options: Options & Required<Pick<Options, 'logLevel' | 'path' | 'publicPath' | 'reduceInlineStyles' | 'pruneSource' | 'additionalStylesheets' | 'dedupeWarnings'>> & { allowRules: Array<string | RegExp> }
   logger: Logger
   fs?: typeof import('node:fs')
 
@@ -63,9 +63,13 @@ export default class Beasties {
       pruneSource: false,
       additionalStylesheets: [],
       allowRules: [],
+      dedupeWarnings: 'process',
     }, options)
 
-    this.logger = this.options.logger || createLogger(this.options.logLevel)
+    this.logger = createDeduplicatingLogger(
+      this.options.logger || createLogger(this.options.logLevel),
+      this.options.dedupeWarnings === true ? 'process' : this.options.dedupeWarnings,
+    )
   }
 
   /**
