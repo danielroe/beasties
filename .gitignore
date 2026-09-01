@@ -4,3 +4,4 @@ dist
 next_sites
 coverage
 .vscode
+dist-rspack

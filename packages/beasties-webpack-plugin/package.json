@@ -34,15 +34,13 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs",
-      "default": "./dist/index.mjs"
+      "require": "./dist/index.cjs"
     }
   },
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/index.d.cts",
   "files": [
     "dist",
     "src"
@@ -51,7 +49,7 @@
     "node": "^20.19.0 || >=22.0.0"
   },
   "scripts": {
-    "build": "unbuild",
+    "build": "tsdown",
     "docs": "documentation readme src -q --no-markdown-toc -a public -s Usage --sort-order alpha",
     "prepack": "npm run -s build"
   },
@@ -68,13 +66,15 @@
     "minimatch": "^10.0.1"
   },
   "devDependencies": {
-    "@types/jsdom": "28.0.3",
-    "css-loader": "7.1.4",
+    "@rspack/core": "2.2.1",
+    "@types/jsdom": "30.0.0",
+    "css-loader": "7.1.5",
     "documentation": "14.0.3",
     "file-loader": "6.2.0",
-    "html-webpack-plugin": "5.6.7",
+    "html-rspack-plugin": "6.1.9",
+    "html-webpack-plugin": "5.6.8",
     "mini-css-extract-plugin": "2.10.2",
-    "unbuild": "3.6.1",
-    "webpack": "5.108.4"
+    "tsdown": "0.22.14",
+    "webpack": "5.110.2"
   }
 }

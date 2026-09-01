@@ -57,7 +57,7 @@ function buildCache(container: Node) {
  * The DOM implementation is an htmlparser2 DOM enhanced with basic DOM mutation methods.
  * @param html   HTML to parse into a Document instance
  */
-export function createDocument(html: string) {
+export function createDocument(html: string): HTMLDocument {
   const document = parseDocument(html, { decodeEntities: false })
 
   extendDocument(document)
@@ -84,7 +84,7 @@ export function createDocument(html: string) {
 /**
  * Serialize a Document to an HTML String
  */
-export function serializeDocument(document: HTMLDocument) {
+export function serializeDocument(document: HTMLDocument): string {
   return render(document, { decodeEntities: false })
 }
 

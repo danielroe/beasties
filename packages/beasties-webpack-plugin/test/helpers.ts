@@ -36,67 +36,90 @@ function parseDom(html: string) {
 }
 
 // returns a promise resolving to the contents of a file
-export function readFile(file: string) {
+export function readFile(file: string): Promise<string> {
   return promisify(fs.readFile)(path.resolve(cwd, file), 'utf-8')
 }
 
-// invoke webpack on a given entry module, optionally mutating the default configuration
-export function compile(entry: string, configDecorator: (config: webpack.Configuration) => webpack.Configuration | void) {
-  return new Promise<webpack.StatsCompilation>((resolve, reject) => {
-    const context = path.dirname(path.resolve(cwd, entry))
-    entry = path.basename(entry)
-    let config: webpack.Configuration = {
-      context,
-      entry: path.resolve(context, entry),
-      output: {
-        path: path.resolve(cwd, path.resolve(context, 'dist')),
-        filename: 'bundle.js',
-        chunkFilename: '[name].chunk.js',
-      },
-      resolveLoader: {
-        modules: [path.resolve(cwd, '../node_modules')],
-      },
-      module: {
-        rules: [],
-      },
-      plugins: [],
-    }
-    if (configDecorator) {
-      config = configDecorator(config) || config
-    }
+type Bundle = (config: any, callback: (err: Error | null | undefined, stats: any) => void) => unknown
 
-    webpack(config, (err, stats) => {
-      if (err)
-        return reject(err)
-      const info = stats!.toJson()
-      if (stats?.hasErrors()) {
-        return reject(info.errors?.[0]?.details)
+type ConfigDecorator<Config> = (config: Config) => Config | void
+
+export interface Helpers<Config> {
+  outDir: string
+  compile: (entry: string, configDecorator: ConfigDecorator<Config>) => Promise<webpack.StatsCompilation>
+  compileToHtml: (fixture: string, configDecorator: ConfigDecorator<Config>, beastiesOptions?: Options) => Promise<webpack.StatsCompilation & { html: string, document: Document }>
+}
+
+// each bundler writes to its own output directory so fixtures can be shared without racing
+export function createHelpers<Config = webpack.Configuration>(bundle: Bundle, outDir: string): Helpers<Config> {
+  // invoke the bundler on a given entry module, optionally mutating the default configuration
+  function compile(entry: string, configDecorator: (config: Config) => Config | void) {
+    return new Promise<webpack.StatsCompilation>((resolve, reject) => {
+      const context = path.dirname(path.resolve(cwd, entry))
+      entry = path.basename(entry)
+      let config = {
+        context,
+        entry: path.resolve(context, entry),
+        output: {
+          path: path.resolve(cwd, path.resolve(context, outDir)),
+          filename: 'bundle.js',
+          chunkFilename: '[name].chunk.js',
+        },
+        resolveLoader: {
+          modules: [path.resolve(cwd, '../node_modules')],
+        },
+        module: {
+          rules: [],
+        },
+        optimization: {
+          minimize: false,
+        },
+        plugins: [],
+      } as Config
+      if (configDecorator) {
+        config = configDecorator(config) || config
       }
-      resolve(info)
+
+      bundle(config, (err, stats) => {
+        if (err)
+          return reject(err)
+        const info = stats!.toJson()
+        if (stats?.hasErrors()) {
+          return reject(new Error(info.errors?.[0]?.details || info.errors?.[0]?.message))
+        }
+        resolve(info)
+      })
     })
-  })
+  }
+
+  // invoke compile(), applying Beasties to inline CSS and injecting `html` and `document` properties into the build info.
+  async function compileToHtml(
+    fixture: string,
+    configDecorator: (config: Config) => Config | void,
+    beastiesOptions: Options = {},
+  ) {
+    const info = await compile(`fixtures/${fixture}/index.js`, (config) => {
+      config = configDecorator(config) || config;
+      (config as webpack.Configuration).plugins!.push(
+        new BeastiesWebpackPlugin({
+          pruneSource: true,
+          compress: false,
+          logLevel: 'silent',
+          ...beastiesOptions,
+        }),
+      )
+    })
+    const html = await readFile(`fixtures/${fixture}/${outDir}/index.html`)
+    return Object.assign(info, {
+      html,
+      document: parseDom(html),
+    })
+  }
+
+  return { outDir, compile, compileToHtml }
 }
 
-// invoke webpack via compile(), applying Beasties to inline CSS and injecting `html` and `document` properties into the webpack build info.
-export async function compileToHtml(
-  fixture: string,
-  configDecorator: (config: webpack.Configuration) => webpack.Configuration | void,
-  beastiesOptions: Options = {},
-) {
-  const info = await compile(`fixtures/${fixture}/index.js`, (config) => {
-    config = configDecorator(config) || config
-    config.plugins!.push(
-      new BeastiesWebpackPlugin({
-        pruneSource: true,
-        compress: false,
-        logLevel: 'silent',
-        ...beastiesOptions,
-      }),
-    )
-  })
-  const html = await readFile(`fixtures/${fixture}/dist/index.html`)
-  return Object.assign(info, {
-    html,
-    document: parseDom(html),
-  })
-}
+const webpackHelpers: Helpers<webpack.Configuration> = createHelpers<webpack.Configuration>(webpack as Bundle, 'dist')
+
+export const compile: Helpers<webpack.Configuration>['compile'] = webpackHelpers.compile
+export const compileToHtml: Helpers<webpack.Configuration>['compileToHtml'] = webpackHelpers.compileToHtml

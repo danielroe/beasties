@@ -17,18 +17,10 @@
 import type { Options } from 'beasties'
 import type HtmlWebpackPlugin from 'html-webpack-plugin'
 import type { Compilation, Compiler, OutputFileSystem, sources } from 'webpack'
-import { createRequire } from 'node:module'
 import path from 'node:path'
 import Beasties from 'beasties'
 import { minimatch } from 'minimatch'
-import { tap } from './util'
-
-const $require
-  = typeof require !== 'undefined'
-    ? require
-    // TODO remove this
-    // eslint-disable-next-line no-eval
-    : createRequire(eval('import.meta.url'))
+import { getHtmlPluginHooks, hasHook, tap } from './util'
 
 // Used to annotate this plugin's hooks in Tappable invocations
 const PLUGIN_NAME = 'beasties-webpack-plugin'
@@ -56,11 +48,11 @@ const DOT_SLASH_RE = /^\.\//
  * }
  */
 export default class BeastiesWebpackPlugin extends Beasties {
-  declare compilation: Compilation
-  declare compiler: Compiler
-  declare fs: OutputFileSystem
-  declare logger: Required<NonNullable<Options['logger']>>
-  declare options: Options & Required<Pick<Options, 'logLevel' | 'path' | 'publicPath' | 'reduceInlineStyles' | 'pruneSource' | 'additionalStylesheets'>> & { allowRules: Array<string | RegExp> }
+  private declare compilation: Compilation
+  private declare compiler: Compiler
+  private declare fs: OutputFileSystem
+  private declare logger: Required<NonNullable<Options['logger']>>
+  private declare options: Options & Required<Pick<Options, 'logLevel' | 'path' | 'publicPath' | 'reduceInlineStyles' | 'pruneSource' | 'additionalStylesheets'>> & { allowRules: Array<string | RegExp> }
   constructor(options: Options) {
     super(options)
   }
@@ -68,29 +60,21 @@ export default class BeastiesWebpackPlugin extends Beasties {
   /**
    * Invoked by Webpack during plugin initialization
    */
-  apply(compiler: Compiler) {
+  apply(compiler: Compiler): void {
     this.compiler = compiler
     this.logger = Object.assign(compiler.getInfrastructureLogger(PLUGIN_NAME), {
       silent(_: string): void { },
     })
     // hook into the compiler to get a Compilation instance...
     tap(compiler, 'compilation', PLUGIN_NAME, false, (compilation: Compilation) => {
-      let htmlPluginHooks: HtmlWebpackPlugin.Hooks | undefined
-
       this.options.path = compiler.options.output.path!
       this.options.publicPath
         // from html-webpack-plugin
         = compiler.options.output.publicPath || typeof compiler.options.output.publicPath === 'function'
-          ? compilation.getAssetPath(compiler.options.output.publicPath!, compilation)
+          ? compilation.getAssetPath(compiler.options.output.publicPath!, compilation.hash ? { hash: compilation.hash } : {})
           : compiler.options.output.publicPath!
 
-      const hasHtmlPlugin = compilation.options.plugins.some(
-        p => p?.constructor?.name === 'HtmlWebpackPlugin',
-      )
-      try {
-        htmlPluginHooks = $require('html-webpack-plugin').getHooks(compilation)
-      }
-      catch {}
+      const htmlPluginHooks = getHtmlPluginHooks(compilation)
       /**
        * @param {{html: string; outputName: string; plugin: HtmlWebpackPlugin}} htmlPluginData
        * @param callback
@@ -109,11 +93,7 @@ export default class BeastiesWebpackPlugin extends Beasties {
       }
 
       // get an "after" hook into html-webpack-plugin's HTML generation.
-      if (
-        compilation.hooks
-        // @ts-expect-error - compat html-webpack-plugin 3.x
-        && compilation.hooks.htmlWebpackPluginAfterHtmlProcessing
-      ) {
+      if (hasHook(compilation, 'htmlWebpackPluginAfterHtmlProcessing')) {
         tap(
           compilation,
           'html-webpack-plugin-after-html-processing',
@@ -122,14 +102,14 @@ export default class BeastiesWebpackPlugin extends Beasties {
           handleHtmlPluginData,
         )
       }
-      else if (hasHtmlPlugin && htmlPluginHooks) {
+      else if (htmlPluginHooks) {
         htmlPluginHooks.beforeEmit.tapAsync(PLUGIN_NAME, handleHtmlPluginData)
       }
       else {
-        // If html-webpack-plugin isn't used, process the first HTML asset as an optimize step
+        // If an html plugin isn't used, process the first HTML asset as an optimize step
         tap(
           compilation,
-          'optimize-assets',
+          hasHook(compilation, 'optimizeAssets') || !hasHook(compilation, 'processAssets') ? 'optimize-assets' : 'process-assets',
           PLUGIN_NAME,
           true,
           (assets: /* CompilationAssets */{ [id: string]: sources.Source }, callback: (err?: null | Error) => void) => {
@@ -237,7 +217,7 @@ export default class BeastiesWebpackPlugin extends Beasties {
   /**
    * Inline the stylesheets from options.additionalStylesheets (assuming it passes `options.filter`)
    */
-  async embedAdditionalStylesheet(document: Document) {
+  async embedAdditionalStylesheet(document: Document): Promise<void> {
     const styleSheetsIncluded: string[] = [];
     (this.options.additionalStylesheets || []).forEach((cssFile: string) => {
       if (styleSheetsIncluded.includes(cssFile)) {
@@ -272,7 +252,7 @@ export default class BeastiesWebpackPlugin extends Beasties {
         this.compilation.deleteAsset(style.$$assetName)
         return true
       }
-      this.compilation.assets[style.$$assetName] = new this.compiler.webpack.sources.SourceMapSource(sheetInverse, style.$$assetName, before)
+      this.compilation.assets[style.$$assetName] = new this.compiler.webpack.sources.RawSource(sheetInverse)
     }
     else {
       this.logger.warn(

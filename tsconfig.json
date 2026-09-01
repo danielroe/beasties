@@ -7,16 +7,26 @@
     ],
     "moduleDetection": "force",
     "module": "preserve",
+    "paths": {
+      "beasties": [
+        "./packages/beasties/src/index.d.ts"
+      ]
+    },
     "resolveJsonModule": true,
-    "allowJs": true,
     "strict": true,
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
+    "declaration": true,
     "noEmit": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
+    "isolatedDeclarations": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true
-  }
+  },
+  "exclude": [
+    "**/dist/**",
+    "coverage"
+  ]
 }

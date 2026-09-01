@@ -48,7 +48,7 @@ const defaultLogger = {
 
 export type LogLevel = typeof LOG_LEVELS[number]
 
-export function createLogger(logLevel: LogLevel) {
+export function createLogger(logLevel: LogLevel): Logger {
   const logLevelIdx = LOG_LEVELS.indexOf(logLevel)
 
   return LOG_LEVELS.reduce((logger: Partial<Logger>, type, index) => {
@@ -62,6 +62,6 @@ export function createLogger(logLevel: LogLevel) {
   }, {})
 }
 
-export function isSubpath(basePath: string, currentPath: string) {
+export function isSubpath(basePath: string, currentPath: string): boolean {
   return !path.relative(basePath, currentPath).startsWith('..')
 }

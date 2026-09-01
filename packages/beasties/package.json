@@ -11,6 +11,11 @@
     {
       "name": "Janicklas Ralph",
       "email": "janicklas@google.com"
+    },
+    {
+      "name": "Daniel Roe",
+      "email": "daniel@roe.dev",
+      "url": "https://roe.dev"
     }
   ],
   "license": "Apache-2.0",
@@ -45,8 +50,7 @@
     "node": ">=20.19.0"
   },
   "scripts": {
-    "build": "unbuild && node -e \"require('fs/promises').cp('src/index.d.ts', 'dist/index.d.ts')\"",
-    "build:stub": "unbuild --stub && node -e \"require('fs/promises').cp('src/index.d.ts', 'dist/index.d.ts')\"",
+    "build": "tsdown",
     "docs": "documentation readme src -q --no-markdown-toc -a public -s Usage --sort-order alpha",
     "prepack": "npm run -s build"
   },
@@ -62,8 +66,8 @@
     "postcss-safe-parser": "^7.0.1"
   },
   "devDependencies": {
-    "@types/postcss-media-query-parser": "0.2.4",
+    "@types/postcss-media-query-parser": "0.2.5",
     "documentation": "14.0.3",
-    "unbuild": "3.6.1"
+    "tsdown": "0.22.14"
   }
 }

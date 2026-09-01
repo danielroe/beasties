@@ -9,7 +9,7 @@
 
 It's a little different from [other options](#similar-libraries), because it **doesn't use a headless browser** to render content. This tradeoff allows Beasties to be very **fast and lightweight**. It also means Beasties inlines all CSS rules used by your document, rather than only those needed for above-the-fold content. For alternatives, see [Similar Libraries](#similar-libraries).
 
-Beasties' design makes it a good fit when inlining critical CSS for prerendered/SSR'd Single Page Applications. It was developed to be an excellent compliment to [prerender-loader](https://github.com/GoogleChromeLabs/prerender-loader), combining to dramatically improve first paint time for most Single Page Applications.
+Beasties' design makes it a good fit when inlining critical CSS for prerendered/SSR'd Single Page Applications. It was developed to be an excellent complement to [prerender-loader](https://github.com/GoogleChromeLabs/prerender-loader), combining to dramatically improve first paint time for most Single Page Applications.
 
 ## Features
 
@@ -226,9 +226,9 @@ For some cases, the input HTML can be very large or deeply nested which makes th
 
 To overcome this issue Beasties makes use of **Beasties containers**.
 
-A Beasties container mimics the viewport and can be enabled by adding `data-beasties-container` into the top level container thats contains the HTML elements above the fold.
+A Beasties container mimics the viewport and can be enabled by adding `data-beasties-container` into the top level container that contains the HTML elements above the fold.
 
-You can estimate the contents of your viewport roughly and add a <div `data-beasties-container` > around the contents.
+You can estimate the contents of your viewport roughly and add a `<div data-beasties-container>` around the contents.
 
 ```html
 <html>

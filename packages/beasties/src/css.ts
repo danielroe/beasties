@@ -27,7 +27,7 @@ import safeParser from 'postcss-safe-parser'
  * @see https://github.com/postcss/postcss/
  * @private
  */
-export function parseStylesheet(stylesheet: string, options?: { safeParser?: boolean }) {
+export function parseStylesheet(stylesheet: string, options?: { safeParser?: boolean }): Root_ {
   if (options?.safeParser) {
     return safeParser(stylesheet)
   }
@@ -47,7 +47,7 @@ interface SerializeStylesheetOptions {
  * @private
  * @param ast A Stylesheet to serialize, such as one returned from `parseStylesheet()`
  */
-export function serializeStylesheet(ast: AnyNode, options: SerializeStylesheetOptions) {
+export function serializeStylesheet(ast: AnyNode, options: SerializeStylesheetOptions): string {
   const cssParts: string[] = []
 
   stringify(ast, (result, node, type) => {
@@ -137,7 +137,7 @@ export function markOnly(predicate: SingleIterator<ChildNode | Root_>): (rule: R
  * @private
  * @param rule The Rule to apply marked selectors to (if they exist).
  */
-export function applyMarkedSelectors(rule: Rule) {
+export function applyMarkedSelectors(rule: Rule): void {
   if (rule.$$markedSelectors) {
     rule.selectors = rule.$$markedSelectors
   }
@@ -152,7 +152,7 @@ export function applyMarkedSelectors(rule: Rule) {
  * @param node       A Stylesheet or Rule to descend into.
  * @param iterator   Invoked on each node in the tree. Return `false` to remove that node.
  */
-export function walkStyleRules(node: ChildNode | Root_, iterator: SingleIterator<ChildNode | Root_ | Rule>) {
+export function walkStyleRules(node: ChildNode | Root_, iterator: SingleIterator<ChildNode | Root_ | Rule>): void {
   if (!('nodes' in node)) {
     return
   }
@@ -173,7 +173,7 @@ export function walkStyleRules(node: ChildNode | Root_, iterator: SingleIterator
  * @param node2      A second tree identical to `node`
  * @param iterator   Invoked on each node in the tree. Return `false` to remove that node from the first tree, true to remove it from the second.
  */
-export function walkStyleRulesWithReverseMirror(node: Rule | Root_, node2: Rule | Root_ | undefined | null, iterator: SingleIterator<ChildNode | Root_>) {
+export function walkStyleRulesWithReverseMirror(node: Rule | Root_, node2: Rule | Root_ | undefined | null, iterator: SingleIterator<ChildNode | Root_>): void {
   if (!node2)
     return walkStyleRules(node, iterator);
 
@@ -245,7 +245,7 @@ function splitFilter<T>(a: T[], b: T[] | undefined, predicate: SplitIterator<T>)
 }
 
 // can be invoked on a style rule to subset its selectors (with reverse mirroring)
-function filterSelectors(this: Rule, predicate: SplitIterator<string>) {
+function filterSelectors(this: Rule, predicate: SplitIterator<string>): void {
   if (this._other) {
     const [a, b] = splitFilter(
       this.selectors,

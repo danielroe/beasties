@@ -41,6 +41,10 @@ const LEADING_SLASH_RE = /^\//
 const WHITESPACE_RE = /\s+/
 // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
 const URL_RE = /url\s*\(\s*(['"]?)(.+?)\1\s*\)/
+// unquoted urls cannot contain unescaped parentheses, and excluding them keeps
+// backtracking linear on input like `url((((...`
+const URL_RE_G = /url\((?:'([^']*)'|"([^"]*)"|([^()]*))\)/gi
+const ABSOLUTE_URL_RE = /^(?:[a-z][\w+.-]*:|\/\/|\/|#)/i
 
 interface PreFetchedStylesheet {
   link: ChildNode
@@ -113,7 +117,7 @@ export default class Beasties {
   /**
    * Apply critical CSS processing to the html
    */
-  async process(html: string) {
+  async process(html: string): Promise<string> {
     const start = Date.now()
 
     // Parse the generated HTML in a DOM we can mutate
@@ -169,7 +173,7 @@ export default class Beasties {
   /**
    * Get the style tags that need processing
    */
-  getAffectedStyleTags(document: HTMLDocument) {
+  getAffectedStyleTags(document: HTMLDocument): Node[] {
     const styles = [...document.querySelectorAll('style')]
 
     // `inline:false` skips processing of inline stylesheets
@@ -179,7 +183,7 @@ export default class Beasties {
     return styles
   }
 
-  mergeStylesheets(document: HTMLDocument) {
+  mergeStylesheets(document: HTMLDocument): void {
     const styles = this.getAffectedStyleTags(document)
     if (styles.length === 0) {
       this.logger.warn?.(
@@ -260,7 +264,7 @@ export default class Beasties {
     return sheet
   }
 
-  checkInlineThreshold(link: Node, style: Node, sheet: string) {
+  checkInlineThreshold(link: Node, style: Node, sheet: string): boolean {
     if (this.options.inlineThreshold && sheet.length < this.options.inlineThreshold) {
       const href = style.$$name
       style.$$reduce = false
@@ -277,7 +281,7 @@ export default class Beasties {
   /**
    * Inline the stylesheets from options.additionalStylesheets (assuming it passes `options.filter`)
    */
-  async embedAdditionalStylesheet(document: HTMLDocument) {
+  async embedAdditionalStylesheet(document: HTMLDocument): Promise<void> {
     const styleSheetsIncluded: string[] = []
 
     const sources = await Promise.all(
@@ -450,7 +454,7 @@ export default class Beasties {
   /**
    * Inline the target stylesheet referred to by a <link rel="stylesheet"> (assuming it passes `options.filter`)
    */
-  async embedLinkedStylesheet(link: ChildNode, document: HTMLDocument) {
+  async embedLinkedStylesheet(link: ChildNode, document: HTMLDocument): Promise<void> {
     const sheet = await this.fetchStylesheet(link, document)
     if (sheet) {
       this.embedFetchedStylesheet(sheet, document)
@@ -460,7 +464,7 @@ export default class Beasties {
   /**
    * Prune the source CSS files
    */
-  pruneSource(style: Node, before: string, sheetInverse: string) {
+  pruneSource(style: Node, before: string, sheetInverse: string): boolean {
     // if external stylesheet would be below minimum size, just inline everything
     const minSize = this.options.minimumExternalSize
     const name = style.$$name
@@ -487,9 +491,13 @@ export default class Beasties {
   /**
    * Parse the stylesheet within a <style> element, then reduce it to contain only rules used by the document.
    */
-  processStyle(style: Node, document: HTMLDocument) {
-    if (style.$$reduce === false)
+  processStyle(style: Node, document: HTMLDocument): void {
+    if (style.$$reduce === false) {
+      if (style.$$name && style.textContent) {
+        style.textContent = rewriteCssUrls(style.textContent, style.$$name)
+      }
       return
+    }
 
     const name = style.$$name ? style.$$name.replace(LEADING_SLASH_RE, '') : 'inline CSS'
     const options = this.options
@@ -707,7 +715,7 @@ export default class Beasties {
             preload.setAttribute('rel', 'preload')
             preload.setAttribute('as', 'font')
             preload.setAttribute('crossorigin', 'anonymous')
-            preload.setAttribute('href', src.trim())
+            preload.setAttribute('href', style.$$name ? resolveCssUrl(src.trim(), style.$$name) : src.trim())
             document.head.appendChild(preload)
           }
         }
@@ -728,6 +736,12 @@ export default class Beasties {
       compress: this.options.compress !== false,
     })
 
+    // once inlined, relative `url()` references resolve against the document rather
+    // than the stylesheet they came from, so they have to be rebased
+    if (style.$$name) {
+      sheet = rewriteCssUrls(sheet, style.$$name)
+    }
+
     // If all rules were removed, get rid of the style element entirely
     if (sheet.trim().length === 0) {
       if (style.parentNode) {
@@ -743,7 +757,7 @@ export default class Beasties {
         compress: this.options.compress !== false,
       })
 
-      styleInlinedCompletely = this.pruneSource(style, before, sheetInverse)
+      styleInlinedCompletely = this.pruneSource(style, style.$$name ? rewriteCssUrls(before, style.$$name) : before, sheetInverse)
 
       if (styleInlinedCompletely) {
         const percent = (sheetInverse.length / before.length) * 100
@@ -785,6 +799,45 @@ export default class Beasties {
 
     return normalizedSelector
   }
+}
+
+/**
+ * Resolve a `url()` value that is relative to `baseHref` (the location of the
+ * stylesheet it was declared in) so that it can be used from the document instead.
+ */
+function resolveCssUrl(url: string, baseHref: string): string {
+  if (!url || ABSOLUTE_URL_RE.test(url)) {
+    return url
+  }
+
+  const base = baseHref.split('?')[0]!.split('#')[0]!
+
+  if (REMOTE_URL_RE.test(base) || base.startsWith('//')) {
+    try {
+      const resolved = new URL(url, base.startsWith('//') ? `https:${base}` : base)
+      return base.startsWith('//') ? resolved.href.replace(REMOTE_URL_RE, '//') : resolved.href
+    }
+    catch {
+      return url
+    }
+  }
+
+  const dir = path.posix.dirname(base)
+  // the stylesheet sits alongside the document, so relative urls already resolve correctly
+  if (dir === '.' || dir === '') {
+    return url
+  }
+
+  return path.posix.join(dir, url)
+}
+
+function rewriteCssUrls(css: string, baseHref: string): string {
+  return css.replace(URL_RE_G, (match, singleQuoted?: string, doubleQuoted?: string, bare?: string) => {
+    const quote = singleQuoted !== undefined ? '\'' : doubleQuoted !== undefined ? '"' : ''
+    const url = singleQuoted ?? doubleQuoted ?? bare?.trim() ?? ''
+    const resolved = resolveCssUrl(url, baseHref)
+    return resolved === url ? match : `url(${quote}${resolved}${quote})`
+  })
 }
 
 function formatSize(size: number) {
