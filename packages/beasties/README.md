@@ -130,7 +130,7 @@ All optional. Pass them to `new Beasties({ ... })`.
 - `allowRules` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)<[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String) | [RegExp](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/RegExp)>** Always include rules matching these selectors or patterns in the critical CSS, regardless of whether they match elements in the document. _(default: `[]`)_
 - `preload` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Which [preload strategy](#preloadstrategy) to use
 - `noscriptFallback` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Add `<noscript>` fallback to JS-based strategies
-- `nonce` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** CSP nonce to set on every `<style>` and `<script>` element beasties injects
+- `nonce` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String) | [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Function)** CSP nonce to set on every `<style>` and `<script>` element beasties injects, or a function called once per document to derive it
 - `inlineFonts` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Inline critical font-face rules _(default: `false`)_
 - `preloadFonts` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Preloads critical fonts _(default: `true`)_
 - `fonts` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Shorthand for setting `inlineFonts` + `preloadFonts`\* Values:
@@ -297,6 +297,15 @@ const beasties = new Beasties({
 })
 ```
 
+A nonce must be unique per response, so if you reuse one instance across requests, pass a function instead of a string. It is called once per document:
+
+```js
+const beasties = new Beasties({
+  preload: 'media-script',
+  nonce: document => readNonceFrom(document),
+})
+```
+
 Deferred links are left as `media="print"` with the real media value in `data-beasties-media`, and a single script restores them:
 
 ```html
@@ -307,6 +316,67 @@ Deferred links are left as `media="print"` with the real media value in `data-be
 ```
 
 Exactly one script is emitted per document and its body never varies, so if you cannot supply a nonce you can allow it with a static `script-src` hash instead.
+
+### Compiler and runtime
+
+Using Beasties per request has two problems: its dependencies are ~1.8 MB of bundle, and every response re-parses the HTML into a DOM and the stylesheets into PostCSS.
+
+But after a build the CSS is usually static, so it can be processed _in advance_. Two subpath exports split the work: `beasties/compiler` runs at build time and keeps PostCSS and css-what, `beasties/runtime` runs per request with no dependencies at all.
+
+|  | classic `process()` | `beasties/runtime` |
+| --- | --- | --- |
+| 13 kB CSS, 21 kB HTML | 3.0ms | 0.4ms |
+| 413 kB CSS, 21 kB HTML | 36.1ms | 1.2ms |
+| runtime dependencies | 9 (~1.8 MB unpacked) | none (~27 kB) |
+
+**1. The compiler turns a stylesheet into a 'plan'**
+
+```js
+import { compileSheet, encodePlan } from 'beasties/compiler'
+
+const plan = encodePlan(compileSheet(css, { href: '/style.css' }))
+```
+
+Rules come out pre-minified, selectors normalised, comment markers and `allowRules` resolved, `url()` values rebased, and font and keyframe dependencies extracted. `href` is what matches a plan to a `<link>` tag later, so a plan compiled without one never matches and the document passes through untouched.
+
+`encodePlan` gives you JSON, so plans can be embedded in a server bundle. They are stored compactly, and utility CSS pools well enough to come out smaller than the stylesheet it describes:
+
+| stylesheet | encoded plan |
+| --- | --- |
+| 13 kB fixture | 15 kB (1.15x) |
+| 413 kB utility-scale | 198 kB (0.48x) |
+
+Decoding costs about 9ms once at startup for a 300 kB plan.
+
+**2. The processor makes a single pass over the HTML**
+
+```js
+import { createProcessor } from 'beasties/runtime'
+
+const processor = createProcessor(plans, { preload: 'media-script' })
+
+const html = processor.process(rendered, { nonce: requestNonce })
+```
+
+Tags, classes, ids and attributes are collected, then critical CSS is spliced in as a string rather than round-tripping a DOM. `processor.extract(html)` returns the critical CSS and font preloads without rewriting the document, if you would rather place them yourself.
+
+Create the processor once and reuse it. Anything that varies per response, like a CSP nonce, belongs in the `process()` call instead.
+
+Without a DOM, selectors do not apply with 100% accuracy. Simple selectors (a single class, id, tag, or attribute presence) are decided by presence in those token sets; combinators, compound selectors like `.a.b`, and attribute values compile to a small match program that runs during the same scan, using the open-element stack for ancestor and sibling context. Set `exact: false` at compile time to fall back to token presence only, which over-inlines combinator selectors but is cheaper and safer.
+
+Options split roughly along the same line:
+
+| option | where |
+| --- | --- |
+| `allowRules`, `safeParser`, `exact`, comment markers | build-time |
+| `preload` (all strategies), `noscriptFallback`, `keyframes`, `fonts`, `inlineFonts`, `preloadFonts`, `inlineThreshold`, `minimumExternalSize`, `cache`, `nonce` | runtime |
+| `path`, `publicPath`, `external`, `remote`, `additionalStylesheets` | configurable |
+| `pruneSource`, `reduceInlineStyles` | not supported |
+
+Critical CSS is cached per document shape, keyed on a fingerprint of the scanned tokens. Enable `cache` only for large stylesheets - with smaller ones the scan is the expensive piece.
+
+> [!NOTE]
+> `minimumExternalSize` is measured against the rules that weren't inlined, not against the stylesheet. It and `inlineThreshold` both inline the stylesheet in full and remove its `<link>` entirely.
 
 ### Logger
 
