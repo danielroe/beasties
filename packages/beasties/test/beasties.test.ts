@@ -1264,6 +1264,60 @@ describe('beasties', () => {
     })
   })
 
+  describe('font preloads', () => {
+    const assets: Record<string, string> = {
+      '/one.css': '@font-face { font-family: MyFont; src: url(/fonts/my.woff2); }\nh1 { font-family: MyFont; }',
+      '/two.css': '@font-face { font-family: MyFont; src: url(/fonts/my.woff2); }\nh1 { font-family: MyFont; }',
+      '/nested/three.css': '@font-face { font-family: MyFont; src: url(my.woff2); }\nh1 { font-family: MyFont; }',
+    }
+
+    function makeBeasties(opts = {}) {
+      const b = new Beasties({ reduceInlineStyles: false, path: '/', preloadFonts: true, ...opts })
+      b.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+      return b
+    }
+
+    it('should emit a single preload for a font shared by several stylesheets', async () => {
+      const result = await makeBeasties().process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/one.css">
+            <link rel="stylesheet" href="/two.css">
+          </head>
+          <body><h1>Hello</h1></body>
+        </html>
+      `)
+      expect(result.match(/href="\/fonts\/my\.woff2"/g)).toHaveLength(1)
+    })
+
+    it('should not preload a font the document already preloads', async () => {
+      const result = await makeBeasties().process(trim`
+        <html>
+          <head>
+            <link rel="preload" as="font" crossorigin="anonymous" href="/fonts/my.woff2">
+            <link rel="stylesheet" href="/one.css">
+          </head>
+          <body><h1>Hello</h1></body>
+        </html>
+      `)
+      expect(result.match(/href="\/fonts\/my\.woff2"/g)).toHaveLength(1)
+    })
+
+    it('should preload fonts that resolve to different urls from the same relative src', async () => {
+      const result = await makeBeasties().process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/one.css">
+            <link rel="stylesheet" href="/nested/three.css">
+          </head>
+          <body><h1>Hello</h1></body>
+        </html>
+      `)
+      expect(result).toContain('href="/fonts/my.woff2"')
+      expect(result).toContain('href="/nested/my.woff2"')
+    })
+  })
+
   describe('data-beasties-skip', () => {
     const assets: Record<string, string> = {
       '/styles.css': 'h1 { color: blue; }',

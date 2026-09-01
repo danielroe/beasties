@@ -732,6 +732,20 @@ describe('compiled beasties (compiler + runtime)', () => {
       expect(result).toContain('<link rel="preload" as="font" crossorigin="anonymous" href="/fonts/my.woff2">')
     })
 
+    it('does not preload a font the document already preloads', () => {
+      const css = trim`
+        h1 { font-family: MyFont; }
+        @font-face { font-family: MyFont; src: url(/fonts/my.woff2); }
+      `
+      const { process } = createProcessor([compileSheet(css, { href: 'style.css' })], { fonts: true })
+      const html = BASIC_HTML.replace(
+        '<link rel="stylesheet" href="/style.css">',
+        '<link rel="preload" as="font" crossorigin="anonymous" href="/fonts/my.woff2"><link rel="stylesheet" href="/style.css">',
+      )
+      const result = process(html)
+      expect(result.match(/href="\/fonts\/my\.woff2"/g)).toHaveLength(1)
+    })
+
     it('leaves html untouched when no sheets match', () => {
       const { process } = createProcessor([compileSheet('h1{color:blue}', { href: 'other.css' })])
       expect(process(BASIC_HTML)).toBe(BASIC_HTML)

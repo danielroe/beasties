@@ -830,6 +830,8 @@ function fingerprintTokens(tokens: DocumentTokens): string {
 const CSS_HREF_RE = /\.css(?:[?#]|$)/i
 const LINK_TAG_RE = /<link\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi
 const REL_STYLESHEET_RE = /\brel\s*=\s*(?:"stylesheet"|'stylesheet'|stylesheet(?=[\s>]))/i
+const REL_PRELOAD_RE = /\brel\s*=\s*(?:"preload"|'preload'|preload(?=[\s>]))/i
+const AS_FONT_RE = /\bas\s*=\s*(?:"font"|'font'|font(?=[\s>]))/i
 
 const CSS_LOADER_PREAMBLE = 'function $loadcss(u,m,l){(l=document.createElement(\'link\')).rel=\'stylesheet\';l.href=u;document.head.appendChild(l)}'
 const CSS_LOADER_LAZY_PREAMBLE = CSS_LOADER_PREAMBLE.replace(
@@ -1067,11 +1069,18 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
     let deferredMedia = false
     const criticalParts: string[] = []
     const fontPreloads = new Set<string>()
+    const existingFontPreloads = new Set<string>()
     let isFirstSheet = true
 
     for (const match of html.matchAll(LINK_TAG_RE)) {
       const tag = match[0]
       if (!REL_STYLESHEET_RE.test(tag)) {
+        if (REL_PRELOAD_RE.test(tag) && AS_FONT_RE.test(tag)) {
+          const preloaded = getAttr(tag, 'href')
+          if (preloaded) {
+            existingFontPreloads.add(preloaded)
+          }
+        }
         continue
       }
       if (getAttr(tag, 'data-beasties-skip') !== null) {
@@ -1173,6 +1182,10 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
       }
 
       isFirstSheet = false
+    }
+
+    for (const preloaded of existingFontPreloads) {
+      fontPreloads.delete(preloaded)
     }
 
     const critical = criticalParts.join('')
