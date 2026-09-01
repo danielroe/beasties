@@ -792,6 +792,11 @@ export interface ProcessorOptions extends RuntimeOptions {
    * `<link>` _(default: `0`, disabled)_
    */
   minimumExternalSize?: number
+  /**
+   * Receives warnings, e.g. for `<link rel="stylesheet">` tags with no
+   * matching compiled sheet _(default: no warnings are emitted)_
+   */
+  logger?: { warn?: (message: string) => void }
 }
 
 const DEFAULT_CACHE_SIZE = 100
@@ -817,6 +822,7 @@ function fingerprintTokens(tokens: DocumentTokens): string {
   return parts.join(' ')
 }
 
+const CSS_HREF_RE = /\.css(?:[?#]|$)/i
 const LINK_TAG_RE = /<link\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi
 const REL_STYLESHEET_RE = /\brel\s*=\s*(?:"stylesheet"|'stylesheet'|stylesheet(?=[\s>]))/i
 // conservative allowlist so a media attribute can be re-emitted into onload
@@ -1011,12 +1017,32 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
     return result
   }
 
+  function skippedSheets(html: string): Set<CompiledSheet> | undefined {
+    let skipped: Set<CompiledSheet> | undefined
+    for (const match of html.matchAll(LINK_TAG_RE)) {
+      const tag = match[0]
+      if (!REL_STYLESHEET_RE.test(tag) || getAttr(tag, 'data-beasties-skip') === null) {
+        continue
+      }
+      const href = getAttr(tag, 'href')
+      const sheet = href ? sheetForHref(sheets, href) : undefined
+      if (sheet) {
+        (skipped ??= new Set()).add(sheet)
+      }
+    }
+    return skipped
+  }
+
   function extract(html: string): CriticalResult {
     const tokens = scanHtml(html, programs)
     const key = cache ? fingerprintTokens(tokens) : undefined
+    const skipped = skippedSheets(html)
     const css: string[] = []
     const fontPreloads: string[] = []
     for (const sheet of sheets) {
+      if (skipped?.has(sheet)) {
+        continue
+      }
       const result = renderSheet(sheet, tokens, key)
       css.push(inlineInFull(sheet, result) ? fullCss(sheet) : result.css)
       fontPreloads.push(...result.fontPreloads)
@@ -1041,12 +1067,18 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
       if (!REL_STYLESHEET_RE.test(tag)) {
         continue
       }
+      if (getAttr(tag, 'data-beasties-skip') !== null) {
+        continue
+      }
       const href = getAttr(tag, 'href')
       if (!href) {
         continue
       }
       const sheet = sheetForHref(sheets, href)
       if (!sheet) {
+        if (CSS_HREF_RE.test(href)) {
+          options.logger?.warn?.(`Unable to locate stylesheet: ${href}`)
+        }
         continue
       }
 

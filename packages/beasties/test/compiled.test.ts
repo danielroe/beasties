@@ -427,6 +427,53 @@ describe('compiled beasties (compiler + runtime)', () => {
     })
   })
 
+  describe('data-beasties-skip', () => {
+    const assets: Record<string, string> = {
+      '/styles.css': 'h1 { color: blue; }',
+      '/theme.css': 'body { background: red; }',
+    }
+
+    const HTML = trim`
+      <html>
+        <head>
+          <link rel="stylesheet" href="/styles.css">
+          <link rel="stylesheet" href="/theme.css" data-beasties-skip>
+        </head>
+        <body><h1>Hello</h1></body>
+      </html>
+    `
+
+    function classic(options: ConstructorParameters<typeof Beasties>[0] = {}) {
+      const beasties = new Beasties({ reduceInlineStyles: false, path: '/', logLevel: 'silent', ...options })
+      beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
+      return beasties.process(HTML)
+    }
+
+    function compiled(options: Parameters<typeof createProcessor>[1] = {}) {
+      const sheets = Object.entries(assets).map(([href, css]) => compileSheet(css, { href }))
+      return createProcessor(sheets, options).process(HTML)
+    }
+
+    for (const preload of [false, 'media', 'swap', 'js', 'body'] as const) {
+      it(`leaves the skipped link untouched on both paths with preload: ${preload}`, async () => {
+        for (const result of [await classic({ preload }), compiled({ preload })]) {
+          expect(result).toContain('<link rel="stylesheet" href="/theme.css" data-beasties-skip>')
+          expect(result).not.toMatch(/theme\.css[^>]*onload/)
+          expect(result).not.toMatch(/theme\.css[^>]*rel="preload"/)
+          expect(result).not.toMatch(/noscript[^>]*theme/)
+          expect(result).not.toContain('background:red')
+          expect(result).toContain('color:blue')
+        }
+      })
+    }
+
+    it('excludes the skipped stylesheet from extract()', () => {
+      const sheets = Object.entries(assets).map(([href, css]) => compileSheet(css, { href }))
+      const { extract } = createProcessor(sheets)
+      expect(extract(HTML).css).toBe('h1{color:blue}')
+    })
+  })
+
   describe('whole-sheet inlining', () => {
     const CSS = trim`
       h1 { color: blue; }
@@ -745,6 +792,22 @@ describe('compiled beasties (compiler + runtime)', () => {
       // BASIC_HTML's entry was evicted by otherHtml, so this re-renders
       bounded.process(BASIC_HTML)
       expect(rulesAccesses).toBeGreaterThan(beforeEvicted)
+    })
+
+    it('warns when a stylesheet link has no matching compiled sheet', () => {
+      const warnings: string[] = []
+      const { process } = makeProcessor({ preload: false, logger: { warn: message => void warnings.push(message) } })
+      process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/style.css">
+            <link rel="stylesheet" href="/missing.css">
+            <link rel="stylesheet" href="/not-a-sheet">
+          </head>
+          <body><h1>Hello</h1></body>
+        </html>
+      `)
+      expect(warnings).toEqual(['Unable to locate stylesheet: /missing.css'])
     })
 
     it('produces a JSON-serializable plan', () => {
