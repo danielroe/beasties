@@ -121,13 +121,12 @@ declare module 'domhandler' {
  * @private
  */
 let extended = false
-function extendElement(element: typeof Element.prototype) {
-  if (extended) {
+export function extendElement(element: typeof Element.prototype): void {
+  if (element === Element.prototype && extended) {
     return
   }
-  extended = true
 
-  Object.defineProperties(element, {
+  const descriptors: PropertyDescriptorMap & ThisType<typeof Element.prototype> = {
     nodeName: {
       get() {
         return this.tagName.toUpperCase()
@@ -244,7 +243,17 @@ function extendElement(element: typeof Element.prototype) {
         return selectAll(sel, this)
       },
     },
-  })
+  }
+
+  for (const property of Object.keys(descriptors)) {
+    if (Object.hasOwn(element, property)) {
+      delete descriptors[property]
+    }
+  }
+  Object.defineProperties(element, descriptors)
+  if (element === Element.prototype) {
+    extended = true
+  }
 }
 
 export interface HTMLDocument extends ParsedDocument {

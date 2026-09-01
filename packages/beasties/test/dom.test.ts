@@ -1,7 +1,19 @@
+import type { Element } from 'domhandler'
 import { describe, expect, it } from 'vitest'
-import { createDocument } from '../src/dom'
+import { createDocument, extendElement } from '../src/dom'
 
 describe('dom', () => {
+  it('preserves a nodeName property provided by the DOM implementation', () => {
+    const element = {}
+    Object.defineProperty(element, 'nodeName', {
+      configurable: false,
+      value: 'provided-node-name',
+    })
+
+    expect(() => extendElement(element as unknown as Element)).not.toThrow()
+    expect(element).toHaveProperty('nodeName', 'provided-node-name')
+  })
+
   describe('exists() selector cache', () => {
     it('falls through to DOM query when selector has a complex group', () => {
       const doc = createDocument(`
