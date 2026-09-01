@@ -23,6 +23,7 @@ import { readFile, writeFile } from 'node:fs'
 import path from 'node:path'
 
 import { applyMarkedSelectors, markOnly, parseStylesheet, serializeStylesheet, validateMediaQuery, walkStyleRules, walkStyleRulesWithReverseMirror } from './css'
+import { CRITTERS_DEPRECATION_WARNING, parseDirective } from './directives'
 import { createDocument, serializeDocument } from './dom'
 import { isAlwaysCriticalSelector, normalizeCssSelector } from './selectors'
 import { REMOTE_URL_RE, resolveCssUrl, rewriteCssUrls } from './urls'
@@ -31,8 +32,6 @@ import { createLogger, isSubpath } from './util'
 const LEADING_SLASH_OR_QUERY_RE = /^\/(?!\/)|[?#].*$/g
 const PUBLIC_PATH_RE = /(^\/(?!\/)|\/$)/g
 const FONT_FAMILY_RE = /\bfont(?:-family)?\b/i
-// eslint-disable-next-line regexp/no-useless-assertions
-const BEASTIES_COMMENT_RE = /^(?<!! )beasties:(.*)/
 const LEADING_SLASH_RE = /^\//
 const WHITESPACE_RE = /\s+/
 // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
@@ -524,6 +523,7 @@ export default class Beasties {
     let includeAll = false
     let excludeNext = false
     let excludeAll = false
+    let warnedCritters = false
 
     const shouldPreloadFonts = options.fonts === true || options.preloadFonts === true
     const shouldInlineFonts = options.fonts !== false && options.inlineFonts === true
@@ -534,10 +534,18 @@ export default class Beasties {
       ast,
       markOnly((rule) => {
         if (rule.type === 'comment') {
-          // we might want to remove a leading ! on comment blocks
-          // beasties can be part of "legal comments" which aren't stripped on build
-          const beastiesComment = rule.text.match(BEASTIES_COMMENT_RE)
-          const command = beastiesComment && beastiesComment[1]
+          // comments starting with `!` are "legal comments" which aren't stripped on build,
+          // so they are not treated as directives
+          const { command, deprecated, warning } = parseDirective(rule.text)
+
+          if (warning) {
+            this.logger.warn?.(warning)
+          }
+
+          if (deprecated && !warnedCritters) {
+            warnedCritters = true
+            this.logger.warn?.(CRITTERS_DEPRECATION_WARNING)
+          }
 
           if (command) {
             switch (command) {

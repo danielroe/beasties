@@ -200,6 +200,10 @@ Including/Excluding multiple rules by adding start and end markers
 /* beasties:include end */
 ```
 
+The supported directives are `beasties:include`, `beasties:exclude`, `beasties:include start`, `beasties:include end`, `beasties:exclude start` and `beasties:exclude end`.
+
+The `critters:` prefix (from the project beasties was forked from) is still accepted as a deprecated alias and logs a warning. Comments which look like a directive but aren't recognised, such as `/* beasties:inclde */` or `/* critter:include */`, also log a warning rather than being silently ignored.
+
 ### Programmatically including rules with allowRules
 
 In addition to comment-based inclusion, you can use the `allowRules` option to programmatically include specific selectors or patterns in the critical CSS, regardless of whether they match elements in the document. This is useful for cases where you know certain styles should always be included.
