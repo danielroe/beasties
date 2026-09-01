@@ -202,15 +202,20 @@ export default class Beasties {
     document.body.appendChild(script)
   }
 
-  private nonceValue: string | undefined
+  // a nonce must not be shared between responses, so it is resolved once per
+  // document rather than once per instance
+  #nonces = new WeakMap<HTMLDocument, string | undefined>()
   private applyNonce(document: HTMLDocument, element: Node) {
-    this.nonceValue
-      ??= typeof this.options.nonce === 'function'
-        ? this.options.nonce(document)
-        : this.options.nonce
+    if (!this.#nonces.has(document)) {
+      this.#nonces.set(
+        document,
+        typeof this.options.nonce === 'function' ? this.options.nonce(document) : this.options.nonce,
+      )
+    }
 
-    if (this.nonceValue) {
-      element.setAttribute('nonce', this.nonceValue)
+    const nonce = this.#nonces.get(document)
+    if (nonce) {
+      element.setAttribute('nonce', nonce)
     }
   }
 

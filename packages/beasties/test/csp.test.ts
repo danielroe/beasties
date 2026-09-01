@@ -94,6 +94,15 @@ describe('nonce (classic)', () => {
     expect(result).toContain('<script nonce="abc123" data-href="/style.css" data-media="all">')
   })
 
+  it('should evaluate the nonce function for each document', async () => {
+    const nonce = vi.fn((document: HTMLDocument) => document.querySelector('meta[name="csp-nonce"]')?.getAttribute('content'))
+    const beasties = classic({ nonce, preload: false })
+    const withNonce = (value: string) => `<html><head><meta name="csp-nonce" content="${value}"><link rel="stylesheet" href="/style.css"></head><body><h1>Hello World!</h1></body></html>`
+    expect(await beasties.process(withNonce('request-1'))).toContain('<style nonce="request-1">')
+    expect(await beasties.process(withNonce('request-2'))).toContain('<style nonce="request-2">')
+    expect(nonce).toHaveBeenCalledTimes(2)
+  })
+
   it('should evaluate the nonce function only once per document', async () => {
     const nonce = vi.fn(() => 'abc123')
     const beasties = classic({ nonce, preload: 'js' })
