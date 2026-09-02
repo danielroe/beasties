@@ -50,6 +50,7 @@ interface PreFetchedStylesheet {
 
 export default class Beasties {
   #selectorCache = new Map<string, string>()
+  #preloadedFonts = new WeakMap<HTMLDocument, Set<string>>()
   options: Options & Required<Pick<Options, 'logLevel' | 'path' | 'publicPath' | 'reduceInlineStyles' | 'pruneSource' | 'additionalStylesheets' | 'dedupeWarnings'>> & { allowRules: Array<string | RegExp> }
   logger: Logger
   fs?: typeof import('node:fs')
@@ -718,7 +719,7 @@ export default class Beasties {
       )
     }
 
-    const preloadedFonts = new Set<string>()
+    const preloadedFonts = this.getPreloadedFonts(document)
     // Second pass, using data picked up from the first
     walkStyleRulesWithReverseMirror(ast, astInverse, (rule) => {
       // remove any rules marked in the first pass
@@ -755,14 +756,17 @@ export default class Beasties {
             }
           }
 
-          if (src && shouldPreloadFonts && !preloadedFonts.has(src)) {
-            preloadedFonts.add(src)
-            const preload = document.createElement('link')
-            preload.setAttribute('rel', 'preload')
-            preload.setAttribute('as', 'font')
-            preload.setAttribute('crossorigin', 'anonymous')
-            preload.setAttribute('href', style.$$name ? resolveCssUrl(src.trim(), style.$$name) : src.trim())
-            document.head.appendChild(preload)
+          if (src && shouldPreloadFonts) {
+            const href = style.$$name ? resolveCssUrl(src.trim(), style.$$name) : src.trim()
+            if (!preloadedFonts.has(href)) {
+              preloadedFonts.add(href)
+              const preload = document.createElement('link')
+              preload.setAttribute('rel', 'preload')
+              preload.setAttribute('as', 'font')
+              preload.setAttribute('crossorigin', 'anonymous')
+              preload.setAttribute('href', href)
+              document.head.appendChild(preload)
+            }
           }
         }
 
@@ -826,6 +830,25 @@ export default class Beasties {
     this.logger.info?.(
       `\u001B[32mInlined ${formatSize(sheet.length)} (${percent}% of original ${formatSize(before.length)}) of ${name}${afterText}.\u001B[39m`,
     )
+  }
+
+  /**
+   * Font URLs already preloaded for a document, whether by beasties while
+   * processing an earlier stylesheet or by the document itself.
+   */
+  private getPreloadedFonts(document: HTMLDocument): Set<string> {
+    let preloaded = this.#preloadedFonts.get(document)
+    if (!preloaded) {
+      preloaded = new Set<string>()
+      for (const link of document.querySelectorAll('link[rel="preload"][as="font"]')) {
+        const href = link.getAttribute('href')
+        if (href) {
+          preloaded.add(href)
+        }
+      }
+      this.#preloadedFonts.set(document, preloaded)
+    }
+    return preloaded
   }
 
   private normalizeCssSelector(sel: string): string {
