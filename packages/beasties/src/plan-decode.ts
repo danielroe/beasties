@@ -20,7 +20,7 @@ import {
 
 export function decodePlan(plan: CompactPlan): CompiledSheet {
   const [, href, size, pool, wraps, rules] = plan
-  const deref = (value: PooledString): string => (typeof value === 'number' ? pool[value]! : value)
+  const deref = (value: PooledString): string => (typeof value === 'number' ? pool[value - 1]! : value)
   const derefAll = (values: PooledString[]): string[] => values.map(deref)
   const wrapChains = wraps.map(derefAll)
 

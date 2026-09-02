@@ -37,12 +37,13 @@ class StringPool {
   finalize(): void {
     for (const [value, count] of this.#counts) {
       if (count > 1) {
-        this.#indices.set(value, this.strings.length)
         this.strings.push(value)
+        this.#indices.set(value, this.strings.length)
       }
     }
   }
 
+  /** A pooled string's one-based index, or the string itself when it isn't pooled */
   ref(value: string): PooledString {
     return this.#indices.get(value) ?? value
   }

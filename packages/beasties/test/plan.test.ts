@@ -126,6 +126,24 @@ describe('compact plan format', () => {
       expect(roundTrip(sheet).warnings).toEqual([])
     })
 
+    it('keeps fields whose pooled string lands at pool index 0', () => {
+      const css = `
+        @font-face { font-family: poppins; src: url(/poppins.woff2) }
+        .a poppins { color: red }
+        .b poppins { color: blue }
+        [data-font="poppins"] { color: teal }
+        [data-label="poppins"] { color: olive }
+      `
+      const sheet = compileSheet(css, { href: 'style.css' })
+      const plan = encodePlan(sheet)
+      expect(plan[3][0]).toBe('poppins')
+
+      const decoded = roundTrip(sheet)
+      expect(decoded.rules[0]!.fontFace).toEqual({ family: 'poppins', src: '/poppins.woff2' })
+      expect(decoded.rules[1]!.match).toEqual([{ program: { combinators: [' '], compounds: [{ classes: ['a'] }, { tag: 'poppins' }] } }])
+      expect(decoded.rules[3]!.match).toEqual([{ program: { combinators: [], compounds: [{ attrs: [{ name: 'data-font', action: 'equals', value: 'poppins' }] }] } }])
+    })
+
     it('keeps href and source size', () => {
       const sheet = compileSheet('h1 { color: blue }', { href: '_nuxt/entry.abc.css' })
       const decoded = roundTrip(sheet)
