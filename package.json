@@ -44,6 +44,7 @@
     "jsdom": "30.0.1",
     "knip": "6.33.0",
     "lint-staged": "17.4.1",
+    "pkg-pr-new": "0.0.88",
     "simple-git-hooks": "2.14.0",
     "typescript": "6.0.3",
     "vitest": "4.1.11"
