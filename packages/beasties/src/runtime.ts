@@ -10,7 +10,7 @@
 
 import type { AttrTest, CompiledRule, CompiledSheet, CompoundTest, SelectorMatch, StructuralProgram } from './compiler'
 import type { CompactPlan } from './plan'
-import { normalizeFontFamily } from './fonts'
+import { addTextCodepoints, createTextCodepoints, normalizeFontFamily, toCodepointSet, unicodeRangeUsed } from './fonts'
 import { isSafeMediaValue } from './media'
 import { isCompactPlan } from './plan'
 import { decodePlan } from './plan-decode'
@@ -23,6 +23,12 @@ export interface DocumentTokens {
   classes: Set<string>
   ids: Set<string>
   attrs: Set<string>
+  /**
+   * Codepoints of the document's rendered text, used to skip `@font-face`
+   * rules whose `unicode-range` covers no character in the document. Absent
+   * when the text could not be read exactly, which disables that check.
+   */
+  chars?: Set<number>
   /** Exact results for structural programs evaluated during the scan */
   matchedPrograms?: Map<StructuralProgram, boolean>
 }
@@ -45,6 +51,12 @@ const VOID_ELEMENTS = new Set([
 ])
 
 const RAW_TEXT_ELEMENTS = new Set(['script', 'style', 'textarea', 'title', 'xmp'])
+
+/** Raw text elements whose contents are still rendered as page text */
+const RENDERED_RAW_TEXT_ELEMENTS = new Set(['textarea', 'xmp'])
+
+/** Attributes whose value can be rendered as text */
+const RENDERED_ATTRS = new Set(['alt', 'label', 'placeholder', 'title', 'value'])
 
 const TAG_START_RE = /[a-z]/
 const TAG_NAME_END_RE = /[\s/>]/
@@ -235,10 +247,28 @@ function createFrame(container: boolean, desc: number[], child: number[]): ScanF
  * programs against it. If `data-beasties-container` elements are present,
  * only tokens (and program completions) within those subtrees count.
  */
-export function scanHtml(html: string, programs?: StructuralProgram[]): DocumentTokens {
+export interface ScanOptions {
+  /**
+   * Collect the codepoints of the document's text, which `@font-face` rules
+   * with a `unicode-range` are matched against. Skipping the walk is worth it
+   * when no compiled sheet has such a rule.
+   * @default true
+   */
+  chars?: boolean
+}
+
+export function scanHtml(html: string, programs?: StructuralProgram[], options: ScanOptions = {}): DocumentTokens {
+  const collectText = options.chars !== false
   const lower = html.toLowerCase()
   const all = createTokens()
   const contained = createTokens()
+
+  // an entity we can't decode means the document's text is not fully known, so
+  // `unicode-range` filtering has to be skipped rather than guess
+  const text = createTextCodepoints()
+  const collectChars = collectText
+    ? (run: string) => addTextCodepoints(run, text)
+    : () => {}
 
   const prepared = programs && programs.length > 0 ? preparePrograms(programs) : undefined
   const matchedAll = prepared ? Array.from<boolean>({ length: prepared.programs.length }).fill(false) : []
@@ -252,9 +282,14 @@ export function scanHtml(html: string, programs?: StructuralProgram[]): Document
   const length = html.length
 
   while (i < length) {
+    const textStart = i
     i = lower.indexOf('<', i)
     if (i === -1) {
+      collectChars(html.slice(textStart))
       break
+    }
+    if (i > textStart) {
+      collectChars(html.slice(textStart, i))
     }
 
     const next = lower[i + 1]
@@ -352,6 +387,9 @@ export function scanHtml(html: string, programs?: StructuralProgram[]): Document
 
       if (attrName) {
         element.attrs.push([attrName, value])
+        if (value !== null && RENDERED_ATTRS.has(attrName)) {
+          collectChars(value)
+        }
         if (attrName === 'data-beasties-container') {
           isContainer = true
           containerFound = true
@@ -448,12 +486,18 @@ export function scanHtml(html: string, programs?: StructuralProgram[]): Document
       if (close === -1) {
         break
       }
+      if (RENDERED_RAW_TEXT_ELEMENTS.has(tagName)) {
+        collectChars(html.slice(i, close))
+      }
       const end = lower.indexOf('>', close)
       i = end === -1 ? length : end + 1
     }
   }
 
   const tokens = containerFound ? contained : all
+  if (collectText) {
+    tokens.chars = toCodepointSet(text)
+  }
   if (prepared) {
     const matched = containerFound ? matchedContained : matchedAll
     tokens.matchedPrograms = new Map()
@@ -586,6 +630,9 @@ export interface RuntimeOptions {
   inlineFonts?: boolean
   /**
    * Preload critical fonts _(default: `true` when `fonts` is set)_
+   *
+   * Only faces whose family is declared by the critical CSS are preloaded, and
+   * a face with a `unicode-range` only when the document's text needs it.
    */
   preloadFonts?: boolean
   /**
@@ -635,10 +682,6 @@ export function renderCriticalCss(sheet: CompiledSheet, tokens: DocumentTokens, 
   for (let i = 0; i < rules.length; i++) {
     const rule = rules[i]!
     if (rule.fontFace) {
-      if (rule.fontFace.src && shouldPreloadFonts && !preloadedFonts.has(rule.fontFace.src)) {
-        preloadedFonts.add(rule.fontFace.src)
-        fontPreloads.push(rule.fontFace.src.trim())
-      }
       continue
     }
     if (rule.keyframes !== undefined) {
@@ -680,8 +723,15 @@ export function renderCriticalCss(sheet: CompiledSheet, tokens: DocumentTokens, 
       continue
     }
     if (rule.fontFace) {
-      const { family } = rule.fontFace
-      if (shouldInlineFonts && family && criticalFonts.has(normalizeFontFamily(family))) {
+      const { family, src, ranges } = rule.fontFace
+      const used = !!family
+        && criticalFonts.has(normalizeFontFamily(family))
+        && unicodeRangeUsed(ranges, tokens.chars)
+      if (used && src && shouldPreloadFonts && !preloadedFonts.has(src)) {
+        preloadedFonts.add(src)
+        fontPreloads.push(src.trim())
+      }
+      if (shouldInlineFonts && used) {
         texts[i] = rule.css ?? ''
       }
       else if (inverseTexts) {
@@ -825,6 +875,10 @@ function fingerprintTokens(tokens: DocumentTokens): string {
     }
     parts.push('\n')
   }
+  if (tokens.chars) {
+    parts.push(Array.from(tokens.chars).join(','))
+  }
+  parts.push('\n')
   if (tokens.matchedPrograms) {
     for (const matched of tokens.matchedPrograms.values()) {
       parts.push(matched ? '1' : '0')
@@ -981,6 +1035,9 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
 } {
   const sheets = plans.map(plan => (isCompactPlan(plan) ? decodePlan(plan) : plan))
   const programs = collectPrograms(sheets)
+  const scanOptions: ScanOptions = {
+    chars: sheets.some(sheet => sheet.rules.some(rule => rule.fontFace?.ranges)),
+  }
 
   const cacheSize = options.cache === false ? 0 : (typeof options.cache === 'object' ? options.cache.maxSize ?? DEFAULT_CACHE_SIZE : DEFAULT_CACHE_SIZE)
   const cache = cacheSize > 0 ? new Map<string, Map<CompiledSheet, CriticalResult>>() : undefined
@@ -1055,7 +1112,7 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
   }
 
   function extract(html: string): CriticalResult {
-    const tokens = scanHtml(html, programs)
+    const tokens = scanHtml(html, programs, scanOptions)
     const key = cache ? fingerprintTokens(tokens) : undefined
     const skipped = skippedSheets(html)
     const css: string[] = []
@@ -1072,7 +1129,7 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
   }
 
   function process(html: string, processOptions?: ProcessOptions): string {
-    const tokens = scanHtml(html, programs)
+    const tokens = scanHtml(html, programs, scanOptions)
     const key = cache ? fingerprintTokens(tokens) : undefined
     const strategy = options.preload
     const nonce = processOptions?.nonce ?? options.nonce

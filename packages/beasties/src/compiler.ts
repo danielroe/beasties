@@ -12,7 +12,7 @@ import type { AtRule, Container, Rule } from 'postcss'
 import { parse as parseSelectorAst } from 'css-what'
 import { parseStylesheet, serializeStylesheet } from './css'
 import { CRITTERS_DEPRECATION_WARNING, parseDirective } from './directives'
-import { parseFontFamilies } from './fonts'
+import { parseFontFamilies, parseUnicodeRanges } from './fonts'
 import { isAlwaysCriticalSelector, normalizeCssSelector } from './selectors'
 import { resolveCssUrl, rewriteCssUrls } from './urls'
 
@@ -97,7 +97,12 @@ export interface CompiledRule {
   /** Animation names referenced by this rule's declarations */
   keyframesUsed?: string[]
   /** This rule is an @font-face */
-  fontFace?: { family?: string, src?: string }
+  fontFace?: {
+    family?: string
+    src?: string
+    /** `unicode-range` as flattened `[start, end, ...]` codepoint pairs */
+    ranges?: number[]
+  }
   /** This rule is a @keyframes block with this name */
   keyframes?: string
 }
@@ -287,6 +292,7 @@ function compileAtRule(rule: AtRule, wrap: string[], sheet: CompiledSheet, state
   if (name === 'font-face') {
     let family: string | undefined
     let src: string | undefined
+    let ranges: number[] | undefined
     for (const decl of rule.nodes ?? []) {
       if (!('prop' in decl))
         continue
@@ -296,10 +302,13 @@ function compileAtRule(rule: AtRule, wrap: string[], sheet: CompiledSheet, state
       else if (decl.prop === 'font-family') {
         family = decl.value
       }
+      else if (decl.prop === 'unicode-range') {
+        ranges = parseUnicodeRanges(decl.value)
+      }
     }
     sheet.rules.push(withWrap({
       css: rebase(serializeStylesheet(rule, { compress: true })),
-      fontFace: { family, src: src && options.href ? resolveCssUrl(src.trim(), options.href) : src },
+      fontFace: { family, src: src && options.href ? resolveCssUrl(src.trim(), options.href) : src, ranges },
     }, wrap))
     return
   }

@@ -174,10 +174,14 @@ function encodeRule(rule: CompiledRule, pool: StringPool, wrapKeys: Map<string, 
   }
   if (rule.fontFace) {
     flags |= F_FONT_FACE
-    fields.push([
+    const face: unknown[] = [
       rule.fontFace.family === undefined ? 0 : pool.ref(rule.fontFace.family),
       rule.fontFace.src === undefined ? 0 : pool.ref(rule.fontFace.src),
-    ])
+    ]
+    if (rule.fontFace.ranges) {
+      face.push(rule.fontFace.ranges)
+    }
+    fields.push(face)
   }
   if (rule.keyframes !== undefined) {
     flags |= F_KEYFRAMES

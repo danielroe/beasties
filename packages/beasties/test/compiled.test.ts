@@ -182,6 +182,22 @@ describe('compiled beasties (compiler + runtime)', () => {
       expect(compiled).not.toContain('UnusedFont')
     })
 
+    it('matches for unicode-range subsetting and escaped fallback families', async () => {
+      const css = trim`
+        h1 { font-family: Barlow, "Barlow Fallback: Segoe UI", sans-serif; }
+        @font-face { font-family: Barlow; src: url(/fonts/latin.woff2); unicode-range: U+0000-00FF; }
+        @font-face { font-family: Barlow; src: url(/fonts/vietnamese.woff2); unicode-range: U+1EA0-1EF9; }
+        @font-face { font-family: Barlow Fallback\\: Segoe UI; src: local(Segoe UI); size-adjust: 105.1%; }
+      `
+      const options = { inlineFonts: true, preloadFonts: false }
+      const classic = await classicCritical(BASIC_HTML, css, options)
+      const compiled = compiledCritical(BASIC_HTML, css, options)
+      expect(compiled).toBe(classic)
+      expect(compiled).toContain('/fonts/latin.woff2')
+      expect(compiled).not.toContain('/fonts/vietnamese.woff2')
+      expect(compiled).toContain('Barlow Fallback\\: Segoe UI')
+    })
+
     it('matches for pseudo-class and pseudo-element selectors', async () => {
       const css = trim`
         h1:hover { color: red; }

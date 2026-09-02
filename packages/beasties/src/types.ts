@@ -84,6 +84,9 @@ export interface Options {
   inlineFonts?: boolean
   /**
    * Preloads critical fonts _(default: `true`)_
+   *
+   * Only faces whose family is declared by the critical CSS are preloaded, and
+   * a face with a `unicode-range` only when the document's text needs it.
    */
   preloadFonts?: boolean
   /**

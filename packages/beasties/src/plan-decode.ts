@@ -67,10 +67,11 @@ function decodeRule(
     rule.keyframesUsed = derefAll(next<PooledString[]>())
   }
   if (flags & F_FONT_FACE) {
-    const [family, src] = next<[PooledString | 0, PooledString | 0]>()
+    const [family, src, ranges] = next<[PooledString | 0, PooledString | 0, number[]?]>()
     rule.fontFace = {
       family: family === 0 ? undefined : deref(family),
       src: src === 0 ? undefined : deref(src),
+      ranges,
     }
   }
   if (flags & F_KEYFRAMES) {

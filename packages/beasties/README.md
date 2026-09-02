@@ -133,6 +133,8 @@ All optional. Pass them to `new Beasties({ ... })`.
 - `nonce` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String) | [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Function)** CSP nonce to set on every `<style>` and `<script>` element beasties injects, or a function called once per document to derive it
 - `inlineFonts` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Inline critical font-face rules _(default: `false`)_
 - `preloadFonts` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Preloads critical fonts _(default: `true`)_
+
+  A font is critical when the critical CSS declares its family, and, for a face with a `unicode-range`, when the document's text contains a character that face covers. Faces of unused families and unused subsets are neither inlined nor preloaded; they still load with the deferred stylesheet.
 - `fonts` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Shorthand for setting `inlineFonts` + `preloadFonts`\* Values:
   - `true` to inline critical font-face rules and preload the fonts
   - `false` to don't inline any font-face rules and don't preload fonts
