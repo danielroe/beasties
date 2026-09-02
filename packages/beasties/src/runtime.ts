@@ -10,6 +10,7 @@
 
 import type { AttrTest, CompiledRule, CompiledSheet, CompoundTest, SelectorMatch, StructuralProgram } from './compiler'
 import type { CompactPlan } from './plan'
+import { isSafeMediaValue } from './media'
 import { isCompactPlan } from './plan'
 import { decodePlan } from './plan-decode'
 
@@ -825,10 +826,6 @@ function fingerprintTokens(tokens: DocumentTokens): string {
 const CSS_HREF_RE = /\.css(?:[?#]|$)/i
 const LINK_TAG_RE = /<link\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi
 const REL_STYLESHEET_RE = /\brel\s*=\s*(?:"stylesheet"|'stylesheet'|stylesheet(?=[\s>]))/i
-// conservative allowlist so a media attribute can be re-emitted into onload
-// javascript without any possibility of attribute or script breakout
-const SAFE_MEDIA_RE = /^[\w\s\-(),:.]+$/
-
 const CSS_LOADER_PREAMBLE = 'function $loadcss(u,m,l){(l=document.createElement(\'link\')).rel=\'stylesheet\';l.href=u;document.head.appendChild(l)}'
 const CSS_LOADER_LAZY_PREAMBLE = CSS_LOADER_PREAMBLE.replace(
   'l.href',
@@ -1106,7 +1103,7 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
       }
 
       const rawMedia = getAttr(tag, 'media')
-      const media = rawMedia && SAFE_MEDIA_RE.test(rawMedia) ? rawMedia : undefined
+      const media = rawMedia && isSafeMediaValue(rawMedia) ? rawMedia : undefined
       let newTag = tag
       let noscriptFallback = false
       let scriptAfter: string | undefined
