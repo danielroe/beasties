@@ -12,7 +12,11 @@
 
 import type { AttrTest } from './compiler'
 
-/** A string, or an index into the plan's string pool */
+/**
+ * A string, or a one-based index into the plan's string pool. References are
+ * biased by one so that `0` is free to mean "field absent" in the slots typed
+ * `PooledString | 0`.
+ */
 export type PooledString = string | number
 
 export type CompactPlan = [
