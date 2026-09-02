@@ -144,6 +144,7 @@ All optional. Pass them to `new Beasties({ ... })`.
 - `safeParser` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Use PostCSS safe parser for fault-tolerant CSS parsing. Handles legacy code with syntax errors _(default: `true`)_
 - `logLevel` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Controls [log level](#loglevel) of the plugin _(default: `"info"`)_
 - `logger` **[object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** Provide a custom logger interface [logger](#logger)
+- `dedupeWarnings` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Suppress repeated identical warnings and errors, either `"process"`-wide (within a one minute window), per `"instance"`, or `false` to emit every message _(default: `"process"`)_
 
 ### Include/exclude rules
 
