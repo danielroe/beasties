@@ -197,14 +197,20 @@ export default class Beasties {
       return
     }
     const script = document.createElement('script')
-    this.applyNonce(script)
+    this.applyNonce(document, script)
     script.textContent = DEFERRED_MEDIA_SCRIPT
     document.body.appendChild(script)
   }
 
-  private applyNonce(element: Node) {
-    if (this.options.nonce) {
-      element.setAttribute('nonce', this.options.nonce)
+  private nonceValue: string | undefined
+  private applyNonce(document: HTMLDocument, element: Node) {
+    this.nonceValue
+      ??= typeof this.options.nonce === 'function'
+        ? this.options.nonce(document)
+        : this.options.nonce
+
+    if (this.nonceValue) {
+      element.setAttribute('nonce', this.nonceValue)
     }
   }
 
@@ -319,7 +325,7 @@ export default class Beasties {
         }
         styleSheetsIncluded.push(cssFile)
         const style = document.createElement('style')
-        this.applyNonce(style)
+        this.applyNonce(document, style)
         style.$$external = true
         style.$$name = cssFile
         return this.getCssAsset(cssFile, style).then(sheet => [sheet, style] as const)
@@ -353,7 +359,7 @@ export default class Beasties {
 
     // dreate style element early so subclasses can use it in getCssAsset
     const style = document.createElement('style')
-    this.applyNonce(style)
+    this.applyNonce(document, style)
     style.$$external = true
 
     const sheet = await this.getCssAsset(href, style)
@@ -411,7 +417,7 @@ export default class Beasties {
     else {
       if (preloadMode === 'js' || preloadMode === 'js-lazy') {
         const script = document.createElement('script')
-        this.applyNonce(script)
+        this.applyNonce(document, script)
         script.setAttribute('data-href', href)
         script.setAttribute('data-media', media || 'all')
         const js = `${cssLoaderPreamble}$loadcss(document.currentScript.dataset.href,document.currentScript.dataset.media)`

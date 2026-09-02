@@ -1,6 +1,7 @@
+import type { HTMLDocument } from '../src/dom'
 import { DomUtils, parseDocument } from 'htmlparser2'
-import { describe, expect, it } from 'vitest'
 
+import { describe, expect, it, vi } from 'vitest'
 import { compileSheet } from '../src/compiler'
 import Beasties from '../src/index'
 import { createProcessor } from '../src/runtime'
@@ -54,6 +55,53 @@ describe('nonce (classic)', () => {
     const result = await classic({ nonce: 'a"><b>', preload: false }).process(html())
     expect(result).toContain('<style nonce="a&quot;><b>">')
   })
+
+  it('should set the nonce returned by a function on the inlined style', async () => {
+    const nonce = vi.fn(() => 'abc123')
+    const result = await classic({ nonce, preload: false }).process(html())
+    expect(result).toContain('<style nonce="abc123">h1{color:blue}</style>')
+    expect(nonce).toHaveBeenCalledOnce()
+  })
+
+  it('should pass the document to the nonce function', async () => {
+    let receivedDoc: HTMLDocument | undefined
+    const result = await classic({
+      nonce: (doc) => {
+        receivedDoc = doc
+        return doc.querySelector('meta[name="csp-nonce"]')?.getAttribute('content')
+      },
+      preload: false,
+    }).process(
+      '<html><head><meta name="csp-nonce" content="meta-nonce"><link rel="stylesheet" href="/style.css"></head><body><h1>Hello World!</h1></body></html>',
+    )
+    expect(receivedDoc).toBeDefined()
+    expect(result).toContain('<style nonce="meta-nonce">h1{color:blue}</style>')
+  })
+
+  it('should not set a nonce when the nonce function returns undefined', async () => {
+    const result = await classic({ nonce: () => undefined, preload: false }).process(html())
+    expect(result).toContain('<style>h1{color:blue}</style>')
+  })
+
+  it('should set the function-provided nonce on additional stylesheets', async () => {
+    const beasties = classic({ nonce: () => 'abc123', preload: false, additionalStylesheets: ['/extra.css'] })
+    const result = await beasties.process(html(''))
+    expect(result).toContain('<style nonce="abc123">h1{color:blue}</style>')
+  })
+
+  it('should set the function-provided nonce on the "js" loader script', async () => {
+    const result = await classic({ nonce: () => 'abc123', preload: 'js' }).process(html())
+    expect(result).toContain('<script nonce="abc123" data-href="/style.css" data-media="all">')
+  })
+
+  it('should evaluate the nonce function only once per document', async () => {
+    const nonce = vi.fn(() => 'abc123')
+    const beasties = classic({ nonce, preload: 'js' })
+    const result = await beasties.process(html())
+    expect(result).toContain('<style nonce="abc123">')
+    expect(result).toContain('<script nonce="abc123"')
+    expect(nonce).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('nonce (compiled)', () => {
@@ -91,6 +139,11 @@ describe('"media-script" preload mode (classic)', () => {
 
   it('should set the nonce on the script', async () => {
     const result = await classic({ preload: 'media-script', nonce: 'abc123' }).process(html())
+    expect(result).toContain(`<script nonce="abc123">${DEFERRED_SCRIPT}</script>`)
+  })
+
+  it('should set the function-provided nonce on the script', async () => {
+    const result = await classic({ preload: 'media-script', nonce: () => 'abc123' }).process(html())
     expect(result).toContain(`<script nonce="abc123">${DEFERRED_SCRIPT}</script>`)
   })
 
