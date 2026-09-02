@@ -38,6 +38,9 @@ const WHITESPACE_RE = /\s+/
 // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
 const URL_RE = /url\s*\(\s*(['"]?)(.+?)\1\s*\)/
 
+const DEFERRED_MEDIA_ATTR = 'data-beasties-media'
+const DEFERRED_MEDIA_SCRIPT = `document.querySelectorAll('link[${DEFERRED_MEDIA_ATTR}]').forEach(function(l){l.media=l.getAttribute('${DEFERRED_MEDIA_ATTR}');l.removeAttribute('${DEFERRED_MEDIA_ATTR}')})`
+
 interface PreFetchedStylesheet {
   link: ChildNode
   href: string
@@ -145,6 +148,10 @@ export default class Beasties {
       }
     }
 
+    if (this.options.preload === 'media-script') {
+      this.injectDeferredMediaScript(document)
+    }
+
     // go through all the style tags in the document and reduce them to only critical CSS
     const styles = this.getAffectedStyleTags(document)
     for (const style of styles) {
@@ -173,6 +180,27 @@ export default class Beasties {
       return styles.filter(style => style.$$external)
     }
     return styles
+  }
+
+  /**
+   * Append the single deferred-CSS activation script used by the `"media-script"`
+   * strategy, if any link was actually deferred. The script body is invariant, so
+   * it can be covered by a CSP hash as well as by `options.nonce`.
+   */
+  private injectDeferredMediaScript(document: HTMLDocument) {
+    if (document.querySelectorAll(`link[${DEFERRED_MEDIA_ATTR}]`).length === 0) {
+      return
+    }
+    const script = document.createElement('script')
+    this.applyNonce(script)
+    script.textContent = DEFERRED_MEDIA_SCRIPT
+    document.body.appendChild(script)
+  }
+
+  private applyNonce(element: Node) {
+    if (this.options.nonce) {
+      element.setAttribute('nonce', this.options.nonce)
+    }
   }
 
   mergeStylesheets(document: HTMLDocument): void {
@@ -283,6 +311,7 @@ export default class Beasties {
         }
         styleSheetsIncluded.push(cssFile)
         const style = document.createElement('style')
+        this.applyNonce(style)
         style.$$external = true
         style.$$name = cssFile
         return this.getCssAsset(cssFile, style).then(sheet => [sheet, style] as const)
@@ -316,6 +345,7 @@ export default class Beasties {
 
     // dreate style element early so subclasses can use it in getCssAsset
     const style = document.createElement('style')
+    this.applyNonce(style)
     style.$$external = true
 
     const sheet = await this.getCssAsset(href, style)
@@ -373,6 +403,7 @@ export default class Beasties {
     else {
       if (preloadMode === 'js' || preloadMode === 'js-lazy') {
         const script = document.createElement('script')
+        this.applyNonce(script)
         script.setAttribute('data-href', href)
         script.setAttribute('data-media', media || 'all')
         const js = `${cssLoaderPreamble}$loadcss(document.currentScript.dataset.href,document.currentScript.dataset.media)`
@@ -383,6 +414,11 @@ export default class Beasties {
         cssLoaderPreamble = ''
         noscriptFallback = true
         updateLinkToPreload = true
+      }
+      else if (preloadMode === 'media-script') {
+        link.setAttribute('media', 'print')
+        link.setAttribute(DEFERRED_MEDIA_ATTR, media || 'all')
+        noscriptFallback = true
       }
       else if (preloadMode === 'media') {
         // @see https://github.com/filamentgroup/loadCSS/blob/af1106cfe0bf70147e22185afa7ead96c01dec48/src/loadCSS.js#L26
