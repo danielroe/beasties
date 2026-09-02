@@ -777,7 +777,10 @@ export interface ProcessorOptions extends RuntimeOptions {
    */
   noscriptFallback?: boolean
   /**
-   * CSP nonce to set on every `<style>` and `<script>` element beasties injects
+   * CSP nonce to set on every `<style>` and `<script>` element beasties
+   * injects. A processor is typically long-lived and a nonce must be unique
+   * per response, so pass it to `process()` instead unless it is genuinely
+   * constant for the lifetime of the processor.
    */
   nonce?: string
   /**
@@ -961,8 +964,16 @@ function applyEdits(html: string, edits: Edit[]): string {
  * Create a `process(html)` function which inlines critical CSS from the
  * compiled sheets into rendered HTML.
  */
+export interface ProcessOptions {
+  /**
+   * CSP nonce to set on every `<style>` and `<script>` element injected into
+   * this document, overriding any nonce given to `createProcessor`.
+   */
+  nonce?: string
+}
+
 export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, options: ProcessorOptions = {}): {
-  process: (html: string) => string
+  process: (html: string, processOptions?: ProcessOptions) => string
   extract: (html: string) => CriticalResult
 } {
   const sheets = plans.map(plan => (isCompactPlan(plan) ? decodePlan(plan) : plan))
@@ -974,7 +985,6 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
   // the inverse is only needed to compare against `minimumExternalSize`
   const renderOptions = { ...options, inverse: !!options.minimumExternalSize }
   const fullCssCache = new Map<CompiledSheet, string>()
-  const nonceAttr = options.nonce ? ` nonce="${escapeAttr(options.nonce)}"` : ''
 
   function fullCss(sheet: CompiledSheet): string {
     let css = fullCssCache.get(sheet)
@@ -1058,10 +1068,12 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
     return { css: css.join(''), fontPreloads }
   }
 
-  function process(html: string): string {
+  function process(html: string, processOptions?: ProcessOptions): string {
     const tokens = scanHtml(html, programs)
     const key = cache ? fingerprintTokens(tokens) : undefined
     const strategy = options.preload
+    const nonce = processOptions?.nonce ?? options.nonce
+    const nonceAttr = nonce ? ` nonce="${escapeAttr(nonce)}"` : ''
 
     let firstLinkIndex = -1
     const edits: Edit[] = []

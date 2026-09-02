@@ -119,6 +119,29 @@ describe('nonce (compiled)', () => {
     const result = compiled({ nonce: 'a"><b>', preload: false }).process(html())
     expect(result).toContain('<style nonce="a&quot;><b>">')
   })
+
+  it('should set a per-document nonce passed to process', () => {
+    const processor = compiled({ preload: 'js' })
+    expect(processor.process(html(), { nonce: 'first' })).toContain('<style nonce="first">h1{color:blue}</style>')
+    expect(processor.process(html(), { nonce: 'second' })).toContain('<style nonce="second">h1{color:blue}</style>')
+    expect(processor.process(html(), { nonce: 'second' })).toContain('<script nonce="second" data-href="/style.css"')
+  })
+
+  it('should let a per-document nonce override the processor nonce', () => {
+    const result = compiled({ nonce: 'from-options', preload: false }).process(html(), { nonce: 'from-document' })
+    expect(result).toContain('<style nonce="from-document">h1{color:blue}</style>')
+  })
+
+  it('should fall back to the processor nonce when none is passed', () => {
+    const result = compiled({ nonce: 'from-options', preload: false }).process(html(), {})
+    expect(result).toContain('<style nonce="from-options">h1{color:blue}</style>')
+  })
+
+  it('should not reuse a cached document nonce', () => {
+    const processor = compiled({ nonce: 'from-options', preload: false })
+    processor.process(html(), { nonce: 'first' })
+    expect(processor.process(html())).toContain('<style nonce="from-options">h1{color:blue}</style>')
+  })
 })
 
 describe('"media-script" preload mode (classic)', () => {
@@ -196,6 +219,11 @@ describe('"media-script" preload mode (compiled)', () => {
 
   it('should set the nonce on the script', () => {
     const result = compiled({ preload: 'media-script', nonce: 'abc123' }).process(html())
+    expect(result).toContain(`<script nonce="abc123">${DEFERRED_SCRIPT}</script>`)
+  })
+
+  it('should set a per-document nonce on the script', () => {
+    const result = compiled({ preload: 'media-script' }).process(html(), { nonce: 'abc123' })
     expect(result).toContain(`<script nonce="abc123">${DEFERRED_SCRIPT}</script>`)
   })
 
