@@ -25,6 +25,7 @@ import path from 'node:path'
 import { applyMarkedSelectors, markOnly, parseStylesheet, serializeStylesheet, validateMediaQuery, walkStyleRules, walkStyleRulesWithReverseMirror } from './css'
 import { CRITTERS_DEPRECATION_WARNING, parseDirective } from './directives'
 import { createDocument, serializeDocument } from './dom'
+import { normalizeFontFamily, parseFontFamilies } from './fonts'
 import { isSafeMediaValue } from './media'
 import { isAlwaysCriticalSelector, isUnevaluableSelectorError, normalizeCssSelector } from './selectors'
 import { REMOTE_URL_RE, resolveCssUrl, rewriteCssUrls } from './urls'
@@ -32,7 +33,7 @@ import { createDeduplicatingLogger, createLogger, isSubpath } from './util'
 
 const LEADING_SLASH_OR_QUERY_RE = /^\/(?!\/)|[?#].*$/g
 const PUBLIC_PATH_RE = /(^\/(?!\/)|\/$)/g
-const FONT_FAMILY_RE = /\bfont(?:-family)?\b/i
+const FONT_PROP_RE = /^font(?:-family)?$/i
 const LEADING_SLASH_RE = /^\//
 const WHITESPACE_RE = /\s+/
 // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
@@ -568,8 +569,7 @@ export default class Beasties {
     const ast = parseStylesheet(sheet, { safeParser: this.options.safeParser !== false })
     const astInverse = options.pruneSource ? parseStylesheet(sheet, { safeParser: this.options.safeParser !== false }) : null
 
-    // a string to search for font names (very loose)
-    let criticalFonts = ''
+    const criticalFonts = new Set<string>()
 
     const unparseableSelectors: string[] = []
 
@@ -696,8 +696,10 @@ export default class Beasties {
                 continue
               }
               // detect used fonts
-              if (shouldInlineFonts && FONT_FAMILY_RE.test(decl.prop)) {
-                criticalFonts += ` ${decl.value}`
+              if (shouldInlineFonts && FONT_PROP_RE.test(decl.prop)) {
+                for (const family of parseFontFamilies(decl.prop, decl.value)) {
+                  criticalFonts.add(family)
+                }
               }
 
               // detect used keyframes
@@ -782,11 +784,11 @@ export default class Beasties {
         }
 
         // if we're missing info, if the font is unused, or if critical font inlining is disabled, remove the rule:
+        // (`src` may be local()-only, as in metric-override fallback faces, so it isn't required)
         if (
           !shouldInlineFonts
           || !family
-          || !src
-          || !criticalFonts.includes(family)
+          || !criticalFonts.has(normalizeFontFamily(family))
         ) {
           return false
         }

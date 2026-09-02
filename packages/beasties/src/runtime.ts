@@ -10,6 +10,7 @@
 
 import type { AttrTest, CompiledRule, CompiledSheet, CompoundTest, SelectorMatch, StructuralProgram } from './compiler'
 import type { CompactPlan } from './plan'
+import { normalizeFontFamily } from './fonts'
 import { isSafeMediaValue } from './media'
 import { isCompactPlan } from './plan'
 import { decodePlan } from './plan-decode'
@@ -625,7 +626,7 @@ export function renderCriticalCss(sheet: CompiledSheet, tokens: DocumentTokens, 
     ? Array.from<string | null>({ length: rules.length }).fill(null)
     : undefined
 
-  let criticalFonts = ''
+  const criticalFonts = new Set<string>()
   const criticalKeyframeNames = new Set<string>()
   const fontPreloads: string[] = []
   const preloadedFonts = new Set<string>()
@@ -654,7 +655,9 @@ export function renderCriticalCss(sheet: CompiledSheet, tokens: DocumentTokens, 
     texts[i] = text
 
     if (rule.fontsUsed) {
-      criticalFonts += ` ${rule.fontsUsed.join(' ')}`
+      for (const family of rule.fontsUsed) {
+        criticalFonts.add(normalizeFontFamily(family))
+      }
     }
     if (rule.keyframesUsed) {
       for (const name of rule.keyframesUsed) {
@@ -677,8 +680,8 @@ export function renderCriticalCss(sheet: CompiledSheet, tokens: DocumentTokens, 
       continue
     }
     if (rule.fontFace) {
-      const { family, src } = rule.fontFace
-      if (shouldInlineFonts && family && src && criticalFonts.includes(family)) {
+      const { family } = rule.fontFace
+      if (shouldInlineFonts && family && criticalFonts.has(normalizeFontFamily(family))) {
         texts[i] = rule.css ?? ''
       }
       else if (inverseTexts) {
