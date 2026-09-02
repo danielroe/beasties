@@ -1,3 +1,4 @@
+import type { HTMLDocument } from './dom'
 import type { DedupeScope, Logger, LogLevel } from './util'
 
 /**
@@ -76,7 +77,7 @@ export interface Options {
   /**
    * CSP nonce to set on every `<style>` and `<script>` element beasties injects
    */
-  nonce?: string
+  nonce?: string | ((document: HTMLDocument) => string | undefined)
   /**
    * Inline critical font-face rules _(default: `false`)_
    */
