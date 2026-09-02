@@ -282,7 +282,10 @@ export default class Beasties {
       sheet = await this.readFile(filename)
     }
     catch {
-      this.logger.warn?.(`Unable to locate stylesheet: ${filename}`)
+      this.logger.warn?.(
+        `Unable to locate stylesheet ${href} (resolved to ${filename}, using path: ${JSON.stringify(outputPath)}, publicPath: ${JSON.stringify(publicPath)}). `
+        + `If this file is not part of your build output, add data-beasties-skip to its <link> to skip it.`,
+      )
     }
 
     return sheet
