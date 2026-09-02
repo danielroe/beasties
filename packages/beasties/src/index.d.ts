@@ -58,7 +58,7 @@ export interface Options {
   additionalStylesheets?: string[]
   preload?: 'body' | 'media' | 'media-script' | 'swap' | 'swap-high' | 'swap-low' | 'js' | 'js-lazy'
   noscriptFallback?: boolean
-  nonce?: string
+  nonce?: string | ((document: HTMLDocument) => string | undefined)
   inlineFonts?: boolean
   preloadFonts?: boolean
   allowRules?: Array<string | RegExp>
