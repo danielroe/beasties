@@ -1,7 +1,49 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createDocument } from '../src/dom'
 
 describe('dom', () => {
+  describe('duplicate copies sharing one domhandler', () => {
+    const HTML = '<html><body><div class="hero">text</div></body></html>'
+
+    /** load a second copy of src/dom that resolves the already-loaded domhandler */
+    async function loadSecondCopy(version?: string) {
+      const domhandler = await import('domhandler')
+      createDocument(HTML)
+
+      vi.resetModules()
+      vi.doMock('domhandler', () => domhandler)
+      if (version) {
+        const pkg = await import('../package.json')
+        vi.doMock('../package.json', () => ({ ...pkg, version }))
+      }
+      const { createDocument: createDocumentAgain } = await import('../src/dom')
+      vi.doUnmock('domhandler')
+      vi.doUnmock('../package.json')
+      return createDocumentAgain
+    }
+
+    it('reuses the existing patch instead of throwing', async () => {
+      const createDocumentAgain = await loadSecondCopy()
+      const logger = { warn: vi.fn() }
+
+      const doc = createDocumentAgain(HTML, logger)
+
+      expect(doc.beastiesContainers[0]!.exists('.hero')).toBe(true)
+      expect(logger.warn).not.toHaveBeenCalled()
+    })
+
+    it('warns when the copies are different versions', async () => {
+      const createDocumentAgain = await loadSecondCopy('99.0.0')
+      const logger = { warn: vi.fn() }
+
+      createDocumentAgain(HTML, logger)
+
+      expect(logger.warn).toHaveBeenCalledOnce()
+      expect(logger.warn.mock.calls[0]![0]).toContain('Multiple versions of beasties')
+      expect(logger.warn.mock.calls[0]![0]).toContain('99.0.0')
+    })
+  })
+
   describe('exists() selector cache', () => {
     it('falls through to DOM query when selector has a complex group', () => {
       const doc = createDocument(`

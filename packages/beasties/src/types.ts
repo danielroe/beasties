@@ -1,4 +1,4 @@
-import type { Logger, LogLevel } from './util'
+import type { DedupeScope, Logger, LogLevel } from './util'
 
 /**
  * The mechanism to use for lazy-loading stylesheets.
@@ -8,6 +8,7 @@ import type { Logger, LogLevel } from './util'
  * - **default:** Move stylesheet links to the end of the document and insert preload meta tags in their place.
  * - **"body":** Move all external stylesheet links to the end of the document.
  * - **"media":** Load stylesheets asynchronously by adding `media="not x"` and removing once loaded. <kbd>JS</kbd>
+ * - **"media-script":** Like `"media"`, but instead of an inline `onload` handler the deferred links are marked with `data-beasties-media` and a single script (with an invariant body, so it can be allowed by CSP hash or `nonce`) restores their media. <kbd>JS</kbd>
  * - **"swap":** Convert stylesheet links to preloads that swap to `rel="stylesheet"` once loaded ([details](https://www.filamentgroup.com/lab/load-css-simpler/#the-code)). <kbd>JS</kbd>
  * - **"swap-high":** Use `<link rel="alternate stylesheet preload">` and swap to `rel="stylesheet"` once loaded ([details](http://filamentgroup.github.io/loadCSS/test/new-high.html)). <kbd>JS</kbd>
  * - **"swap-low":** Use `<link rel="alternate stylesheet">` (no `preload` in `rel` here!) and swap to `rel="stylesheet"` once loaded ([details](http://filamentgroup.github.io/loadCSS/test/new-low.html)). It ensures lowest priority compared to `swap` and `swap-high`. <kbd>JS</kbd>
@@ -15,7 +16,7 @@ import type { Logger, LogLevel } from './util'
  * - **"js-lazy":** Like `"js"`, but the stylesheet is disabled until fully loaded.
  * - **false:** Disables adding preload tags.
  */
-type PreloadStrategy = 'body' | 'media' | 'swap' | 'swap-high' | 'swap-low' | 'js' | 'js-lazy'
+type PreloadStrategy = 'body' | 'media' | 'media-script' | 'swap' | 'swap-high' | 'swap-low' | 'js' | 'js-lazy'
 
 /**
  * Controls which keyframes rules are inlined.
@@ -73,6 +74,10 @@ export interface Options {
    */
   noscriptFallback?: boolean
   /**
+   * CSP nonce to set on every `<style>` and `<script>` element beasties injects
+   */
+  nonce?: string
+  /**
    * Inline critical font-face rules _(default: `false`)_
    */
   inlineFonts?: boolean
@@ -113,6 +118,10 @@ export interface Options {
    * Provide a custom logger interface {@link Logger logger}
    */
   logger?: Logger
+  /**
+   * Suppress repeated identical warnings and errors, within the given {@link DedupeScope scope} _(default: `"process"`)_
+   */
+  dedupeWarnings?: DedupeScope | true
 }
 
 export type { Logger }

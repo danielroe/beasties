@@ -23,28 +23,23 @@ import { readFile, writeFile } from 'node:fs'
 import path from 'node:path'
 
 import { applyMarkedSelectors, markOnly, parseStylesheet, serializeStylesheet, validateMediaQuery, walkStyleRules, walkStyleRulesWithReverseMirror } from './css'
+import { CRITTERS_DEPRECATION_WARNING, parseDirective } from './directives'
 import { createDocument, serializeDocument } from './dom'
-import { createLogger, isSubpath } from './util'
+import { isSafeMediaValue } from './media'
+import { isAlwaysCriticalSelector, isUnevaluableSelectorError, normalizeCssSelector } from './selectors'
+import { REMOTE_URL_RE, resolveCssUrl, rewriteCssUrls } from './urls'
+import { createDeduplicatingLogger, createLogger, isSubpath } from './util'
 
-const removePseudoClassesAndElementsPattern = /(?<!\\)::?[a-z-]+(?:\(.+\))?/gi
-const implicitUniversalPattern = /([>+~])\s*(?!\1)([>+~])/g
-const emptyCombinatorPattern = /([>+~])\s*(?=\1|$)/g
-const removeTrailingCommasPattern = /\(\s*,|,\s*\)/g
 const LEADING_SLASH_OR_QUERY_RE = /^\/(?!\/)|[?#].*$/g
 const PUBLIC_PATH_RE = /(^\/(?!\/)|\/$)/g
-const REMOTE_URL_RE = /^https?:\/\//
-const BEFORE_AFTER_PSEUDO_RE = /^::?(?:before|after)$/
 const FONT_FAMILY_RE = /\bfont(?:-family)?\b/i
-// eslint-disable-next-line regexp/no-useless-assertions
-const BEASTIES_COMMENT_RE = /^(?<!! )beasties:(.*)/
 const LEADING_SLASH_RE = /^\//
 const WHITESPACE_RE = /\s+/
 // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
 const URL_RE = /url\s*\(\s*(['"]?)(.+?)\1\s*\)/
-// unquoted urls cannot contain unescaped parentheses, and excluding them keeps
-// backtracking linear on input like `url((((...`
-const URL_RE_G = /url\((?:'([^']*)'|"([^"]*)"|([^()]*))\)/gi
-const ABSOLUTE_URL_RE = /^(?:[a-z][\w+.-]*:|\/\/|\/|#)/i
+
+const DEFERRED_MEDIA_ATTR = 'data-beasties-media'
+const DEFERRED_MEDIA_SCRIPT = `document.querySelectorAll('link[${DEFERRED_MEDIA_ATTR}]').forEach(function(l){l.media=l.getAttribute('${DEFERRED_MEDIA_ATTR}');l.removeAttribute('${DEFERRED_MEDIA_ATTR}')})`
 
 interface PreFetchedStylesheet {
   link: ChildNode
@@ -55,7 +50,8 @@ interface PreFetchedStylesheet {
 
 export default class Beasties {
   #selectorCache = new Map<string, string>()
-  options: Options & Required<Pick<Options, 'logLevel' | 'path' | 'publicPath' | 'reduceInlineStyles' | 'pruneSource' | 'additionalStylesheets'>> & { allowRules: Array<string | RegExp> }
+  #preloadedFonts = new WeakMap<HTMLDocument, Set<string>>()
+  options: Options & Required<Pick<Options, 'logLevel' | 'path' | 'publicPath' | 'reduceInlineStyles' | 'pruneSource' | 'additionalStylesheets' | 'dedupeWarnings'>> & { allowRules: Array<string | RegExp> }
   logger: Logger
   fs?: typeof import('node:fs')
 
@@ -68,9 +64,13 @@ export default class Beasties {
       pruneSource: false,
       additionalStylesheets: [],
       allowRules: [],
+      dedupeWarnings: 'process',
     }, options)
 
-    this.logger = this.options.logger || createLogger(this.options.logLevel)
+    this.logger = createDeduplicatingLogger(
+      this.options.logger || createLogger(this.options.logLevel),
+      this.options.dedupeWarnings === true ? 'process' : this.options.dedupeWarnings,
+    )
   }
 
   /**
@@ -121,7 +121,7 @@ export default class Beasties {
     const start = Date.now()
 
     // Parse the generated HTML in a DOM we can mutate
-    const document = createDocument(html)
+    const document = createDocument(html, this.logger)
 
     if (this.options.additionalStylesheets.length > 0) {
       await this.embedAdditionalStylesheet(document)
@@ -153,6 +153,10 @@ export default class Beasties {
       }
     }
 
+    if (this.options.preload === 'media-script') {
+      this.injectDeferredMediaScript(document)
+    }
+
     // go through all the style tags in the document and reduce them to only critical CSS
     const styles = this.getAffectedStyleTags(document)
     for (const style of styles) {
@@ -181,6 +185,27 @@ export default class Beasties {
       return styles.filter(style => style.$$external)
     }
     return styles
+  }
+
+  /**
+   * Append the single deferred-CSS activation script used by the `"media-script"`
+   * strategy, if any link was actually deferred. The script body is invariant, so
+   * it can be covered by a CSP hash as well as by `options.nonce`.
+   */
+  private injectDeferredMediaScript(document: HTMLDocument) {
+    if (document.querySelectorAll(`link[${DEFERRED_MEDIA_ATTR}]`).length === 0) {
+      return
+    }
+    const script = document.createElement('script')
+    this.applyNonce(script)
+    script.textContent = DEFERRED_MEDIA_SCRIPT
+    document.body.appendChild(script)
+  }
+
+  private applyNonce(element: Node) {
+    if (this.options.nonce) {
+      element.setAttribute('nonce', this.options.nonce)
+    }
   }
 
   mergeStylesheets(document: HTMLDocument): void {
@@ -258,7 +283,10 @@ export default class Beasties {
       sheet = await this.readFile(filename)
     }
     catch {
-      this.logger.warn?.(`Unable to locate stylesheet: ${filename}`)
+      this.logger.warn?.(
+        `Unable to locate stylesheet ${href} (resolved to ${filename}, using path: ${JSON.stringify(outputPath)}, publicPath: ${JSON.stringify(publicPath)}). `
+        + `If this file is not part of your build output, add data-beasties-skip to its <link> to skip it.`,
+      )
     }
 
     return sheet
@@ -291,6 +319,7 @@ export default class Beasties {
         }
         styleSheetsIncluded.push(cssFile)
         const style = document.createElement('style')
+        this.applyNonce(style)
         style.$$external = true
         style.$$name = cssFile
         return this.getCssAsset(cssFile, style).then(sheet => [sheet, style] as const)
@@ -324,6 +353,7 @@ export default class Beasties {
 
     // dreate style element early so subclasses can use it in getCssAsset
     const style = document.createElement('style')
+    this.applyNonce(style)
     style.$$external = true
 
     const sheet = await this.getCssAsset(href, style)
@@ -352,7 +382,7 @@ export default class Beasties {
 
     let media: string | undefined = link.getAttribute('media')
 
-    if (media && !validateMediaQuery(media)) {
+    if (media && (!validateMediaQuery(media) || !isSafeMediaValue(media))) {
       media = undefined
     }
     const preloadMode = this.options.preload
@@ -381,6 +411,7 @@ export default class Beasties {
     else {
       if (preloadMode === 'js' || preloadMode === 'js-lazy') {
         const script = document.createElement('script')
+        this.applyNonce(script)
         script.setAttribute('data-href', href)
         script.setAttribute('data-media', media || 'all')
         const js = `${cssLoaderPreamble}$loadcss(document.currentScript.dataset.href,document.currentScript.dataset.media)`
@@ -391,6 +422,11 @@ export default class Beasties {
         cssLoaderPreamble = ''
         noscriptFallback = true
         updateLinkToPreload = true
+      }
+      else if (preloadMode === 'media-script') {
+        link.setAttribute('media', 'print')
+        link.setAttribute(DEFERRED_MEDIA_ATTR, media || 'all')
+        noscriptFallback = true
       }
       else if (preloadMode === 'media') {
         // @see https://github.com/filamentgroup/loadCSS/blob/af1106cfe0bf70147e22185afa7ead96c01dec48/src/loadCSS.js#L26
@@ -524,7 +560,7 @@ export default class Beasties {
     // a string to search for font names (very loose)
     let criticalFonts = ''
 
-    const failedSelectors: string[] = []
+    const unparseableSelectors: string[] = []
 
     const criticalKeyframeNames = new Set()
 
@@ -532,6 +568,7 @@ export default class Beasties {
     let includeAll = false
     let excludeNext = false
     let excludeAll = false
+    let warnedCritters = false
 
     const shouldPreloadFonts = options.fonts === true || options.preloadFonts === true
     const shouldInlineFonts = options.fonts !== false && options.inlineFonts === true
@@ -542,10 +579,18 @@ export default class Beasties {
       ast,
       markOnly((rule) => {
         if (rule.type === 'comment') {
-          // we might want to remove a leading ! on comment blocks
-          // beasties can be part of "legal comments" which aren't stripped on build
-          const beastiesComment = rule.text.match(BEASTIES_COMMENT_RE)
-          const command = beastiesComment && beastiesComment[1]
+          // comments starting with `!` are "legal comments" which aren't stripped on build,
+          // so they are not treated as directives
+          const { command, deprecated, warning } = parseDirective(rule.text)
+
+          if (warning) {
+            this.logger.warn?.(warning)
+          }
+
+          if (deprecated && !warnedCritters) {
+            warnedCritters = true
+            this.logger.warn?.(CRITTERS_DEPRECATION_WARNING)
+          }
 
           if (command) {
             switch (command) {
@@ -605,12 +650,7 @@ export default class Beasties {
 
             // Strip pseudo-elements and pseudo-classes, since we only care that their associated elements exist.
             // This means any selector for a pseudo-element or having a pseudo-class will be inlined if the rest of the selector matches.
-            if (
-              sel === ':root'
-              || sel === 'html'
-              || sel === 'body'
-              || (sel[0] === ':' && BEFORE_AFTER_PSEUDO_RE.test(sel))
-            ) {
+            if (isAlwaysCriticalSelector(sel)) {
               return true
             }
 
@@ -623,7 +663,13 @@ export default class Beasties {
               return beastiesContainers.some(container => container.exists(sel))
             }
             catch (e) {
-              failedSelectors.push(`${sel} -> ${(e as Error).message || (e as Error).toString()}`)
+              const message = (e as Error).message || String(e)
+              if (isUnevaluableSelectorError(message)) {
+                this.logger.debug?.(`Cannot statically evaluate selector, excluding it from critical CSS: ${sel} (${message})`)
+              }
+              else {
+                unparseableSelectors.push(`${sel} (${message})`)
+              }
               return false
             }
           })
@@ -666,13 +712,14 @@ export default class Beasties {
       }),
     )
 
-    if (failedSelectors.length !== 0) {
+    if (unparseableSelectors.length !== 0) {
+      const single = unparseableSelectors.length === 1
       this.logger.warn?.(
-        `${failedSelectors.length} rules skipped due to selector errors:\n  ${failedSelectors.join('\n  ')}`,
+        `Could not parse ${single ? '1 selector' : `${unparseableSelectors.length} selectors`} in ${style.$$name || 'inline styles'}; ${single ? 'its rule was' : 'their rules were'} left out of the critical CSS but still ${single ? 'applies' : 'apply'} once the full stylesheet loads:\n  ${unparseableSelectors.join('\n  ')}`,
       )
     }
 
-    const preloadedFonts = new Set<string>()
+    const preloadedFonts = this.getPreloadedFonts(document)
     // Second pass, using data picked up from the first
     walkStyleRulesWithReverseMirror(ast, astInverse, (rule) => {
       // remove any rules marked in the first pass
@@ -709,14 +756,17 @@ export default class Beasties {
             }
           }
 
-          if (src && shouldPreloadFonts && !preloadedFonts.has(src)) {
-            preloadedFonts.add(src)
-            const preload = document.createElement('link')
-            preload.setAttribute('rel', 'preload')
-            preload.setAttribute('as', 'font')
-            preload.setAttribute('crossorigin', 'anonymous')
-            preload.setAttribute('href', style.$$name ? resolveCssUrl(src.trim(), style.$$name) : src.trim())
-            document.head.appendChild(preload)
+          if (src && shouldPreloadFonts) {
+            const href = style.$$name ? resolveCssUrl(src.trim(), style.$$name) : src.trim()
+            if (!preloadedFonts.has(href)) {
+              preloadedFonts.add(href)
+              const preload = document.createElement('link')
+              preload.setAttribute('rel', 'preload')
+              preload.setAttribute('as', 'font')
+              preload.setAttribute('crossorigin', 'anonymous')
+              preload.setAttribute('href', href)
+              document.head.appendChild(preload)
+            }
           }
         }
 
@@ -782,62 +832,37 @@ export default class Beasties {
     )
   }
 
+  /**
+   * Font URLs already preloaded for a document, whether by beasties while
+   * processing an earlier stylesheet or by the document itself.
+   */
+  private getPreloadedFonts(document: HTMLDocument): Set<string> {
+    let preloaded = this.#preloadedFonts.get(document)
+    if (!preloaded) {
+      preloaded = new Set<string>()
+      for (const link of document.querySelectorAll('link[rel="preload"][as="font"]')) {
+        const href = link.getAttribute('href')
+        if (href) {
+          preloaded.add(href)
+        }
+      }
+      this.#preloadedFonts.set(document, preloaded)
+    }
+    return preloaded
+  }
+
   private normalizeCssSelector(sel: string): string {
     let normalizedSelector = this.#selectorCache.get(sel)
     if (normalizedSelector !== undefined) {
       return normalizedSelector
     }
 
-    normalizedSelector = sel
-      .replace(removePseudoClassesAndElementsPattern, '')
-      .replace(removeTrailingCommasPattern, match => (match.includes('(') ? '(' : ')'))
-      .replace(implicitUniversalPattern, '$1 * $2')
-      .replace(emptyCombinatorPattern, '$1 *')
-      .trim()
+    normalizedSelector = normalizeCssSelector(sel)
 
     this.#selectorCache.set(sel, normalizedSelector)
 
     return normalizedSelector
   }
-}
-
-/**
- * Resolve a `url()` value that is relative to `baseHref` (the location of the
- * stylesheet it was declared in) so that it can be used from the document instead.
- */
-function resolveCssUrl(url: string, baseHref: string): string {
-  if (!url || ABSOLUTE_URL_RE.test(url)) {
-    return url
-  }
-
-  const base = baseHref.split('?')[0]!.split('#')[0]!
-
-  if (REMOTE_URL_RE.test(base) || base.startsWith('//')) {
-    try {
-      const resolved = new URL(url, base.startsWith('//') ? `https:${base}` : base)
-      return base.startsWith('//') ? resolved.href.replace(REMOTE_URL_RE, '//') : resolved.href
-    }
-    catch {
-      return url
-    }
-  }
-
-  const dir = path.posix.dirname(base)
-  // the stylesheet sits alongside the document, so relative urls already resolve correctly
-  if (dir === '.' || dir === '') {
-    return url
-  }
-
-  return path.posix.join(dir, url)
-}
-
-function rewriteCssUrls(css: string, baseHref: string): string {
-  return css.replace(URL_RE_G, (match, singleQuoted?: string, doubleQuoted?: string, bare?: string) => {
-    const quote = singleQuoted !== undefined ? '\'' : doubleQuoted !== undefined ? '"' : ''
-    const url = singleQuoted ?? doubleQuoted ?? bare?.trim() ?? ''
-    const resolved = resolveCssUrl(url, baseHref)
-    return resolved === url ? match : `url(${quote}${resolved}${quote})`
-  })
 }
 
 function formatSize(size: number) {

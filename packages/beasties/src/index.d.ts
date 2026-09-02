@@ -56,8 +56,9 @@ export interface Options {
   pruneSource?: boolean
   mergeStylesheets?: boolean
   additionalStylesheets?: string[]
-  preload?: 'body' | 'media' | 'swap' | 'swap-high' | 'swap-low' | 'js' | 'js-lazy'
+  preload?: 'body' | 'media' | 'media-script' | 'swap' | 'swap-high' | 'swap-low' | 'js' | 'js-lazy'
   noscriptFallback?: boolean
+  nonce?: string
   inlineFonts?: boolean
   preloadFonts?: boolean
   allowRules?: Array<string | RegExp>
@@ -68,6 +69,7 @@ export interface Options {
   logLevel?: 'info' | 'warn' | 'error' | 'trace' | 'debug' | 'silent'
   reduceInlineStyles?: boolean
   logger?: Logger
+  dedupeWarnings?: 'process' | 'instance' | false | true
 }
 
 export interface Logger {

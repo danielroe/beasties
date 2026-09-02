@@ -17,12 +17,14 @@
 import type { AttributeSelector } from 'css-what'
 
 import type { ChildNode, Node, NodeWithChildren } from 'domhandler'
+import type { Logger } from './util'
 
 import { selectAll, selectOne } from 'css-select'
 import { parse as selectorParser } from 'css-what'
 import render from 'dom-serializer'
 import { Element, Text } from 'domhandler'
 import { DomUtils, parseDocument } from 'htmlparser2'
+import { version } from '../package.json'
 
 type ParsedDocument = ReturnType<typeof parseDocument>
 
@@ -57,13 +59,19 @@ function buildCache(container: Node) {
  * The DOM implementation is an htmlparser2 DOM enhanced with basic DOM mutation methods.
  * @param html   HTML to parse into a Document instance
  */
-export function createDocument(html: string): HTMLDocument {
+export function createDocument(html: string, logger?: Logger): HTMLDocument {
   const document = parseDocument(html, { decodeEntities: false })
 
   extendDocument(document)
 
-  // Extend Element.prototype with DOM manipulation methods.
-  extendElement(Element.prototype)
+  // Extend Element.prototype with DOM manipulation methods. `htmlparser2` may
+  // resolve a different copy of `domhandler` than we do, in which case parsed
+  // nodes do not inherit from the `Element` imported here.
+  const parsedPrototype = Object.getPrototypeOf(document.children.find(child => child.type === 'tag') ?? Element.prototype)
+  extendElement(parsedPrototype, logger)
+  if (parsedPrototype !== Element.prototype) {
+    extendElement(Element.prototype, logger)
+  }
 
   // Beasties containers are the viewport to evaluate critical CSS.
   let beastiesContainers: (Node | HTMLDocument)[] = document.querySelectorAll('[data-beasties-container]') as Node[]
@@ -120,12 +128,24 @@ declare module 'domhandler' {
  * Methods and descriptors to mix into Element.prototype
  * @private
  */
-let extended = false
-function extendElement(element: typeof Element.prototype) {
-  if (extended) {
+const extendedMarker = Symbol.for('beasties.element-extended')
+
+function extendElement(element: typeof Element.prototype, logger?: Logger) {
+  // `Element.prototype` is shared with any other copy of beasties that resolves
+  // the same `domhandler`, and the descriptors below are non-configurable, so a
+  // second copy must not reapply them.
+  const appliedVersion = (element as unknown as Record<symbol, unknown>)[extendedMarker]
+    ?? (Object.hasOwn(element, 'nodeName') ? 'an older version' : undefined)
+
+  if (typeof appliedVersion === 'string') {
+    if (appliedVersion !== version) {
+      logger?.warn?.(
+        `Multiple versions of beasties are patching the same \`domhandler\` instance (${appliedVersion} applied it, ${version} loaded after). `
+        + `Deduplicate beasties to a single version if you see unexpected DOM errors.`,
+      )
+    }
     return
   }
-  extended = true
 
   Object.defineProperties(element, {
     nodeName: {
@@ -245,6 +265,8 @@ function extendElement(element: typeof Element.prototype) {
       },
     },
   })
+
+  Object.defineProperty(element, extendedMarker, { value: version, configurable: true })
 }
 
 export interface HTMLDocument extends ParsedDocument {

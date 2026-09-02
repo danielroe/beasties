@@ -130,6 +130,7 @@ All optional. Pass them to `new Beasties({ ... })`.
 - `allowRules` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)<[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String) | [RegExp](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/RegExp)>** Always include rules matching these selectors or patterns in the critical CSS, regardless of whether they match elements in the document. _(default: `[]`)_
 - `preload` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Which [preload strategy](#preloadstrategy) to use
 - `noscriptFallback` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Add `<noscript>` fallback to JS-based strategies
+- `nonce` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** CSP nonce to set on every `<style>` and `<script>` element beasties injects
 - `inlineFonts` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Inline critical font-face rules _(default: `false`)_
 - `preloadFonts` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Preloads critical fonts _(default: `true`)_
 - `fonts` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Shorthand for setting `inlineFonts` + `preloadFonts`\* Values:
@@ -143,6 +144,7 @@ All optional. Pass them to `new Beasties({ ... })`.
 - `safeParser` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Use PostCSS safe parser for fault-tolerant CSS parsing. Handles legacy code with syntax errors _(default: `true`)_
 - `logLevel` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Controls [log level](#loglevel) of the plugin _(default: `"info"`)_
 - `logger` **[object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** Provide a custom logger interface [logger](#logger)
+- `dedupeWarnings` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Suppress repeated identical warnings and errors, either `"process"`-wide (within a one minute window), per `"instance"`, or `false` to emit every message _(default: `"process"`)_
 
 ### Include/exclude rules
 
@@ -199,6 +201,10 @@ Including/Excluding multiple rules by adding start and end markers
 
 /* beasties:include end */
 ```
+
+The supported directives are `beasties:include`, `beasties:exclude`, `beasties:include start`, `beasties:include end`, `beasties:exclude start` and `beasties:exclude end`.
+
+The `critters:` prefix (from the project beasties was forked from) is still accepted as a deprecated alias and logs a warning. Comments which look like a directive but aren't recognised, such as `/* beasties:inclde */` or `/* critter:include */`, also log a warning rather than being silently ignored.
 
 ### Programmatically including rules with allowRules
 
@@ -278,6 +284,30 @@ If a stylesheet should not be processed by Beasties — for example a file that 
 
 Beasties will not read, inline, prune, or mutate that tag regardless of the active preload strategy. This is useful when disabling `inlineCritical` globally would sacrifice Core Web Vitals optimizations for the rest of your stylesheets.
 
+### Content Security Policy
+
+All preload strategies other than `"body"`, `"media-script"` and `preload: false` rely on an inline `onload` attribute or an inline `<script>`, both of which are blocked under a strict CSP (`script-src-attr 'none'`, or `strict-dynamic` alongside a hash or nonce, which makes `'unsafe-inline'` inert).
+
+To defer non-critical CSS under a strict CSP, use `preload: 'media-script'` with a `nonce`:
+
+```js
+const beasties = new Beasties({
+  preload: 'media-script',
+  nonce: requestNonce,
+})
+```
+
+Deferred links are left as `media="print"` with the real media value in `data-beasties-media`, and a single script restores them:
+
+```html
+<link rel="stylesheet" href="/style.css" media="print" data-beasties-media="all">
+<noscript><link rel="stylesheet" href="/style.css"></noscript>
+<!-- ...at the end of <body> -->
+<script nonce="...">document.querySelectorAll('link[data-beasties-media]').forEach(function(l){l.media=l.getAttribute('data-beasties-media');l.removeAttribute('data-beasties-media')})</script>
+```
+
+Exactly one script is emitted per document and its body never varies, so if you cannot supply a nonce you can allow it with a static `script-src` hash instead.
+
 ### Logger
 
 Custom logger interface:
@@ -316,6 +346,7 @@ Note: <kbd>JS</kbd> indicates a strategy requiring JavaScript (falls back to `<n
 - **default:** Move stylesheet links to the end of the document and insert preload meta tags in their place.
 - **"body":** Move all external stylesheet links to the end of the document.
 - **"media":** Load stylesheets asynchronously by adding `media="not x"` and removing once loaded. <kbd>JS</kbd>
+- **"media-script":** Like `"media"`, but instead of an inline `onload` handler the deferred links are marked with `data-beasties-media` and a single script at the end of `<body>` restores their media. The script body is invariant, so it can be allowed with a CSP hash or with `options.nonce`. <kbd>JS</kbd>
 - **"swap":** Convert stylesheet links to preloads that swap to `rel="stylesheet"` once loaded ([details](https://www.filamentgroup.com/lab/load-css-simpler/#the-code)). <kbd>JS</kbd>
 - **"swap-high":** Use `<link rel="alternate stylesheet preload">` and swap to `rel="stylesheet"` once loaded ([details](http://filamentgroup.github.io/loadCSS/test/new-high.html)). <kbd>JS</kbd>
 - **"swap-low":** Use `<link rel="alternate stylesheet">` (no `preload` in `rel` here!) and swap to `rel="stylesheet"` once loaded ([details](http://filamentgroup.github.io/loadCSS/test/new-low.html)). It ensures lowest priority compared to `swap` and `swap-high`. <kbd>JS</kbd>
@@ -323,7 +354,7 @@ Note: <kbd>JS</kbd> indicates a strategy requiring JavaScript (falls back to `<n
 - **"js-lazy":** Like `"js"`, but the stylesheet is disabled until fully loaded.
 - **false:** Disables adding preload tags.
 
-Type: (default | `"body"` | `"media"` | `"swap"` | `"swap-high"` | `"swap-low"` | `"js"` | `"js-lazy"`)
+Type: (default | `"body"` | `"media"` | `"media-script"` | `"swap"` | `"swap-high"` | `"swap-low"` | `"js"` | `"js-lazy"`)
 
 ## Similar Libraries
 
