@@ -11,14 +11,13 @@ import type { Selector } from 'css-what'
 import type { AtRule, Container, Rule } from 'postcss'
 import { parse as parseSelectorAst } from 'css-what'
 import { parseStylesheet, serializeStylesheet } from './css'
+import { CRITTERS_DEPRECATION_WARNING, parseDirective } from './directives'
 import { isAlwaysCriticalSelector, normalizeCssSelector } from './selectors'
 import { resolveCssUrl, rewriteCssUrls } from './urls'
 
 export type { CompactPlan } from './plan'
 export { encodePlan } from './plan-encode'
 
-// eslint-disable-next-line regexp/no-useless-assertions
-const BEASTIES_COMMENT_RE = /^(?<!! )beasties:(.*)/
 const FONT_FAMILY_RE = /\bfont(?:-family)?\b/i
 const WHITESPACE_RE = /\s+/
 // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
@@ -138,6 +137,7 @@ interface MarkerState {
   excludeNext: boolean
   includeAll: boolean
   excludeAll: boolean
+  warnedCritters: boolean
 }
 
 export function compileSheet(css: string, options: CompileOptions = {}): CompiledSheet {
@@ -158,6 +158,7 @@ export function compileSheet(css: string, options: CompileOptions = {}): Compile
     excludeNext: false,
     includeAll: false,
     excludeAll: false,
+    warnedCritters: false,
   }
 
   walk(ast, [], sheet, state, options, rebase)
@@ -170,8 +171,14 @@ type Rebase = (text: string) => string
 function walk(container: Container, wrap: string[], sheet: CompiledSheet, state: MarkerState, options: CompileOptions, rebase: Rebase) {
   for (const node of container.nodes ?? []) {
     if (node.type === 'comment') {
-      const match = node.text.match(BEASTIES_COMMENT_RE)
-      const command = match && match[1]
+      const { command, deprecated, warning } = parseDirective(node.text)
+      if (warning) {
+        sheet.warnings.push(warning)
+      }
+      if (deprecated && !state.warnedCritters) {
+        state.warnedCritters = true
+        sheet.warnings.push(CRITTERS_DEPRECATION_WARNING)
+      }
       if (command) {
         switch (command) {
           case 'include':
