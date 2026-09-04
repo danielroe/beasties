@@ -12,13 +12,14 @@ import type { AtRule, Container, Rule } from 'postcss'
 import { parse as parseSelectorAst } from 'css-what'
 import { parseStylesheet, serializeStylesheet } from './css'
 import { CRITTERS_DEPRECATION_WARNING, parseDirective } from './directives'
+import { parseFontFamilies, parseUnicodeRanges } from './fonts'
 import { isAlwaysCriticalSelector, normalizeCssSelector } from './selectors'
 import { resolveCssUrl, rewriteCssUrls } from './urls'
 
 export type { CompactPlan } from './plan'
 export { encodePlan } from './plan-encode'
 
-const FONT_FAMILY_RE = /\bfont(?:-family)?\b/i
+const FONT_PROP_RE = /^font(?:-family)?$/i
 const WHITESPACE_RE = /\s+/
 // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
 const URL_RE = /url\s*\(\s*(['"]?)(.+?)\1\s*\)/
@@ -91,12 +92,17 @@ export interface CompiledRule {
   always?: true
   /** Chain of enclosing at-rule wrappers, each ending with `{` */
   wrap?: string[]
-  /** Font-family values referenced by this rule's declarations */
+  /** Normalized font families referenced by this rule's declarations */
   fontsUsed?: string[]
   /** Animation names referenced by this rule's declarations */
   keyframesUsed?: string[]
   /** This rule is an @font-face */
-  fontFace?: { family?: string, src?: string }
+  fontFace?: {
+    family?: string
+    src?: string
+    /** `unicode-range` as flattened `[start, end, ...]` codepoint pairs */
+    ranges?: number[]
+  }
   /** This rule is a @keyframes block with this name */
   keyframes?: string
 }
@@ -286,6 +292,7 @@ function compileAtRule(rule: AtRule, wrap: string[], sheet: CompiledSheet, state
   if (name === 'font-face') {
     let family: string | undefined
     let src: string | undefined
+    let ranges: number[] | undefined
     for (const decl of rule.nodes ?? []) {
       if (!('prop' in decl))
         continue
@@ -295,10 +302,13 @@ function compileAtRule(rule: AtRule, wrap: string[], sheet: CompiledSheet, state
       else if (decl.prop === 'font-family') {
         family = decl.value
       }
+      else if (decl.prop === 'unicode-range') {
+        ranges = parseUnicodeRanges(decl.value)
+      }
     }
     sheet.rules.push(withWrap({
       css: rebase(serializeStylesheet(rule, { compress: true })),
-      fontFace: { family, src: src && options.href ? resolveCssUrl(src.trim(), options.href) : src },
+      fontFace: { family, src: src && options.href ? resolveCssUrl(src.trim(), options.href) : src, ranges },
     }, wrap))
     return
   }
@@ -457,8 +467,10 @@ function collectDependencies(rule: Rule, compiled: CompiledRule) {
     if (!('prop' in decl)) {
       continue
     }
-    if (FONT_FAMILY_RE.test(decl.prop)) {
-      (compiled.fontsUsed ??= []).push(decl.value)
+    if (FONT_PROP_RE.test(decl.prop)) {
+      for (const family of parseFontFamilies(decl.prop, decl.value)) {
+        (compiled.fontsUsed ??= []).push(family)
+      }
     }
     if (decl.prop === 'animation' || decl.prop === 'animation-name') {
       for (const name of decl.value.split(WHITESPACE_RE)) {

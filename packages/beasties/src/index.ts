@@ -14,7 +14,7 @@
  * the License.
  */
 
-import type { ChildNode, Node } from 'domhandler'
+import type { ChildNode, Node, NodeWithChildren, Text } from 'domhandler'
 
 import type { HTMLDocument } from './dom'
 import type { Logger, Options } from './types'
@@ -25,6 +25,7 @@ import path from 'node:path'
 import { applyMarkedSelectors, markOnly, parseStylesheet, serializeStylesheet, validateMediaQuery, walkStyleRules, walkStyleRulesWithReverseMirror } from './css'
 import { CRITTERS_DEPRECATION_WARNING, parseDirective } from './directives'
 import { createDocument, serializeDocument } from './dom'
+import { addTextCodepoints, createTextCodepoints, normalizeFontFamily, parseFontFamilies, parseUnicodeRanges, toCodepointSet, unicodeRangeUsed } from './fonts'
 import { isSafeMediaValue } from './media'
 import { isAlwaysCriticalSelector, isUnevaluableSelectorError, normalizeCssSelector } from './selectors'
 import { REMOTE_URL_RE, resolveCssUrl, rewriteCssUrls } from './urls'
@@ -32,7 +33,9 @@ import { createDeduplicatingLogger, createLogger, isSubpath } from './util'
 
 const LEADING_SLASH_OR_QUERY_RE = /^\/(?!\/)|[?#].*$/g
 const PUBLIC_PATH_RE = /(^\/(?!\/)|\/$)/g
-const FONT_FAMILY_RE = /\bfont(?:-family)?\b/i
+const FONT_PROP_RE = /^font(?:-family)?$/i
+const NON_RENDERED_ELEMENTS = new Set(['script', 'style', 'template', 'noscript', 'head', 'title'])
+const RENDERED_ATTRS = ['alt', 'label', 'placeholder', 'title', 'value']
 const LEADING_SLASH_RE = /^\//
 const WHITESPACE_RE = /\s+/
 // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
@@ -51,6 +54,7 @@ interface PreFetchedStylesheet {
 export default class Beasties {
   #selectorCache = new Map<string, string>()
   #preloadedFonts = new WeakMap<HTMLDocument, Set<string>>()
+  #documentChars = new WeakMap<HTMLDocument, Set<number> | undefined>()
   options: Options & Required<Pick<Options, 'logLevel' | 'path' | 'publicPath' | 'reduceInlineStyles' | 'pruneSource' | 'additionalStylesheets' | 'dedupeWarnings'>> & { allowRules: Array<string | RegExp> }
   logger: Logger
   fs?: typeof import('node:fs')
@@ -568,8 +572,7 @@ export default class Beasties {
     const ast = parseStylesheet(sheet, { safeParser: this.options.safeParser !== false })
     const astInverse = options.pruneSource ? parseStylesheet(sheet, { safeParser: this.options.safeParser !== false }) : null
 
-    // a string to search for font names (very loose)
-    let criticalFonts = ''
+    const criticalFonts = new Set<string>()
 
     const unparseableSelectors: string[] = []
 
@@ -696,8 +699,10 @@ export default class Beasties {
                 continue
               }
               // detect used fonts
-              if (shouldInlineFonts && FONT_FAMILY_RE.test(decl.prop)) {
-                criticalFonts += ` ${decl.value}`
+              if ((shouldInlineFonts || shouldPreloadFonts) && FONT_PROP_RE.test(decl.prop)) {
+                for (const family of parseFontFamilies(decl.prop, decl.value)) {
+                  criticalFonts.add(family)
+                }
               }
 
               // detect used keyframes
@@ -752,7 +757,8 @@ export default class Beasties {
 
       // prune @font-face rules
       if (rule.type === 'atrule' && rule.name === 'font-face') {
-        let family, src
+        let family, src, ranges
+        let used = false
         if (rule.nodes) {
           for (const decl of rule.nodes) {
             if (!('prop' in decl)) {
@@ -765,9 +771,17 @@ export default class Beasties {
             else if (decl.prop === 'font-family') {
               family = decl.value
             }
+            else if (decl.prop === 'unicode-range') {
+              ranges = parseUnicodeRanges(decl.value)
+            }
           }
 
-          if (src && shouldPreloadFonts) {
+          used = !!family
+            && criticalFonts.has(normalizeFontFamily(family))
+            // reading the document's text is only worth it for a subsetted face
+            && (!ranges || unicodeRangeUsed(ranges, this.getDocumentChars(document)))
+
+          if (used && src && shouldPreloadFonts) {
             const href = style.$$name ? resolveCssUrl(src.trim(), style.$$name) : src.trim()
             if (!preloadedFonts.has(href)) {
               preloadedFonts.add(href)
@@ -781,13 +795,8 @@ export default class Beasties {
           }
         }
 
-        // if we're missing info, if the font is unused, or if critical font inlining is disabled, remove the rule:
-        if (
-          !shouldInlineFonts
-          || !family
-          || !src
-          || !criticalFonts.includes(family)
-        ) {
+        // if the font is unused or critical font inlining is disabled, remove the rule
+        if (!shouldInlineFonts || !used) {
           return false
         }
       }
@@ -841,6 +850,44 @@ export default class Beasties {
     this.logger.info?.(
       `\u001B[32mInlined ${formatSize(sheet.length)} (${percent}% of original ${formatSize(before.length)}) of ${name}${afterText}.\u001B[39m`,
     )
+  }
+
+  /**
+   * Codepoints of a document's rendered text, or `undefined` when its text
+   * could not be read exactly, which disables `unicode-range` filtering.
+   */
+  private getDocumentChars(document: HTMLDocument): Set<number> | undefined {
+    if (this.#documentChars.has(document)) {
+      return this.#documentChars.get(document)
+    }
+    const text = createTextCodepoints()
+    // the whole document, not just beasties containers: text outside them is
+    // still rendered, and over-keeping a face is safer than dropping one
+    const queue: Node[] = [document as unknown as Node]
+    while (queue.length > 0) {
+      const node = queue.pop()!
+      if (node.type === 'text') {
+        addTextCodepoints((node as Text).data, text)
+        continue
+      }
+      if (node.type === 'tag') {
+        if (NON_RENDERED_ELEMENTS.has(node.nodeName.toLowerCase())) {
+          continue
+        }
+        for (const attr of RENDERED_ATTRS) {
+          const value = node.getAttribute(attr)
+          if (value) {
+            addTextCodepoints(value, text)
+          }
+        }
+      }
+      if ('children' in node) {
+        queue.push(...(node as NodeWithChildren).children as Node[])
+      }
+    }
+    const chars = toCodepointSet(text)
+    this.#documentChars.set(document, chars)
+    return chars
   }
 
   /**
