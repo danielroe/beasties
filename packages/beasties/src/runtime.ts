@@ -223,22 +223,32 @@ function matchesCompound(test: CompoundTest, element: ScannedElement): boolean {
 /**
  * Per-open-element matcher state, holding the program positions available to
  * this element's children and later siblings.
+ *
+ * Descendant positions live on a stack shared by every open frame rather than
+ * in a list of their own: they only grow as the stack deepens, and a frame
+ * that copied its parent's list would keep one progressively larger copy per
+ * open element - `O(positions x depth^2)` entries for deeply nested input,
+ * nearly all of them duplicates that the candidate set discards on read.
  */
 interface ScanFrame {
   /** this element is (or is inside) a beasties container */
   container: boolean
-  /** positions reachable at any depth below (descendant edges) */
-  desc: number[]
+  /** how much of the shared descendant stack is reachable from this frame */
+  descLength: number
   /** positions reachable only by direct children (child edges) */
   child: number[]
   /** positions reachable only by the immediately-next child element */
   adjacent: number[]
-  /** positions reachable by any later child element (general sibling edges) */
-  sibling: number[]
+  /**
+   * positions reachable by any later child element (general sibling edges):
+   * the first contributing child's list, deduplicated into a set once a later
+   * child re-derives them
+   */
+  sibling: number[] | Set<number> | null
 }
 
-function createFrame(container: boolean, desc: number[], child: number[]): ScanFrame {
-  return { container, desc, child, adjacent: [], sibling: [] }
+function createFrame(container: boolean, descLength: number, child: number[]): ScanFrame {
+  return { container, descLength, child, adjacent: [], sibling: null }
 }
 
 /**
@@ -274,9 +284,15 @@ export function scanHtml(html: string, programs?: StructuralProgram[], options: 
   const matchedAll = prepared ? Array.from<boolean>({ length: prepared.programs.length }).fill(false) : []
   const matchedContained = prepared ? Array.from<boolean>({ length: prepared.programs.length }).fill(false) : []
   const candidateSet = new Set<number>()
+  // descendant positions reachable by the open frames, held once and without
+  // duplicates: appended as the stack deepens, dropped again as it unwinds
+  const descStack: number[] = []
+  // encoded positions stay below `2 * flat.length`, so membership is a flag
+  // per position rather than a set lookup on every push and pop
+  const descMembers = new Uint8Array(prepared ? prepared.flat.length * 2 : 0)
 
   let containerFound = false
-  const frames: ScanFrame[] = [createFrame(false, [], [])]
+  const frames: ScanFrame[] = [createFrame(false, 0, [])]
 
   let i = 0
   const length = html.length
@@ -301,6 +317,10 @@ export function scanHtml(html: string, programs?: StructuralProgram[], options: 
       }
       if (frames.length > 1) {
         frames.pop()
+        const { descLength } = frames[frames.length - 1]!
+        while (descStack.length > descLength) {
+          descMembers[descStack.pop()!] = 0
+        }
       }
       i = end + 1
       continue
@@ -423,8 +443,16 @@ export function scanHtml(html: string, programs?: StructuralProgram[], options: 
       const strictlyInside = frame.container
 
       candidateSet.clear()
-      for (const list of [frame.desc, frame.child, frame.adjacent, frame.sibling]) {
+      for (let k = 0; k < frame.descLength; k++) {
+        candidateSet.add(descStack[k]!)
+      }
+      for (const list of [frame.child, frame.adjacent]) {
         for (const encoded of list) {
+          candidateSet.add(encoded)
+        }
+      }
+      if (frame.sibling) {
+        for (const encoded of frame.sibling) {
           candidateSet.add(encoded)
         }
       }
@@ -432,6 +460,7 @@ export function scanHtml(html: string, programs?: StructuralProgram[], options: 
 
       const adjacentOut: number[] = []
       frame.adjacent = adjacentOut
+      let siblingOut: number[] | undefined
 
       for (const encoded of candidateSet) {
         const position = encoded >> 1
@@ -459,8 +488,24 @@ export function scanHtml(html: string, programs?: StructuralProgram[], options: 
             adjacentOut.push(nextEncoded)
             break
           case '~':
-            frame.sibling.push(nextEncoded)
+            (siblingOut ??= []).push(nextEncoded)
             break
+        }
+      }
+
+      if (siblingOut) {
+        if (!frame.sibling) {
+          frame.sibling = siblingOut
+        }
+        else {
+          // later children re-derive the positions earlier ones added, so from
+          // the second contributing child on they are kept in a set
+          if (Array.isArray(frame.sibling)) {
+            frame.sibling = new Set(frame.sibling)
+          }
+          for (const encoded of siblingOut) {
+            frame.sibling.add(encoded)
+          }
         }
       }
     }
@@ -472,11 +517,17 @@ export function scanHtml(html: string, programs?: StructuralProgram[], options: 
     const isRawText = RAW_TEXT_ELEMENTS.has(tagName)
 
     if (!isVoid && !isRawText) {
-      frames.push(createFrame(
-        insideContainer,
-        descOut ? frame.desc.concat(descOut) : frame.desc,
-        childOut ?? [],
-      ))
+      if (descOut) {
+        // a position already reachable from this frame is re-derived by every
+        // matching descendant; storing it again can never change a match
+        for (const encoded of descOut) {
+          if (!descMembers[encoded]) {
+            descMembers[encoded] = 1
+            descStack.push(encoded)
+          }
+        }
+      }
+      frames.push(createFrame(insideContainer, descStack.length, childOut ?? []))
     }
 
     i = lower[pos] === '>' ? pos + 1 : pos
