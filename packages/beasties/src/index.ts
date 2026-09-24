@@ -55,6 +55,7 @@ export default class Beasties {
   #selectorCache = new Map<string, string>()
   #preloadedFonts = new WeakMap<HTMLDocument, Set<string>>()
   #documentChars = new WeakMap<HTMLDocument, Set<number> | undefined>()
+  #pendingWrites = new Set<Promise<void>>()
   options: Options & Required<Pick<Options, 'logLevel' | 'path' | 'publicPath' | 'reduceInlineStyles' | 'pruneSource' | 'additionalStylesheets' | 'dedupeWarnings'>> & { allowRules: Array<string | RegExp> }
   logger: Logger
   fs?: typeof import('node:fs')
@@ -170,6 +171,8 @@ export default class Beasties {
     if (this.options.mergeStylesheets !== false && styles.length !== 0) {
       this.mergeStylesheets(document)
     }
+
+    await Promise.all(this.#pendingWrites)
 
     // serialize the document back to HTML and we're done
     const output = serializeDocument(document)
@@ -835,9 +838,11 @@ export default class Beasties {
       }
 
       const cssFilePath = path.resolve(this.options.path, name)
-      this.writeFile(cssFilePath, sheetInverse)
+      const write: Promise<void> = this.writeFile(cssFilePath, sheetInverse)
         .then(() => this.logger.info?.(`${name} was successfully updated`))
         .catch(err => this.logger.error?.(err))
+        .finally(() => this.#pendingWrites.delete(write))
+      this.#pendingWrites.add(write)
     }
 
     // replace the inline stylesheet with its critical'd counterpart
