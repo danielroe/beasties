@@ -385,6 +385,35 @@ describe('compiled beasties (compiler + runtime)', () => {
       expect(result).toContain('<style>h1{color:blue}</style>')
     })
 
+    // matcher state used to grow quadratically with the input: descendant
+    // positions were copied into every open frame, so a few KB of nested
+    // markup could exhaust an SSR worker's heap, and general-sibling positions
+    // were appended once per matching child, so each sibling in a long run
+    // rescanned an ever longer list. Either regression takes seconds on these
+    // inputs, against tens of milliseconds bounded (more under coverage)
+    it('keeps descendant state bounded in deeply nested markup', () => {
+      const levels = Array.from({ length: 8 }, (_, i) => `.rich-text${' ul'.repeat(i + 1)} li`)
+      const css = levels.map(selector => `${selector}{margin:0}`).join('')
+      const html = `<div class="rich-text">${'<ul>'.repeat(4000)}<li></li>`
+
+      const start = performance.now()
+      const result = compiledCritical(html, css)
+      expect(performance.now() - start).toBeLessThan(1000)
+
+      expect(result).toBe(css)
+    })
+
+    it('keeps sibling state bounded in long sibling runs', () => {
+      const css = Array.from({ length: 40 }, (_, i) => `.feed span ~ i.k${i}{margin:0}`).join('')
+      const html = `<div class="feed">${'<span></span>'.repeat(4000)}<i class="k0"></i><i class="k39"></i></div>`
+
+      const start = performance.now()
+      const result = compiledCritical(html, css)
+      expect(performance.now() - start).toBeLessThan(1000)
+
+      expect(result).toBe('.feed span ~ i.k0{margin:0}.feed span ~ i.k39{margin:0}')
+    })
+
     it('appends an attribute to tags with unusual endings', () => {
       const { process } = createProcessor([sheet()], { preload: 'media' })
       for (const [tag, expected] of [
@@ -440,6 +469,14 @@ describe('compiled beasties (compiler + runtime)', () => {
       expect(tokens.ids).toContain('inner-id')
       expect(tokens.classes).not.toContain('outside')
       expect(tokens.classes).not.toContain('also-outside')
+    })
+
+    it('drops descendant positions once their element closes', () => {
+      const css = '.rich-text ul li{margin:0}'
+      // positions armed inside the first list must not reach a later one...
+      expect(compiledCritical('<div class="rich-text"><ul></ul></div><ul><li></li></ul>', css)).toBe('')
+      // ...but are armed again when the same subtree opens a second time
+      expect(compiledCritical('<div class="rich-text"><ul></ul></div><div class="rich-text"><ul><li></li></ul></div>', css)).toBe(css)
     })
   })
 
