@@ -29,7 +29,7 @@ import safeParser from 'postcss-safe-parser'
  */
 export function parseStylesheet(stylesheet: string, options?: { safeParser?: boolean }): Root_ {
   if (options?.safeParser) {
-    return safeParser(stylesheet)
+    return safeParser(stylesheet) as Root_
   }
   return parse(stylesheet)
 }
