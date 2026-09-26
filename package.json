@@ -48,7 +48,7 @@
     "@codspeed/vitest-plugin": "5.7.1",
     "@types/node": "24.13.6",
     "@types/postcss-safe-parser": "5.0.4",
-    "@vitest/coverage-v8": "4.1.11",
+    "@vitest/coverage-v8": "5.0.2",
     "cheerio": "1.2.0",
     "eslint": "10.11.0",
     "installed-check": "11.0.0",
@@ -58,7 +58,7 @@
     "pkg-pr-new": "0.0.88",
     "simple-git-hooks": "2.14.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.11"
+    "vitest": "5.0.2"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged"
