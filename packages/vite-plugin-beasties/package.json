@@ -1,8 +1,7 @@
 {
   "name": "vite-plugin-beasties",
   "type": "module",
-  "version": "0.5.4",
-  "packageManager": "pnpm@12.6.0",
+  "version": "0.5.5",
   "description": "",
   "author": "Daniel Roe <daniel@roe.dev>",
   "license": "MIT",
