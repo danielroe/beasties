@@ -16,15 +16,16 @@
 
 import type { AttributeSelector } from 'css-what'
 
-import type { ChildNode, Node, NodeWithChildren } from 'domhandler'
+import type { AnyNode, ChildNode, Node, NodeWithChildren } from 'domhandler'
 import type { Logger } from './util'
 
 import { selectAll, selectOne } from 'css-select'
 import { parse as selectorParser } from 'css-what'
 import render from 'dom-serializer'
-import { Element, Text } from 'domhandler'
+import { Element, isTag, Text } from 'domhandler'
 import { DomUtils, parseDocument } from 'htmlparser2'
 import { version } from '../package.json'
+import { decodeEntities } from './fonts'
 
 type ParsedDocument = ReturnType<typeof parseDocument>
 
@@ -37,14 +38,14 @@ function buildCache(container: Node) {
     const node = queue.shift()!
 
     if (node.hasAttribute?.('class')) {
-      const classList = node.getAttribute('class').trim().split(' ')
+      const classList = decodeEntities(node.getAttribute('class')).trim().split(/\s+/)
       classList.forEach((cls) => {
         container._classCache!.add(cls)
       })
     }
 
     if (node.hasAttribute?.('id')) {
-      const id = node.getAttribute('id').trim()
+      const id = decodeEntities(node.getAttribute('id')).trim()
       container._idCache!.add(id)
     }
 
@@ -377,6 +378,18 @@ function extendDocument(document: ParsedDocument): asserts document is HTMLDocum
 // so that it's disposed with it.
 const selectorTokensCache = new Map<string, null | AttributeSelector[]>()
 
+// attribute values are kept as written, so they are decoded before matching
+const selectOptions = {
+  adapter: {
+    ...DomUtils,
+    isTag,
+    getAttributeValue(elem: Element, name: string) {
+      const value = DomUtils.getAttributeValue(elem, name)
+      return value && decodeEntities(value)
+    },
+  },
+}
+
 function cachedQuerySelector(sel: string, node: Node) {
   let selectorTokens = selectorTokensCache.get(sel)
   if (selectorTokens === undefined) {
@@ -396,7 +409,7 @@ function cachedQuerySelector(sel: string, node: Node) {
     return true
   }
 
-  return !!selectOne(sel, node)
+  return !!selectOne(sel, node as AnyNode, selectOptions)
 }
 
 function parseRelevantSelectors(sel: string): AttributeSelector[] | null {

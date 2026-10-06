@@ -77,6 +77,14 @@ export function unicodeRangeUsed(ranges: number[] | undefined, chars: Set<number
 }
 
 const ENTITY_RE = /&(#x[0-9a-f]+|#\d+|[a-z][a-z0-9]*);/iy
+const REFERENCE_RE = /&(?:#x([0-9a-f]+);?|#(\d+);?|([a-z0-9]+)(;?))/gi
+// `apos;` and the references HTML allows without a semicolon: these, then the names of U+00A0 to U+00FF in order
+const ATTRIBUTE_ENTITIES = new Map(Object.entries({ 'AMP': '&', 'amp': '&', 'apos;': '\'', 'COPY': '\u00A9', 'GT': '>', 'gt': '>', 'LT': '<', 'lt': '<', 'QUOT': '"', 'quot': '"', 'REG': '\u00AE' }))
+for (const [index, name] of 'nbsp iexcl cent pound curren yen brvbar sect uml copy ordf laquo not shy reg macr deg plusmn sup2 sup3 acute micro para middot cedil sup1 ordm raquo frac14 frac12 frac34 iquest Agrave Aacute Acirc Atilde Auml Aring AElig Ccedil Egrave Eacute Ecirc Euml Igrave Iacute Icirc Iuml ETH Ntilde Ograve Oacute Ocirc Otilde Ouml times Oslash Ugrave Uacute Ucirc Uuml Yacute THORN szlig agrave aacute acirc atilde auml aring aelig ccedil egrave eacute ecirc euml igrave iacute icirc iuml eth ntilde ograve oacute ocirc otilde ouml divide oslash ugrave uacute ucirc uuml yacute thorn yuml'.split(' ').entries()) {
+  ATTRIBUTE_ENTITIES.set(name, String.fromCharCode(0xA0 + index))
+}
+// numeric references to C1 controls are read as windows-1252
+const C1_REPLACEMENTS = '\u20AC\u0081\u201A\u0192\u201E\u2026\u2020\u2021\u02C6\u2030\u0160\u2039\u0152\u008D\u017D\u008F\u0090\u2018\u2019\u201C\u201D\u2022\u2013\u2014\u02DC\u2122\u0161\u203A\u0153\u009D\u017E\u0178'
 const NAMED_ENTITIES: Record<string, string> = {
   amp: '&',
   apos: '\'',
@@ -164,6 +172,27 @@ export function addTextCodepoints(text: string, into: TextCodepoints): void {
     }
     bmp[code] = 1
   }
+}
+
+/**
+ * Decode the character references in an attribute value that was kept as
+ * written, as an HTML parser does. References that need the full table of
+ * named references are left as written, since it would outweigh the runtime.
+ */
+export function decodeEntities(text: string): string {
+  if (!text.includes('&'))
+    return text
+  return text.replace(REFERENCE_RE, (reference, hex?: string, decimal?: string, name?: string, semicolon?: string, offset = 0) => {
+    if (name) {
+      const char = ATTRIBUTE_ENTITIES.get(name) ?? ATTRIBUTE_ENTITIES.get(name + semicolon)
+      // without its semicolon, a reference followed by `=` is left as written
+      return char && (semicolon || text[offset + reference.length] !== '=') ? char : reference
+    }
+    const codepoint = hex ? Number.parseInt(hex, 16) : Number(decimal)
+    if (!codepoint || codepoint > 0x10FFFF || (codepoint >= 0xD800 && codepoint <= 0xDFFF))
+      return '\uFFFD'
+    return C1_REPLACEMENTS[codepoint - 0x80] ?? String.fromCodePoint(codepoint)
+  })
 }
 
 /** Case-fold, unquote and unescape a single family name for comparison */
