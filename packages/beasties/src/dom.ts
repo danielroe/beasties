@@ -38,7 +38,7 @@ function buildCache(container: Node) {
     const node = queue.shift()!
 
     if (node.hasAttribute?.('class')) {
-      const classList = decodeEntities(node.getAttribute('class')).trim().split(' ')
+      const classList = decodeEntities(node.getAttribute('class')).trim().split(/\s+/)
       classList.forEach((cls) => {
         container._classCache!.add(cls)
       })

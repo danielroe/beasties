@@ -93,6 +93,36 @@ describe('compiled beasties (compiler + runtime)', () => {
       expect(compiled).toContain('::before{content:\'\'}')
     })
 
+    it('splits decoded class names on whitespace', async () => {
+      const html = '<html><head><link rel="stylesheet" href="/style.css"></head><body><p class="a&#10;b">x</p></body></html>'
+      const css = '.b { color: red; }'
+      const classic = await classicCritical(html, css)
+      expect(compiledCritical(html, css)).toBe(classic)
+      expect(classic).toBe('.b{color:red}')
+    })
+
+    it('decodes attribute values as an HTML parser does', async () => {
+      const html = trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/style.css">
+          </head>
+          <body>
+            <p class="a&copy;b c&copy-d e&copyf g&#39h">named</p>
+            <p class="i&#0;j k&#xD800;l m&#x110000;n o&#150;p">numeric</p>
+          </body>
+        </html>
+      `
+      const css = trim`
+        .a\\a9 b, .c\\a9-d, .e\\&copyf, .g\\'h { color: red; }
+        .e\\a9 f { color: blue; }
+        .i\\fffd j, .k\\fffd l, .m\\fffd n, .o\\2013 p { color: green; }
+      `
+      const classic = await classicCritical(html, css)
+      expect(compiledCritical(html, css)).toBe(classic)
+      expect(classic).toBe('.a\\a9 b,.c\\a9-d,.e\\&copyf,.g\\\'h{color:red}.i\\fffd j,.k\\fffd l,.m\\fffd n,.o\\2013 p{color:green}')
+    })
+
     it('matches on the styles.css fixture (with data-beasties-container)', async () => {
       const html = fs.readFileSync(path.join(fixtureDir, 'index.html'), 'utf-8')
       const css = fs.readFileSync(path.join(fixtureDir, 'styles.css'), 'utf-8')
