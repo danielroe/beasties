@@ -70,6 +70,29 @@ describe('compiled beasties (compiler + runtime)', () => {
       expect(compiled).toMatchInlineSnapshot(`"h1{color:blue}p{color:purple}.para{margin:0}#app{display:flex}[data-x]{color:teal}span.a.b{color:green}"`)
     })
 
+    it('matches class names written with entities', async () => {
+      const html = trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/style.css">
+          </head>
+          <body>
+            <div class="[&amp;_*]:fill-current"><span>icon</span></div>
+            <p class="before:content-[&#39;&#39;]">quoted</p>
+          </body>
+        </html>
+      `
+      const css = trim`
+        .\\[\\&_\\*\\]\\:fill-current * { fill: currentColor; }
+        .before\\:content-\\[\\'\\'\\]::before { content: ''; }
+      `
+      const classic = await classicCritical(html, css)
+      const compiled = compiledCritical(html, css)
+      expect(compiled).toBe(classic)
+      expect(compiled).toContain('fill-current *{fill:currentColor}')
+      expect(compiled).toContain('::before{content:\'\'}')
+    })
+
     it('matches on the styles.css fixture (with data-beasties-container)', async () => {
       const html = fs.readFileSync(path.join(fixtureDir, 'index.html'), 'utf-8')
       const css = fs.readFileSync(path.join(fixtureDir, 'styles.css'), 'utf-8')

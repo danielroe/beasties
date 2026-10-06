@@ -77,6 +77,7 @@ export function unicodeRangeUsed(ranges: number[] | undefined, chars: Set<number
 }
 
 const ENTITY_RE = /&(#x[0-9a-f]+|#\d+|[a-z][a-z0-9]*);/iy
+const ENTITIES_RE = /&(?:#x([0-9a-f]+)|#(\d+)|([a-z][a-z0-9]*));/gi
 const NAMED_ENTITIES: Record<string, string> = {
   amp: '&',
   apos: '\'',
@@ -164,6 +165,18 @@ export function addTextCodepoints(text: string, into: TextCodepoints): void {
     }
     bmp[code] = 1
   }
+}
+
+/** Decode the character references in markup that was kept as written */
+export function decodeEntities(text: string): string {
+  if (!text.includes('&'))
+    return text
+  return text.replace(ENTITIES_RE, (entity, hex?: string, decimal?: string, name?: string) => {
+    if (name)
+      return NAMED_ENTITIES[name.toLowerCase()] ?? entity
+    const codepoint = hex ? Number.parseInt(hex, 16) : Number(decimal)
+    return codepoint <= 0x10FFFF ? String.fromCodePoint(codepoint) : entity
+  })
 }
 
 /** Case-fold, unquote and unescape a single family name for comparison */
