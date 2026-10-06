@@ -14,12 +14,17 @@
  * the License.
  */
 
-import type { AnyNode, ChildNode, Rule } from 'postcss'
+import type { AnyNode, ChildNode, Container, Rule } from 'postcss'
 import type { Child, Root } from 'postcss-media-query-parser'
 import type Root_ from 'postcss/lib/root'
 import { parse, stringify } from 'postcss'
 import mediaParser from 'postcss-media-query-parser'
 import safeParser from 'postcss-safe-parser'
+
+// splitting on commas and parentheses too separates names from `var()` references and their fallbacks
+const ANIMATION_SPLIT_RE = /[\s,()]+/
+const CUSTOM_PROPERTY_RE = /^--/
+const customPropertiesCache = new WeakMap<Container, Map<string, string[]>>()
 
 /**
  * Parse a textual CSS Stylesheet into a Stylesheet instance.
@@ -202,6 +207,33 @@ export function walkStyleRulesWithReverseMirror(node: Rule | Root_, node2: Rule 
       return true
     })
   }
+}
+
+/**
+ * Split an `animation` or `animation-name` value into the names it may refer to,
+ * following `var()` references to the custom properties declared in `root`.
+ */
+export function parseAnimationNames(value: string, root: Container): Set<string> {
+  const names = new Set(value.split(ANIMATION_SPLIT_RE))
+  for (const name of names) {
+    if (CUSTOM_PROPERTY_RE.test(name)) {
+      for (const part of customProperties(root).get(name) ?? [])
+        names.add(part)
+    }
+  }
+  return names
+}
+
+function customProperties(root: Container): Map<string, string[]> {
+  const cached = customPropertiesCache.get(root)
+  if (cached)
+    return cached
+  const properties = new Map<string, string[]>()
+  root.walkDecls(CUSTOM_PROPERTY_RE, (decl) => {
+    properties.set(decl.prop, [...properties.get(decl.prop) ?? [], ...decl.value.split(ANIMATION_SPLIT_RE)])
+  })
+  customPropertiesCache.set(root, properties)
+  return properties
 }
 
 // Checks if a node has nested rules, like @media

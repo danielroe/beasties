@@ -10,7 +10,7 @@
 import type { Selector } from 'css-what'
 import type { AtRule, Container, Rule } from 'postcss'
 import { parse as parseSelectorAst } from 'css-what'
-import { parseStylesheet, serializeStylesheet } from './css'
+import { parseAnimationNames, parseStylesheet, serializeStylesheet } from './css'
 import { CRITTERS_DEPRECATION_WARNING, parseDirective } from './directives'
 import { parseFontFamilies, parseUnicodeRanges } from './fonts'
 import { isAlwaysCriticalSelector, normalizeCssSelector } from './selectors'
@@ -473,7 +473,7 @@ function collectDependencies(rule: Rule, compiled: CompiledRule) {
       }
     }
     if (decl.prop === 'animation' || decl.prop === 'animation-name') {
-      for (const name of decl.value.split(WHITESPACE_RE)) {
+      for (const name of parseAnimationNames(decl.value, rule.root())) {
         const trimmed = name.trim()
         if (trimmed)
           (compiled.keyframesUsed ??= []).push(trimmed)

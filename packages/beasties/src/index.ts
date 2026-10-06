@@ -22,7 +22,7 @@ import type { Logger, Options } from './types'
 import { readFile, writeFile } from 'node:fs'
 import path from 'node:path'
 
-import { applyMarkedSelectors, markOnly, parseStylesheet, serializeStylesheet, validateMediaQuery, walkStyleRules, walkStyleRulesWithReverseMirror } from './css'
+import { applyMarkedSelectors, markOnly, parseAnimationNames, parseStylesheet, serializeStylesheet, validateMediaQuery, walkStyleRules, walkStyleRulesWithReverseMirror } from './css'
 import { CRITTERS_DEPRECATION_WARNING, parseDirective } from './directives'
 import { createDocument, serializeDocument } from './dom'
 import { addTextCodepoints, createTextCodepoints, normalizeFontFamily, parseFontFamilies, parseUnicodeRanges, toCodepointSet, unicodeRangeUsed } from './fonts'
@@ -37,7 +37,6 @@ const FONT_PROP_RE = /^font(?:-family)?$/i
 const NON_RENDERED_ELEMENTS = new Set(['script', 'style', 'template', 'noscript', 'head', 'title'])
 const RENDERED_ATTRS = ['alt', 'label', 'placeholder', 'title', 'value']
 const LEADING_SLASH_RE = /^\//
-const WHITESPACE_RE = /\s+/
 // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
 const URL_RE = /url\s*\(\s*(['"]?)(.+?)\1\s*\)/
 
@@ -710,7 +709,7 @@ export default class Beasties {
 
               // detect used keyframes
               if (decl.prop === 'animation' || decl.prop === 'animation-name') {
-                for (const name of decl.value.split(WHITESPACE_RE)) {
+                for (const name of parseAnimationNames(decl.value, ast)) {
                   // @todo: parse animation declarations and extract only the name. for now we'll do a lazy match.
                   const nameTrimmed = name.trim()
                   if (nameTrimmed)

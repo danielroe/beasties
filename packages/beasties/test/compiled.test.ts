@@ -167,6 +167,26 @@ describe('compiled beasties (compiler + runtime)', () => {
       expect(allKeyframes).toContain('@keyframes spin')
     })
 
+    it('matches for keyframes named through custom properties', async () => {
+      const css = trim`
+        :root { --animate-fade: fade 1s ease infinite; --animate-spin: spin 1s linear infinite; }
+        h1 { animation: var(--animate-fade); }
+        p { animation: var(--unset, pulse), var(--unset,blink 1s); }
+        .unused { animation: var(--animate-spin); }
+        @keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes pulse { 50% { opacity: .5 } }
+        @keyframes blink { 50% { opacity: 0 } }
+        @keyframes spin { to { transform: rotate(360deg) } }
+      `
+      const classic = await classicCritical(BASIC_HTML, css)
+      const compiled = compiledCritical(BASIC_HTML, css)
+      expect(compiled).toBe(classic)
+      expect(compiled).toContain('@keyframes fade')
+      expect(compiled).toContain('@keyframes pulse')
+      expect(compiled).toContain('@keyframes blink')
+      expect(compiled).not.toContain('@keyframes spin')
+    })
+
     it('matches for critical font inlining', async () => {
       const css = trim`
         h1 { font-family: CriticalFont, sans-serif; }
