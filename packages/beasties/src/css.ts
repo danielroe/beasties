@@ -21,8 +21,8 @@ import { parse, stringify } from 'postcss'
 import mediaParser from 'postcss-media-query-parser'
 import safeParser from 'postcss-safe-parser'
 
-const WHITESPACE_RE = /\s+/
-const VAR_RE = /var\(\s*(--[^\s,)]+)/g
+// splitting on commas and parentheses too separates names from `var()` references and their fallbacks
+const ANIMATION_SPLIT_RE = /[\s,()]+/
 const CUSTOM_PROPERTY_RE = /^--/
 const customPropertiesCache = new WeakMap<Container, Map<string, string[]>>()
 
@@ -214,10 +214,10 @@ export function walkStyleRulesWithReverseMirror(node: Rule | Root_, node2: Rule 
  * following `var()` references to the custom properties declared in `root`.
  */
 export function parseAnimationNames(value: string, root: Container): Set<string> {
-  const names = new Set(value.split(WHITESPACE_RE))
+  const names = new Set(value.split(ANIMATION_SPLIT_RE))
   for (const name of names) {
-    for (const [, property] of name.matchAll(VAR_RE)) {
-      for (const part of customProperties(root).get(property!) ?? [])
+    if (CUSTOM_PROPERTY_RE.test(name)) {
+      for (const part of customProperties(root).get(name) ?? [])
         names.add(part)
     }
   }
@@ -230,7 +230,7 @@ function customProperties(root: Container): Map<string, string[]> {
     return cached
   const properties = new Map<string, string[]>()
   root.walkDecls(CUSTOM_PROPERTY_RE, (decl) => {
-    properties.set(decl.prop, [...properties.get(decl.prop) ?? [], ...decl.value.split(WHITESPACE_RE)])
+    properties.set(decl.prop, [...properties.get(decl.prop) ?? [], ...decl.value.split(ANIMATION_SPLIT_RE)])
   })
   customPropertiesCache.set(root, properties)
   return properties
