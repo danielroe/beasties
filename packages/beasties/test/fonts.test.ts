@@ -111,6 +111,11 @@ describe('unicode-range filtering', () => {
     expect(css).toContain('/_fonts/vietnamese.woff2')
   })
 
+  it('should not decode object prototype names as entities', () => {
+    const { css } = render(NUXT_FONTS_CSS, page('&constructor; &toString;'), { inlineFonts: true })
+    expect(css).toContain('/_fonts/vietnamese.woff2')
+  })
+
   it('should count text in rendered attributes', () => {
     const html = '<html><body><p class="font-sans"><input value="\u1EA1"></p></body></html>'
     const { css } = render(NUXT_FONTS_CSS, html, { inlineFonts: true })

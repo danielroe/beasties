@@ -77,14 +77,14 @@ export function unicodeRangeUsed(ranges: number[] | undefined, chars: Set<number
 }
 
 const ENTITY_RE = /&(#x[0-9a-f]+|#\d+|[a-z][a-z0-9]*);/iy
-const NAMED_ENTITIES: Record<string, string> = {
+const NAMED_ENTITIES = new Map(Object.entries({
   amp: '&',
   apos: '\'',
   gt: '>',
   lt: '<',
   nbsp: '\u00A0',
   quot: '"',
-}
+}))
 
 /**
  * Codepoints seen in a document's text. BMP codepoints are marked in a flat
@@ -142,7 +142,7 @@ export function addTextCodepoints(text: string, into: TextCodepoints): void {
           }
         }
         else {
-          const decoded = NAMED_ENTITIES[body.toLowerCase()]
+          const decoded = NAMED_ENTITIES.get(body.toLowerCase())
           if (decoded) {
             bmp[decoded.charCodeAt(0)] = 1
           }
