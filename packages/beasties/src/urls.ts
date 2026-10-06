@@ -3,7 +3,7 @@ import path from 'node:path'
 export const REMOTE_URL_RE: RegExp = /^https?:\/\//
 // unquoted urls cannot contain unescaped parentheses, and excluding them keeps
 // backtracking linear on input like `url((((...`
-const URL_RE_G = /url\((?:'([^']*)'|"([^"]*)"|([^()]*))\)/gi
+const URL_RE_G = /url\((?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"|([^()]*))\)/gi
 const ABSOLUTE_URL_RE = /^(?:[a-z][\w+.-]*:|\/\/|\/|#)/i
 
 /**

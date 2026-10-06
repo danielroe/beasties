@@ -1190,6 +1190,7 @@ describe('beasties', () => {
       `,
       '/styles.css': 'h1 { background: url(./images/bg.png); }',
       '/assets/parens.css': 'h1 { background: url("../img/a(1).png") }',
+      '/assets/svg.css': 'h1 { mask: url("data:image/svg+xml,<svg xmlns=\\"http://www.w3.org/2000/svg\\"/>") }',
     }
 
     function makeBeasties(opts = {}) {
@@ -1236,6 +1237,18 @@ describe('beasties', () => {
         </html>
       `)
       expect(result).toContain('url("/img/a(1).png")')
+    })
+
+    it('should leave quoted urls containing escaped quotes alone', async () => {
+      const result = await makeBeasties().process(trim`
+        <html>
+          <head>
+            <link rel="stylesheet" href="/assets/svg.css">
+          </head>
+          <body><h1>Hello</h1></body>
+        </html>
+      `)
+      expect(result).toContain('url("data:image/svg+xml,<svg xmlns=\\"http://www.w3.org/2000/svg\\"/>")')
     })
 
     it('should make root-relative urls explicit for stylesheets at the root', async () => {
