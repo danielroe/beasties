@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { compileSheet } from '../src/compiler'
 import Beasties from '../src/index'
-import { collectPrograms, createProcessor, renderCriticalCss, scanHtml } from '../src/runtime'
+import { collectPrograms, createProcessor, renderCriticalCss, renderFullCss, scanHtml } from '../src/runtime'
 
 const fixtureDir = fileURLToPath(new URL('./src', import.meta.url))
 
@@ -114,6 +114,32 @@ describe('compiled beasties (compiler + runtime)', () => {
       expect(compiled).toBe(classic)
       expect(compiled).toContain('@layer a, b;')
       expect(compiled).toContain('@layer base {}')
+    })
+
+    it('does not terminate block at-rules with a semicolon', async () => {
+      const css = trim`
+        @property --x { syntax: '*'; inherits: false; initial-value: 0; }
+        @counter-style thumbs { system: cyclic; symbols: "👍"; }
+        @page { margin: 1cm; }
+        h1 { color: blue; }
+      `
+      const classic = await classicCritical(BASIC_HTML, css)
+      const compiled = compiledCritical(BASIC_HTML, css)
+      expect(compiled).toBe(classic)
+      expect(compiled).not.toContain('};')
+      expect(compiled).toContain('h1{color:blue}')
+
+      // https://github.com/danielroe/beasties/issues/443
+      const full = renderFullCss(compileSheet(
+        '@property --tw-translate-x{syntax:"*";inherits:false;initial-value:0}'
+        + '@property --tw-translate-y{syntax:"*";inherits:false;initial-value:0}'
+        + '.translate-x-full{--tw-translate-x:100%}',
+      ))
+      expect(full).toBe(
+        '@property --tw-translate-x{syntax:"*";inherits:false;initial-value:0}'
+        + '@property --tw-translate-y{syntax:"*";inherits:false;initial-value:0}'
+        + '.translate-x-full{--tw-translate-x:100%}',
+      )
     })
 
     it('matches for beasties comment markers', async () => {
