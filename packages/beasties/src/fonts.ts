@@ -85,14 +85,14 @@ for (const [index, name] of 'nbsp iexcl cent pound curren yen brvbar sect uml co
 }
 // numeric references to C1 controls are read as windows-1252
 const C1_REPLACEMENTS = '\u20AC\u0081\u201A\u0192\u201E\u2026\u2020\u2021\u02C6\u2030\u0160\u2039\u0152\u008D\u017D\u008F\u0090\u2018\u2019\u201C\u201D\u2022\u2013\u2014\u02DC\u2122\u0161\u203A\u0153\u009D\u017E\u0178'
-const NAMED_ENTITIES: Record<string, string> = {
+const NAMED_ENTITIES = new Map(Object.entries({
   amp: '&',
   apos: '\'',
   gt: '>',
   lt: '<',
   nbsp: '\u00A0',
   quot: '"',
-}
+}))
 
 /**
  * Codepoints seen in a document's text. BMP codepoints are marked in a flat
@@ -150,7 +150,7 @@ export function addTextCodepoints(text: string, into: TextCodepoints): void {
           }
         }
         else {
-          const decoded = NAMED_ENTITIES[body.toLowerCase()]
+          const decoded = NAMED_ENTITIES.get(body.toLowerCase())
           if (decoded) {
             bmp[decoded.charCodeAt(0)] = 1
           }
