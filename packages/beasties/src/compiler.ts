@@ -328,8 +328,7 @@ function compileAtRule(rule: AtRule, wrap: string[], sheet: CompiledSheet, state
   }
 
   // statement at-rules (@import, @charset, @namespace, `@layer a, b;`, ...)
-  // need an explicit terminator as they're serialized standalone; block
-  // at-rules without nested rules (@property, @page, ...) must not get one
+  // need an explicit terminator as they're serialized standalone
   let css = rebase(serializeStylesheet(rule, { compress: true }))
   if (rule.nodes === undefined && !css.endsWith(';')) {
     css += ';'
