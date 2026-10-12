@@ -10,7 +10,7 @@
 
 import type { AttrTest, CompiledRule, CompiledSheet, CompoundTest, SelectorMatch, StructuralProgram } from './compiler'
 import type { CompactPlan } from './plan'
-import { addTextCodepoints, createTextCodepoints, normalizeFontFamily, toCodepointSet, unicodeRangeUsed } from './fonts'
+import { addTextCodepoints, createTextCodepoints, decodeEntities, normalizeFontFamily, toCodepointSet, unicodeRangeUsed } from './fonts'
 import { isSafeMediaValue } from './media'
 import { isCompactPlan } from './plan'
 import { decodePlan } from './plan-decode'
@@ -406,10 +406,11 @@ export function scanHtml(html: string, programs?: StructuralProgram[], options: 
       }
 
       if (attrName) {
-        element.attrs.push([attrName, value])
         if (value !== null && RENDERED_ATTRS.has(attrName)) {
           collectChars(value)
         }
+        value &&= decodeEntities(value)
+        element.attrs.push([attrName, value])
         if (attrName === 'data-beasties-container') {
           isContainer = true
           containerFound = true
