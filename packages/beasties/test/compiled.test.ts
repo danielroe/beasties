@@ -169,6 +169,20 @@ describe('compiled beasties (compiler + runtime)', () => {
       expect(compiled).toContain('@layer base {}')
     })
 
+    it('does not terminate block at-rules with a semicolon', async () => {
+      const css = trim`
+        @property --x { syntax: '*'; inherits: false; initial-value: 0; }
+        @counter-style thumbs { system: cyclic; symbols: "👍"; }
+        @page { margin: 1cm; }
+        h1 { color: blue; }
+      `
+      const classic = await classicCritical(BASIC_HTML, css)
+      const compiled = compiledCritical(BASIC_HTML, css)
+      expect(compiled).toBe(classic)
+      expect(compiled).not.toContain('};')
+      expect(compiled).toContain('h1{color:blue}')
+    })
+
     it('matches for beasties comment markers', async () => {
       const css = trim`
         /* beasties:exclude */
