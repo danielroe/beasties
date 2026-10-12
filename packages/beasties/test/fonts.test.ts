@@ -112,7 +112,7 @@ describe('unicode-range filtering', () => {
   })
 
   it('should not decode object prototype names as entities', () => {
-    const { css } = render(NUXT_FONTS_CSS, page('&constructor; &toString;'), { inlineFonts: true })
+    const { css } = render(NUXT_FONTS_CSS, page('&constructor; &CONSTRUCTOR;'), { inlineFonts: true })
     expect(css).toContain('/_fonts/vietnamese.woff2')
   })
 
