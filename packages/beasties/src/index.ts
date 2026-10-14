@@ -22,7 +22,7 @@ import type { Logger, Options } from './types'
 import { readFile, writeFile } from 'node:fs'
 import path from 'node:path'
 
-import { applyMarkedSelectors, markOnly, parseAnimationNames, parseStylesheet, serializeStylesheet, validateMediaQuery, walkStyleRules, walkStyleRulesWithReverseMirror } from './css'
+import { applyMarkedSelectors, expandCustomProperties, markOnly, parseAnimationNames, parseStylesheet, serializeStylesheet, validateMediaQuery, walkStyleRules, walkStyleRulesWithReverseMirror } from './css'
 import { CRITTERS_DEPRECATION_WARNING, parseDirective } from './directives'
 import { createDocument, serializeDocument } from './dom'
 import { addTextCodepoints, createTextCodepoints, normalizeFontFamily, parseFontFamilies, parseUnicodeRanges, toCodepointSet, unicodeRangeUsed } from './fonts'
@@ -702,8 +702,10 @@ export default class Beasties {
               }
               // detect used fonts
               if ((shouldInlineFonts || shouldPreloadFonts) && FONT_PROP_RE.test(decl.prop)) {
-                for (const family of parseFontFamilies(decl.prop, decl.value)) {
-                  criticalFonts.add(family)
+                for (const value of expandCustomProperties(decl.value, ast)) {
+                  for (const family of parseFontFamilies(decl.prop, value)) {
+                    criticalFonts.add(family)
+                  }
                 }
               }
 

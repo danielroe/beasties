@@ -10,7 +10,7 @@
 import type { Selector } from 'css-what'
 import type { AtRule, Container, Rule } from 'postcss'
 import { parse as parseSelectorAst } from 'css-what'
-import { parseAnimationNames, parseStylesheet, serializeStylesheet } from './css'
+import { expandCustomProperties, parseAnimationNames, parseStylesheet, serializeStylesheet } from './css'
 import { CRITTERS_DEPRECATION_WARNING, parseDirective } from './directives'
 import { parseFontFamilies, parseUnicodeRanges } from './fonts'
 import { isAlwaysCriticalSelector, normalizeCssSelector } from './selectors'
@@ -468,8 +468,10 @@ function collectDependencies(rule: Rule, compiled: CompiledRule) {
       continue
     }
     if (FONT_PROP_RE.test(decl.prop)) {
-      for (const family of parseFontFamilies(decl.prop, decl.value)) {
-        (compiled.fontsUsed ??= []).push(family)
+      for (const value of expandCustomProperties(decl.value, rule.root())) {
+        for (const family of parseFontFamilies(decl.prop, value)) {
+          (compiled.fontsUsed ??= []).push(family)
+        }
       }
     }
     if (decl.prop === 'animation' || decl.prop === 'animation-name') {

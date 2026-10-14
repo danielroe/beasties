@@ -25,6 +25,7 @@ import safeParser from 'postcss-safe-parser'
 const ANIMATION_SPLIT_RE = /[\s,()]+/
 const CUSTOM_PROPERTY_RE = /^--/
 const customPropertiesCache = new WeakMap<Root_, Map<string, string[]>>()
+const customPropertyValuesCache = new WeakMap<Root_, Map<string, string[]>>()
 
 /**
  * Parse a textual CSS Stylesheet into a Stylesheet instance.
@@ -222,6 +223,70 @@ export function parseAnimationNames(value: string, root: Root_): Set<string> {
     }
   }
   return names
+}
+
+const VAR_RE = /var\(\s*(--[\w-]+)\s*(?:,|\))/
+// a value can reference custom properties that reference others; cap the number
+// of alternatives so a pathological stylesheet can't blow up
+const MAX_EXPANSIONS = 64
+
+/**
+ * Expand the `var()` references in a declaration value into every value it may
+ * take: each value declared for the custom property in `root`, plus the
+ * fallback. Used for `font-family` / `font`, where the families must be read
+ * from the resolved value.
+ */
+export function expandCustomProperties(value: string, root: Root_): string[] {
+  const results: string[] = []
+  const pending: Array<{ value: string, seen: Set<string> }> = [{ value, seen: new Set() }]
+  while (pending.length && results.length < MAX_EXPANSIONS) {
+    const current = pending.pop()!
+    const match = VAR_RE.exec(current.value)
+    if (!match) {
+      results.push(current.value)
+      continue
+    }
+
+    // find the closing parenthesis of this `var(`
+    const start = match.index
+    let depth = 0
+    let end = start
+    for (; end < current.value.length; end++) {
+      const char = current.value[end]
+      if (char === '(')
+        depth++
+      else if (char === ')' && --depth === 0)
+        break
+    }
+    const inner = current.value.slice(start + 'var('.length, end)
+    const comma = inner.indexOf(',')
+    const fallback = comma === -1 ? undefined : inner.slice(comma + 1)
+    const name = match[1]!
+    const before = current.value.slice(0, start)
+    const after = current.value.slice(end + 1)
+
+    const alternatives = current.seen.has(name) ? [] : (customPropertyValues(root).get(name) ?? [])
+    const seen = new Set(current.seen).add(name)
+    for (const alternative of [...alternatives, ...(fallback === undefined ? [] : [fallback])])
+      pending.push({ value: before + alternative + after, seen })
+  }
+  return results
+}
+
+function customPropertyValues(root: Root_): Map<string, string[]> {
+  const cached = customPropertyValuesCache.get(root)
+  if (cached)
+    return cached
+  const properties = new Map<string, string[]>()
+  root.walkDecls(CUSTOM_PROPERTY_RE, (decl) => {
+    const existing = properties.get(decl.prop)
+    if (existing)
+      existing.push(decl.value)
+    else
+      properties.set(decl.prop, [decl.value])
+  })
+  customPropertyValuesCache.set(root, properties)
+  return properties
 }
 
 function customProperties(root: Root_): Map<string, string[]> {

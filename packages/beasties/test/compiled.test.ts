@@ -269,6 +269,29 @@ describe('compiled beasties (compiler + runtime)', () => {
       expect(compiled).not.toContain('UnusedFont')
     })
 
+    it('matches for font families named through custom properties', async () => {
+      const css = trim`
+        :root { --font-secondary: Gotham, sans-serif; --font-sans: Inter, sans-serif; --default-font-family: var(--font-sans); --font-mono: Mono; }
+        h1 { font-family: var(--font-secondary); }
+        p { font-family: var(--default-font-family, system-ui); }
+        div { font: 1rem/1.5 var(--unset, Fallback), serif; }
+        .unused { font-family: var(--font-mono); }
+        span { --loop: var(--loop); font-family: var(--loop, Gotham); }
+        @font-face { font-family: Gotham; src: url(/fonts/gotham.woff2); }
+        @font-face { font-family: Inter; src: url(/fonts/inter.woff2); }
+        @font-face { font-family: Fallback; src: url(/fonts/fallback.woff2); }
+        @font-face { font-family: Mono; src: url(/fonts/mono.woff2); }
+      `
+      const options = { inlineFonts: true, preloadFonts: false }
+      const classic = await classicCritical(BASIC_HTML, css, options)
+      const compiled = compiledCritical(BASIC_HTML, css, options)
+      expect(compiled).toBe(classic)
+      expect(compiled).toContain('/fonts/gotham.woff2')
+      expect(compiled).toContain('/fonts/inter.woff2')
+      expect(compiled).toContain('/fonts/fallback.woff2')
+      expect(compiled).not.toContain('/fonts/mono.woff2')
+    })
+
     it('matches for unicode-range subsetting and escaped fallback families', async () => {
       const css = trim`
         h1 { font-family: Barlow, "Barlow Fallback: Segoe UI", sans-serif; }
