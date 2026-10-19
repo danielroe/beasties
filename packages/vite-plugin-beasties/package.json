@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "rolldown": "1.2.14",
-    "rollup": "4.64.9",
+    "rollup": "4.64.10",
     "tsdown": "0.23.1",
     "vite": "8.3.4"
   }
