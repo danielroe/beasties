@@ -20,11 +20,13 @@ import type Root_ from 'postcss/lib/root'
 import { parse, stringify } from 'postcss'
 import mediaParser from 'postcss-media-query-parser'
 import safeParser from 'postcss-safe-parser'
+import { parseFontFamilies } from './fonts'
 
 // commas and parentheses separate names from `var()` references and their fallbacks
 const ANIMATION_SPLIT_RE = /[\s,()]+/
 const CUSTOM_PROPERTY_RE = /^--/
 const customPropertiesCache = new WeakMap<Root_, Map<string, string[]>>()
+const fontFamiliesCache = new WeakMap<Root_, Map<string, string[]>>()
 
 /**
  * Parse a textual CSS Stylesheet into a Stylesheet instance.
@@ -212,30 +214,74 @@ export function walkStyleRulesWithReverseMirror(node: Rule | Root_, node2: Rule 
 /**
  * Split an `animation` or `animation-name` value into the names it may refer to,
  * following `var()` references to the custom properties declared in `root`.
+ * e.g: `var(--animate-fade)` with `--animate-fade: fade 1s ease` gives a set that includes `fade`, `1s` and `ease`.
  */
 export function parseAnimationNames(value: string, root: Root_): Set<string> {
   const names = new Set(value.split(ANIMATION_SPLIT_RE))
   for (const name of names) {
     if (CUSTOM_PROPERTY_RE.test(name)) {
-      for (const part of customProperties(root).get(name) ?? [])
-        names.add(part)
+      for (const declared of customProperties(root).get(name) ?? []) {
+        for (const part of declared.split(ANIMATION_SPLIT_RE))
+          names.add(part)
+      }
     }
   }
   return names
 }
 
+/**
+ * Find the font names a `font-family` or `font` value uses.
+ * Each `var()` is looked up in the stylesheet, so `var(--font-sans)`
+ * gives the names `--font-sans` is set to.
+ */
+export function resolveFontFamilies(prop: string, value: string, root: Root_): string[] {
+  return parseFontFamilies(prop, value, (name, as) => customPropertyFamilies(root, name, as))
+}
+
+/**
+ * Find the font names a custom property like `--font-sans` may have.
+ * If it is set in several places, the names from all of them are kept.
+ * `prop` says how to read its values: as `font-family` or as `font`.
+ * The answer is cached, so each property is worked out only once.
+ */
+function customPropertyFamilies(root: Root_, name: string, prop: string): string[] {
+  let cache = fontFamiliesCache.get(root)
+  if (!cache) {
+    cache = new Map()
+    fontFamiliesCache.set(root, cache)
+  }
+  const key = `${prop}:${name}`
+  const cached = cache.get(key)
+  if (cached)
+    return cached
+  // mark the property as in progress with no families: cyclic custom
+  // properties are invalid in CSS, so a reference back to it adds nothing
+  cache.set(key, [])
+  const families = new Set<string>()
+  for (const declared of customProperties(root).get(name) ?? []) {
+    for (const family of resolveFontFamilies(prop, declared, root))
+      families.add(family)
+  }
+  const result = [...families]
+  cache.set(key, result)
+  return result
+}
+
+/**
+ * Find every `--name: value` in the stylesheet once, grouped by name.
+ * e.g. `--font-quoted: "Quoted Font", serif` turns into `--font-quoted -> ['"Quoted Font", serif']`.
+ */
 function customProperties(root: Root_): Map<string, string[]> {
   const cached = customPropertiesCache.get(root)
   if (cached)
     return cached
   const properties = new Map<string, string[]>()
   root.walkDecls(CUSTOM_PROPERTY_RE, (decl) => {
-    const parts = decl.value.split(ANIMATION_SPLIT_RE)
     const existing = properties.get(decl.prop)
     if (existing)
-      existing.push(...parts)
+      existing.push(decl.value)
     else
-      properties.set(decl.prop, parts)
+      properties.set(decl.prop, [decl.value])
   })
   customPropertiesCache.set(root, properties)
   return properties

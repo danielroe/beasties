@@ -10,9 +10,9 @@
 import type { Selector } from 'css-what'
 import type { AtRule, Container, Rule } from 'postcss'
 import { parse as parseSelectorAst } from 'css-what'
-import { parseAnimationNames, parseStylesheet, serializeStylesheet } from './css'
+import { parseAnimationNames, parseStylesheet, resolveFontFamilies, serializeStylesheet } from './css'
 import { CRITTERS_DEPRECATION_WARNING, parseDirective } from './directives'
-import { parseFontFamilies, parseUnicodeRanges } from './fonts'
+import { parseUnicodeRanges } from './fonts'
 import { isAlwaysCriticalSelector, normalizeCssSelector } from './selectors'
 import { resolveCssUrl, rewriteCssUrls } from './urls'
 
@@ -468,7 +468,7 @@ function collectDependencies(rule: Rule, compiled: CompiledRule) {
       continue
     }
     if (FONT_PROP_RE.test(decl.prop)) {
-      for (const family of parseFontFamilies(decl.prop, decl.value)) {
+      for (const family of resolveFontFamilies(decl.prop, decl.value, rule.root())) {
         (compiled.fontsUsed ??= []).push(family)
       }
     }
