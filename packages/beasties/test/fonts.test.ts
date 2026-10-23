@@ -43,6 +43,14 @@ describe('parseFontFamilies', () => {
     expect(parseFontFamilies('font', 'caption')).toEqual([])
     expect(parseFontFamilies('font-family', 'inherit')).toEqual([])
   })
+
+  it('should collect `var()` families through the lookup, along with their fallbacks', () => {
+    const lookup = (name: string) => name === '--sans' ? ['barlow'] : []
+    expect(parseFontFamilies('font-family', 'var(--sans, "Open Sans"), serif', lookup))
+      .toEqual(['barlow', 'open sans', 'serif'])
+    expect(parseFontFamilies('font', 'bold 16px var(--sans)', lookup)).toEqual(['barlow'])
+    expect(parseFontFamilies('font-family', 'var(--sans)')).toEqual([])
+  })
 })
 
 describe('parseUnicodeRanges', () => {
@@ -91,6 +99,43 @@ describe('@font-face inlining', () => {
   it('should not match a family as a substring of a used family', () => {
     const { css } = render('@font-face{font-family:Sans;src:url(/sans.woff2)}.a{font-family:"Open Sans"}', '<html><body><p class="a">hi</p></body></html>', { inlineFonts: true })
     expect(css).not.toContain('@font-face')
+  })
+
+  it('should resolve cyclic custom properties', () => {
+    const CSS = [
+      ':root { --a: var(--b), Barlow; --b: var(--a); }',
+      '.font-sans { font-family: var(--a); }',
+      '@font-face { font-family: Barlow; src: url(/barlow.woff2); }',
+    ].join('\n')
+    const { css } = render(CSS, page('hi'), { inlineFonts: true })
+    expect(css).toContain('/barlow.woff2')
+  })
+
+  it('should keep fonts from every place a custom property is set', () => {
+    const CSS = [
+      ':root { --font-body: LightFont; }',
+      '.dark { --font-body: DarkFont; }',
+      '.font-sans { font-family: var(--font-body); }',
+      '@font-face { font-family: LightFont; src: url(/light.woff2); }',
+      '@font-face { font-family: DarkFont; src: url(/dark.woff2); }',
+    ].join('\n')
+    const { css } = render(CSS, page('hi'), { inlineFonts: true })
+    expect(css).toContain('/light.woff2')
+    expect(css).toContain('/dark.woff2')
+  })
+
+  it('should resolve repeated custom property references without exponential growth', () => {
+    // each level references the one below it twice, doubling the size of a naive expansion
+    const levels = Array.from({ length: 30 }, (_, i) => `--f${i + 1}: var(--f${i}), var(--f${i});`)
+    const CSS = [
+      `:root { --f0: Barlow; ${levels.join(' ')} }`,
+      '.font-sans { font-family: var(--f30); }',
+      '@font-face { font-family: Barlow; src: url(/barlow.woff2); }',
+    ].join('\n')
+    const start = performance.now()
+    const { css } = render(CSS, page('hi'), { inlineFonts: true })
+    expect(performance.now() - start).toBeLessThan(1000)
+    expect(css).toContain('/barlow.woff2')
   })
 })
 
