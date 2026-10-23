@@ -293,17 +293,20 @@ describe('compiled beasties (compiler + runtime)', () => {
           --default-font-family: var(--font-sans);
           --brand: CustomFont;
           --font-unused: UnusedFont;
+          --font-quoted: "Quoted Font", serif;
         }
         body { font-family: var(--font-secondary); }
         html { font-family: var(--default-font-family, ui-sans-serif); }
         h1 { font: bold 2em var(--brand); }
         p { font-family: var(--unset, Fallback), serif; }
         .unused { font-family: var(--font-unused); }
+        #app { font-family: var(--font-quoted); }
         @font-face { font-family: CriticalFont; src: url(/fonts/critical.woff2); }
         @font-face { font-family: Inter; src: url(/fonts/inter.woff2); }
         @font-face { font-family: CustomFont; src: url(/fonts/custom-font.woff2); }
         @font-face { font-family: Fallback; src: url(/fonts/fallback.woff2); }
         @font-face { font-family: UnusedFont; src: url(/fonts/unused.woff2); }
+        @font-face { font-family: "Quoted Font"; src: url(/fonts/quoted-font.woff2); }
       `
       const options = { inlineFonts: true, preloadFonts: false }
       const classic = await classicCritical(BASIC_HTML, css, options)
