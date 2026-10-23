@@ -316,6 +316,7 @@ describe('compiled beasties (compiler + runtime)', () => {
       expect(compiled).toContain('/fonts/inter.woff2')
       expect(compiled).toContain('/fonts/custom-font.woff2')
       expect(compiled).toContain('/fonts/fallback.woff2')
+      expect(compiled).toContain('/fonts/quoted-font.woff2')
       expect(compiled).not.toContain('/fonts/unused.woff2')
     })
 
