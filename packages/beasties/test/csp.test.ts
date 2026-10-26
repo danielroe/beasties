@@ -41,7 +41,11 @@ describe('nonce (classic)', () => {
   })
 
   it('should set the nonce on additional stylesheets', async () => {
-    const beasties = classic({ nonce: 'abc123', preload: false, additionalStylesheets: ['/extra.css'] })
+    const beasties = classic({
+      nonce: 'abc123',
+      preload: false,
+      additionalStylesheets: ['/extra.css'],
+    })
     const result = await beasties.process(html(''))
     expect(result).toContain('<style nonce="abc123">h1{color:blue}</style>')
   })
@@ -79,18 +83,28 @@ describe('nonce (classic)', () => {
   })
 
   it('should not set a nonce when the nonce function returns undefined', async () => {
-    const result = await classic({ nonce: () => undefined, preload: false }).process(html())
+    const result = await classic({
+      nonce: () => undefined,
+      preload: false,
+    }).process(html())
     expect(result).toContain('<style>h1{color:blue}</style>')
   })
 
   it('should set the function-provided nonce on additional stylesheets', async () => {
-    const beasties = classic({ nonce: () => 'abc123', preload: false, additionalStylesheets: ['/extra.css'] })
+    const beasties = classic({
+      nonce: () => 'abc123',
+      preload: false,
+      additionalStylesheets: ['/extra.css'],
+    })
     const result = await beasties.process(html(''))
     expect(result).toContain('<style nonce="abc123">h1{color:blue}</style>')
   })
 
   it('should set the function-provided nonce on the "js" loader script', async () => {
-    const result = await classic({ nonce: () => 'abc123', preload: 'js' }).process(html())
+    const result = await classic({
+      nonce: () => 'abc123',
+      preload: 'js',
+    }).process(html())
     expect(result).toContain('<script nonce="abc123" data-href="/style.css" data-media="all">')
   })
 
@@ -175,7 +189,10 @@ describe('"media-script" preload mode (classic)', () => {
   })
 
   it('should set the function-provided nonce on the script', async () => {
-    const result = await classic({ preload: 'media-script', nonce: () => 'abc123' }).process(html())
+    const result = await classic({
+      preload: 'media-script',
+      nonce: () => 'abc123',
+    }).process(html())
     expect(result).toContain(`<script nonce="abc123">${DEFERRED_SCRIPT}</script>`)
   })
 

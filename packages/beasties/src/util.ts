@@ -2,7 +2,14 @@ import path from 'node:path'
 
 import pc from 'picocolors'
 
-const LOG_LEVELS = ['trace', 'debug', 'info', 'warn', 'error', 'silent'] as const
+const LOG_LEVELS = [
+  'trace',
+  'debug',
+  'info',
+  'warn',
+  'error',
+  'silent',
+] as const
 
 /** Custom logger interface. */
 export interface Logger {
@@ -91,7 +98,9 @@ export function createDeduplicatingLogger(logger: Logger, scope: DedupeScope): L
     return logger
   }
 
-  const seen = scope === 'process' ? processSeen : new Map<string, number>()
+  const seen = scope === 'process'
+    ? processSeen
+    : new Map<string, number>()
 
   const shouldEmit = (level: string, message: string) => {
     const key = `${level}:${message}`

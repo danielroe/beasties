@@ -33,7 +33,9 @@ export function isAlwaysCriticalSelector(sel: string): boolean {
 export function normalizeCssSelector(sel: string): string {
   return sel
     .replace(removePseudoClassesAndElementsPattern, '')
-    .replace(removeTrailingCommasPattern, match => (match.includes('(') ? '(' : ')'))
+    .replace(removeTrailingCommasPattern, match => (match.includes('(')
+      ? '('
+      : ')'))
     .replace(implicitUniversalPattern, '$1 * $2')
     .replace(emptyCombinatorPattern, '$1 *')
     .trim()

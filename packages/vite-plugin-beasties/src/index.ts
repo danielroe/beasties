@@ -46,12 +46,17 @@ export function beasties(options: ViteBeastiesOptions = {}): Plugin {
 
       beastiesInstance.readFile = (filename: string) => {
         const path = relative(config.build.outDir, filename).replace(BACKSLASH_RE, '/')
-        const chunk = bundle[path] ?? { type: 'asset', source: readFileSync(filename, 'utf-8') }
+        const chunk = bundle[path] ?? {
+          type: 'asset',
+          source: readFileSync(filename, 'utf-8'),
+        }
         if (!chunk) {
           throw new Error(`Failed to read file: ${filename}`)
         }
 
-        return chunk.type === 'asset' ? chunk.source.toString() : chunk.code
+        return chunk.type === 'asset'
+          ? chunk.source.toString()
+          : chunk.code
       }
 
       const originalPrune = beastiesInstance.pruneSource.bind(beastiesInstance)

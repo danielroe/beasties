@@ -31,7 +31,15 @@ const COMBINATOR_TOKENS: Record<string, Combinator> = {
   sibling: '~',
 }
 
-const SUPPORTED_ATTR_ACTIONS = new Set(['exists', 'equals', 'element', 'start', 'end', 'any', 'hyphen'])
+const SUPPORTED_ATTR_ACTIONS = new Set([
+  'exists',
+  'equals',
+  'element',
+  'start',
+  'end',
+  'any',
+  'hyphen',
+])
 
 /**
  * Tokens which must all be present in the document for a selector to
@@ -225,7 +233,10 @@ function compileRule(rule: Rule, wrap: string[], sheet: CompiledSheet, state: Ma
   if (state.includeNext) {
     state.includeNext = false
     // marker-included rules don't contribute font/keyframe usage
-    sheet.rules.push(withWrap({ css: rebase(serializeStylesheet(rule, { compress: true })), always: true }, wrap))
+    sheet.rules.push(withWrap({
+      css: rebase(serializeStylesheet(rule, { compress: true })),
+      always: true,
+    }, wrap))
     return
   }
   if (state.excludeNext) {
@@ -233,7 +244,10 @@ function compileRule(rule: Rule, wrap: string[], sheet: CompiledSheet, state: Ma
     return
   }
   if (state.includeAll) {
-    sheet.rules.push(withWrap({ css: rebase(serializeStylesheet(rule, { compress: true })), always: true }, wrap))
+    sheet.rules.push(withWrap({
+      css: rebase(serializeStylesheet(rule, { compress: true })),
+      always: true,
+    }, wrap))
     return
   }
   if (state.excludeAll) {
@@ -308,7 +322,13 @@ function compileAtRule(rule: AtRule, wrap: string[], sheet: CompiledSheet, state
     }
     sheet.rules.push(withWrap({
       css: rebase(serializeStylesheet(rule, { compress: true })),
-      fontFace: { family, src: src && options.href ? resolveCssUrl(src.trim(), options.href) : src, ranges },
+      fontFace: {
+        family,
+        src: src && options.href
+          ? resolveCssUrl(src.trim(), options.href)
+          : src,
+        ranges,
+      },
     }, wrap))
     return
   }

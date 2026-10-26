@@ -67,7 +67,9 @@ describe('vite-plugin-beasties', () => {
   })
 
   it('allows disabling pruning of source CSS files during the build', async () => {
-    const { output } = await runViteBuild({ options: { pruneSource: false } })
+    const { output } = await runViteBuild({
+      options: { pruneSource: false },
+    })
     const css = output.find(file => file.fileName.endsWith('.css')) as any
 
     expect(css.source.trim()).toMatchInlineSnapshot(`".test-content{color:#00f;font-weight:700}"`)
@@ -75,7 +77,9 @@ describe('vite-plugin-beasties', () => {
 
   it('respects the filter option', async () => {
     const { readOutput } = await runViteBuild(
-      { filter: path => path.split('/').pop() === 'index.html' },
+      {
+        filter: path => path.split('/').pop() === 'index.html',
+      },
       {
         build: {
           rollupOptions: {

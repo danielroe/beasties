@@ -13,7 +13,10 @@ function createTestLogger() {
     error: () => {},
     debug: () => {},
   }
-  return { logger, warn: vi.spyOn(logger, 'warn') }
+  return {
+    logger,
+    warn: vi.spyOn(logger, 'warn'),
+  }
 }
 
 async function classic(css: string, logger?: Logger) {
@@ -26,7 +29,9 @@ async function classic(css: string, logger?: Logger) {
   })
   beasties.readFile = () => css
   const result = await beasties.process(HTML)
-  return [...result.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('')
+  return [
+    ...result.matchAll(/<style>([\s\S]*?)<\/style>/g),
+  ].map(m => m[1]).join('')
 }
 
 describe('critters: alias', () => {
