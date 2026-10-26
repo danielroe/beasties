@@ -54,9 +54,13 @@
     "prepack": "npm run -s build"
   },
   "peerDependencies": {
+    "html-rspack-plugin": "^6.1.5",
     "html-webpack-plugin": "^5.0.0"
   },
   "peerDependenciesMeta": {
+    "html-rspack-plugin": {
+      "optional": true
+    },
     "html-webpack-plugin": {
       "optional": true
     }
