@@ -45,10 +45,10 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "9.5.1",
-    "@codspeed/vitest-plugin": "5.7.1",
+    "@codspeed/vitest-plugin": "6.1.0",
     "@types/node": "24.19.2",
     "@types/postcss-safe-parser": "5.0.4",
-    "@vitest/coverage-v8": "4.1.12",
+    "@vitest/coverage-v8": "5.0.5",
     "cheerio": "1.2.0",
     "eslint": "10.13.0",
     "installed-check": "11.0.0",
@@ -58,7 +58,7 @@
     "pkg-pr-new": "0.0.92",
     "simple-git-hooks": "2.14.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.12"
+    "vitest": "5.0.5"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged"
