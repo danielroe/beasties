@@ -2,7 +2,7 @@
   "name": "vite-plugin-beasties",
   "type": "module",
   "version": "0.5.5",
-  "packageManager": "pnpm@12.14.0",
+  "packageManager": "pnpm@12.15.0",
   "description": "",
   "author": "Daniel Roe <daniel@roe.dev>",
   "license": "MIT",
@@ -38,9 +38,9 @@
     "beasties": "workspace:^"
   },
   "devDependencies": {
-    "rolldown": "1.2.14",
-    "rollup": "4.64.10",
-    "tsdown": "0.23.1",
+    "rolldown": "1.2.15",
+    "rollup": "4.65.0",
+    "tsdown": "0.23.2",
     "vite": "8.3.4"
   }
 }
