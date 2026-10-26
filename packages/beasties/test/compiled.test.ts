@@ -26,7 +26,9 @@ async function classicCritical(html: string, css: string, options: ConstructorPa
   })
   beasties.readFile = () => css
   const result = await beasties.process(html)
-  const styles = [...result.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1])
+  const styles = [
+    ...result.matchAll(/<style>([\s\S]*?)<\/style>/g),
+  ].map(m => m[1])
   return styles.join('')
 }
 
@@ -450,7 +452,9 @@ describe('compiled beasties (compiler + runtime)', () => {
     const sheet = () => compileSheet('h1 { color: blue; }', { href: 'style.css' })
 
     it('handles long whitespace runs inside a link tag in linear time', () => {
-      const { process } = createProcessor([sheet()], { preload: 'swap' })
+      const { process } = createProcessor([
+        sheet(),
+      ], { preload: 'swap' })
       const html = `<html><head><link href="/style.css" rel="stylesheet"${' '.repeat(64_000)}data-x="1"></head><body><h1>hi</h1></body></html>`
 
       const start = performance.now()
@@ -462,7 +466,9 @@ describe('compiled beasties (compiler + runtime)', () => {
     })
 
     it('handles hrefs with many query and hash characters in linear time', () => {
-      const { process } = createProcessor([sheet()])
+      const { process } = createProcessor([
+        sheet(),
+      ])
       const html = `<html><head><link href="/style.css?${'#'.repeat(64_000)}\n" rel="stylesheet"></head><body><h1>hi</h1></body></html>`
 
       const start = performance.now()
@@ -502,7 +508,9 @@ describe('compiled beasties (compiler + runtime)', () => {
     })
 
     it('appends an attribute to tags with unusual endings', () => {
-      const { process } = createProcessor([sheet()], { preload: 'media' })
+      const { process } = createProcessor([
+        sheet(),
+      ], { preload: 'media' })
       for (const [tag, expected] of [
         ['<link rel="stylesheet" href="/style.css">', '<link rel="stylesheet" href="/style.css" media="print" onload'],
         ['<link rel="stylesheet" href="/style.css"/>', '<link rel="stylesheet" href="/style.css" media="print" onload'],
@@ -584,7 +592,12 @@ describe('compiled beasties (compiler + runtime)', () => {
     `
 
     function classic(options: ConstructorParameters<typeof Beasties>[0] = {}) {
-      const beasties = new Beasties({ reduceInlineStyles: false, path: '/', logLevel: 'silent', ...options })
+      const beasties = new Beasties({
+        reduceInlineStyles: false,
+        path: '/',
+        logLevel: 'silent',
+        ...options,
+      })
       beasties.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
       return beasties.process(HTML)
     }
@@ -596,7 +609,10 @@ describe('compiled beasties (compiler + runtime)', () => {
 
     for (const preload of [false, 'media', 'swap', 'js', 'body'] as const) {
       it(`leaves the skipped link untouched on both paths with preload: ${preload}`, async () => {
-        for (const result of [await classic({ preload }), compiled({ preload })]) {
+        for (const result of [
+          await classic({ preload }),
+          compiled({ preload }),
+        ]) {
           expect(result).toContain('<link rel="stylesheet" href="/theme.css" data-beasties-skip>')
           expect(result).not.toMatch(/theme\.css[^>]*onload/)
           expect(result).not.toMatch(/theme\.css[^>]*rel="preload"/)
@@ -622,13 +638,20 @@ describe('compiled beasties (compiler + runtime)', () => {
     `
 
     function classic(options: ConstructorParameters<typeof Beasties>[0]) {
-      const beasties = new Beasties({ reduceInlineStyles: false, path: '/', logLevel: 'silent', ...options })
+      const beasties = new Beasties({
+        reduceInlineStyles: false,
+        path: '/',
+        logLevel: 'silent',
+        ...options,
+      })
       beasties.readFile = () => CSS
       return beasties.process(BASIC_HTML)
     }
 
     function compiled(options: Parameters<typeof createProcessor>[1]) {
-      return createProcessor([compileSheet(CSS, { href: 'style.css' })], options).process(BASIC_HTML)
+      return createProcessor([
+        compileSheet(CSS, { href: 'style.css' }),
+      ], options).process(BASIC_HTML)
     }
 
     it('inlines a stylesheet below inlineThreshold in full and drops its link', async () => {
@@ -681,7 +704,13 @@ describe('compiled beasties (compiler + runtime)', () => {
     })
 
     it('overrides any preload strategy for the inlined sheet', () => {
-      for (const preload of ['js', 'media', 'swap', 'body', undefined] as const) {
+      for (const preload of [
+        'js',
+        'media',
+        'swap',
+        'body',
+        undefined,
+      ] as const) {
         const result = compiled({ inlineThreshold: 1000, preload })
         expect(result, String(preload)).not.toContain('<link')
         expect(result, String(preload)).not.toContain('<script')
@@ -704,7 +733,9 @@ describe('compiled beasties (compiler + runtime)', () => {
     })
 
     it('is reflected by extract()', () => {
-      const { extract } = createProcessor([compileSheet(CSS, { href: 'style.css' })], { inlineThreshold: 1000 })
+      const { extract } = createProcessor([
+        compileSheet(CSS, { href: 'style.css' }),
+      ], { inlineThreshold: 1000 })
       expect(extract(BASIC_HTML).css).toContain('.unused{color:red}')
     })
 
@@ -713,7 +744,9 @@ describe('compiled beasties (compiler + runtime)', () => {
         h1 { font-family: MyFont; }
         @font-face { font-family: MyFont; src: url(/fonts/my.woff2); }
       `
-      const { process } = createProcessor([compileSheet(css, { href: 'style.css' })], { inlineThreshold: 1000, fonts: true })
+      const { process } = createProcessor([
+        compileSheet(css, { href: 'style.css' }),
+      ], { inlineThreshold: 1000, fonts: true })
       const result = process(BASIC_HTML)
       expect(result).toContain('<link rel="preload" as="font" crossorigin="anonymous" href="/fonts/my.woff2">')
       expect(result).not.toContain('rel="stylesheet"')
@@ -737,7 +770,14 @@ describe('compiled beasties (compiler + runtime)', () => {
     `
 
     it('rebases relative urls against the stylesheet location', async () => {
-      const beasties = new Beasties({ reduceInlineStyles: false, path: '/', logLevel: 'silent', preload: false, inlineFonts: true, preloadFonts: false })
+      const beasties = new Beasties({
+        reduceInlineStyles: false,
+        path: '/',
+        logLevel: 'silent',
+        preload: false,
+        inlineFonts: true,
+        preloadFonts: false,
+      })
       beasties.readFile = () => CSS
       const classicCss = (await beasties.process(HTML)).match(/<style>([\s\S]*?)<\/style>/)![1]
 
@@ -766,7 +806,9 @@ describe('compiled beasties (compiler + runtime)', () => {
 
   describe('createProcessor', () => {
     const makeProcessor = (options: Parameters<typeof createProcessor>[1] = {}, css = 'h1 { color: blue; }\n.unused { color: red; }') =>
-      createProcessor([compileSheet(css, { href: 'style.css' })], options)
+      createProcessor([
+        compileSheet(css, { href: 'style.css' }),
+      ], options)
 
     it('inlines critical css for matching stylesheet links', () => {
       const { process } = makeProcessor({ preload: false })
@@ -867,7 +909,9 @@ describe('compiled beasties (compiler + runtime)', () => {
         h1 { font-family: MyFont; }
         @font-face { font-family: MyFont; src: url(/fonts/my.woff2); }
       `
-      const { process } = createProcessor([compileSheet(css, { href: 'style.css' })], { fonts: true })
+      const { process } = createProcessor([
+        compileSheet(css, { href: 'style.css' }),
+      ], { fonts: true })
       const result = process(BASIC_HTML)
       expect(result).toContain('<link rel="preload" as="font" crossorigin="anonymous" href="/fonts/my.woff2">')
     })
@@ -877,7 +921,9 @@ describe('compiled beasties (compiler + runtime)', () => {
         h1 { font-family: MyFont; }
         @font-face { font-family: MyFont; src: url(/fonts/my.woff2); }
       `
-      const { process } = createProcessor([compileSheet(css, { href: 'style.css' })], { fonts: true })
+      const { process } = createProcessor([
+        compileSheet(css, { href: 'style.css' }),
+      ], { fonts: true })
       const html = BASIC_HTML.replace(
         '<link rel="stylesheet" href="/style.css">',
         '<link rel="preload" as="font" crossorigin="anonymous" href="/fonts/my.woff2"><link rel="stylesheet" href="/style.css">',
@@ -887,7 +933,9 @@ describe('compiled beasties (compiler + runtime)', () => {
     })
 
     it('leaves html untouched when no sheets match', () => {
-      const { process } = createProcessor([compileSheet('h1{color:blue}', { href: 'other.css' })])
+      const { process } = createProcessor([
+        compileSheet('h1{color:blue}', { href: 'other.css' }),
+      ])
       expect(process(BASIC_HTML)).toBe(BASIC_HTML)
     })
 
@@ -938,7 +986,9 @@ describe('compiled beasties (compiler + runtime)', () => {
       expect(rulesAccesses).toBeGreaterThan(afterFirst)
       expect(afterFirst).toBeGreaterThan(baseline)
 
-      const bounded = createProcessor([sheet], { cache: { maxSize: 1 } })
+      const bounded = createProcessor([sheet], {
+        cache: { maxSize: 1 },
+      })
       const otherHtml = BASIC_HTML.replace('<h1>', '<h1 class="extra">')
       bounded.process(BASIC_HTML)
       bounded.process(otherHtml)
@@ -950,7 +1000,12 @@ describe('compiled beasties (compiler + runtime)', () => {
 
     it('warns when a stylesheet link has no matching compiled sheet', () => {
       const warnings: string[] = []
-      const { process } = makeProcessor({ preload: false, logger: { warn: message => void warnings.push(message) } })
+      const { process } = makeProcessor({
+        preload: false,
+        logger: {
+          warn: message => void warnings.push(message),
+        },
+      })
       process(trim`
         <html>
           <head>

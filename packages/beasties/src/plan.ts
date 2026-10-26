@@ -73,7 +73,15 @@ export const M_CLASS = 1
 export const M_ID = 2
 export const M_TAG = 3
 
-export const ATTR_ACTIONS: AttrTest['action'][] = ['exists', 'equals', 'element', 'start', 'end', 'any', 'hyphen']
+export const ATTR_ACTIONS: AttrTest['action'][] = [
+  'exists',
+  'equals',
+  'element',
+  'start',
+  'end',
+  'any',
+  'hyphen',
+]
 
 /** Whether a value is a compact plan rather than a `CompiledSheet` */
 export function isCompactPlan(plan: unknown): plan is CompactPlan {

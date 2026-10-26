@@ -53,7 +53,13 @@ describe('compact plan format', () => {
 
     it('every fixture stylesheet', () => {
       const html = fs.readFileSync(path.join(fixtureDir, 'index.html'), 'utf-8')
-      for (const file of ['styles.css', 'styles2.css', 'colors.css', 'prune-source.css', 'large.css']) {
+      for (const file of [
+        'styles.css',
+        'styles2.css',
+        'colors.css',
+        'prune-source.css',
+        'large.css',
+      ]) {
         const sheet = compileSheet(fs.readFileSync(path.join(fixtureDir, file), 'utf-8'), { href: file })
         expect(critical(roundTrip(sheet), html), file).toBe(critical(sheet, html))
       }
@@ -61,7 +67,12 @@ describe('compact plan format', () => {
 
     it('preserves allowRules and non-exact compilation', () => {
       const css = '.always { color: red } .a .b { color: blue }'
-      for (const compileOptions of [{ allowRules: ['.always', /^\.a/] }, { exact: false }]) {
+      for (const compileOptions of [
+        {
+          allowRules: ['.always', /^\.a/],
+        },
+        { exact: false },
+      ]) {
         const sheet = compileSheet(css, { href: 'style.css', ...compileOptions })
         expect(critical(roundTrip(sheet), HTML)).toBe(critical(sheet, HTML))
       }
@@ -87,17 +98,36 @@ describe('compact plan format', () => {
 
       const sheet = compileSheet('.md\\:flex { display: flex }', { href: 'style.css' })
       const decoded = roundTrip(sheet)
-      expect(decoded.rules[0]!.match).toEqual([{ classes: ['md:flex'] }])
+      expect(decoded.rules[0]!.match).toEqual([
+        {
+          classes: ['md:flex'],
+        },
+      ])
       expect(critical(decoded, '<html><body><div class="md:flex"></div></body></html>')).toBe('.md\\:flex{display:flex}')
     })
 
     it('drops token fields when a structural program decides the match', () => {
       const sheet = compileSheet('.a > .b { color: red }', { href: 'style.css' })
       const original = sheet.rules[0]!.match![0]
-      expect(original).toMatchObject({ classes: ['a', 'b'], program: expect.any(Object) })
+      expect(original).toMatchObject({
+        classes: ['a', 'b'],
+        program: expect.any(Object),
+      })
 
       const decoded = roundTrip(sheet).rules[0]!.match![0]
-      expect(decoded).toEqual({ program: { combinators: ['>'], compounds: [{ classes: ['a'] }, { classes: ['b'] }] } })
+      expect(decoded).toEqual({
+        program: {
+          combinators: ['>'],
+          compounds: [
+            {
+              classes: ['a'],
+            },
+            {
+              classes: ['b'],
+            },
+          ],
+        },
+      })
     })
 
     it('pools strings used more than once and inlines unique ones', () => {
@@ -140,8 +170,33 @@ describe('compact plan format', () => {
 
       const decoded = roundTrip(sheet)
       expect(decoded.rules[0]!.fontFace).toEqual({ family: 'poppins', src: '/poppins.woff2' })
-      expect(decoded.rules[1]!.match).toEqual([{ program: { combinators: [' '], compounds: [{ classes: ['a'] }, { tag: 'poppins' }] } }])
-      expect(decoded.rules[3]!.match).toEqual([{ program: { combinators: [], compounds: [{ attrs: [{ name: 'data-font', action: 'equals', value: 'poppins' }] }] } }])
+      expect(decoded.rules[1]!.match).toEqual([
+        {
+          program: {
+            combinators: [' '],
+            compounds: [
+              {
+                classes: ['a'],
+              },
+              { tag: 'poppins' },
+            ],
+          },
+        },
+      ])
+      expect(decoded.rules[3]!.match).toEqual([
+        {
+          program: {
+            combinators: [],
+            compounds: [
+              {
+                attrs: [
+                  { name: 'data-font', action: 'equals', value: 'poppins' },
+                ],
+              },
+            ],
+          },
+        },
+      ])
     })
 
     it('keeps href and source size', () => {
@@ -168,7 +223,9 @@ describe('compact plan format', () => {
       const css = 'h1 { color: blue } .unused { color: red } .a > .b { color: teal }'
       const sheet = compileSheet(css, { href: 'style.css' })
       const fromSheet = createProcessor([sheet]).process(HTML)
-      const fromPlan = createProcessor([JSON.parse(JSON.stringify(encodePlan(sheet)))]).process(HTML)
+      const fromPlan = createProcessor([
+        JSON.parse(JSON.stringify(encodePlan(sheet))),
+      ]).process(HTML)
       expect(fromPlan).toBe(fromSheet)
     })
 
@@ -176,7 +233,10 @@ describe('compact plan format', () => {
       const a = compileSheet('h1 { color: blue }', { href: 'a.css' })
       const b = compileSheet('.lead { color: red }', { href: 'b.css' })
       const html = HTML.replace('<link rel="stylesheet" href="/style.css">', '<link rel="stylesheet" href="/a.css"><link rel="stylesheet" href="/b.css">')
-      expect(createProcessor([encodePlan(a), b]).extract(html).css)
+      expect(createProcessor([
+        encodePlan(a),
+        b,
+      ]).extract(html).css)
         .toBe(createProcessor([a, b]).extract(html).css)
     })
   })

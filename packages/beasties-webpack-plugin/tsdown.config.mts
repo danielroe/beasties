@@ -20,6 +20,8 @@ export default defineConfig({
   entry: ['src/index.ts'],
   format: ['esm', 'cjs'],
   dts: true,
-  deps: { neverBundle: ['webpack'] },
+  deps: {
+    neverBundle: ['webpack'],
+  },
   banner: { js: license, dts: license },
 }) as ReturnType<typeof defineConfig>

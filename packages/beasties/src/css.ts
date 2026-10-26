@@ -123,7 +123,9 @@ type SingleIterator<T> = (item: T) => boolean | void
  */
 export function markOnly(predicate: SingleIterator<ChildNode | Root_>): (rule: Rule | ChildNode | Root_) => void {
   return (rule) => {
-    const sel = 'selectors' in rule ? rule.selectors : undefined
+    const sel = 'selectors' in rule
+      ? rule.selectors
+      : undefined
     if (predicate(rule) === false) {
       rule.$$remove = true
     }
@@ -337,7 +339,9 @@ function validateMediaType(node: Child | Root) {
  */
 export function validateMediaQuery(query: string): boolean {
   // The below is needed for consumption with webpack.
-  const mediaParserFn = 'default' in mediaParser ? mediaParser.default as unknown as typeof mediaParser : mediaParser
+  const mediaParserFn = 'default' in mediaParser
+    ? mediaParser.default as unknown as typeof mediaParser
+    : mediaParser
   const mediaTree = mediaParserFn(query)
   const nodeTypes = new Set(['media-type', 'keyword', 'media-feature'])
 

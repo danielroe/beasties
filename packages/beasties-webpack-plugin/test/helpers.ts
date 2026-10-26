@@ -66,7 +66,9 @@ export function createHelpers<Config = webpack.Configuration>(bundle: Bundle, ou
           chunkFilename: '[name].chunk.js',
         },
         resolveLoader: {
-          modules: [path.resolve(cwd, '../node_modules')],
+          modules: [
+            path.resolve(cwd, '../node_modules'),
+          ],
         },
         module: {
           rules: [],

@@ -130,7 +130,12 @@ function countCondition(condition: SelectorMatch, pool: StringPool) {
     }
     return
   }
-  for (const list of [condition.classes, condition.ids, condition.tags, condition.attrs]) {
+  for (const list of [
+    condition.classes,
+    condition.ids,
+    condition.tags,
+    condition.attrs,
+  ]) {
     for (const value of list ?? []) {
       pool.count(value)
     }
@@ -145,7 +150,9 @@ function encodeRule(rule: CompiledRule, pool: StringPool, wrapKeys: Map<string, 
     flags |= F_SELECTORS
     // the common single-selector case skips the array wrapper
     fields.push(
-      rule.selectors.length === 1 ? pool.ref(rule.selectors[0]!) : pool.refs(rule.selectors),
+      rule.selectors.length === 1
+        ? pool.ref(rule.selectors[0]!)
+        : pool.refs(rule.selectors),
       pool.ref(rule.body),
     )
   }
@@ -175,8 +182,12 @@ function encodeRule(rule: CompiledRule, pool: StringPool, wrapKeys: Map<string, 
   if (rule.fontFace) {
     flags |= F_FONT_FACE
     const face: unknown[] = [
-      rule.fontFace.family === undefined ? 0 : pool.ref(rule.fontFace.family),
-      rule.fontFace.src === undefined ? 0 : pool.ref(rule.fontFace.src),
+      rule.fontFace.family === undefined
+        ? 0
+        : pool.ref(rule.fontFace.family),
+      rule.fontFace.src === undefined
+        ? 0
+        : pool.ref(rule.fontFace.src),
     ]
     if (rule.fontFace.ranges) {
       face.push(rule.fontFace.ranges)
@@ -219,23 +230,43 @@ function encodeMatch(condition: SelectorMatch, selector: string | undefined, poo
   }
 
   return [
-    condition.classes ? pool.refs(condition.classes) : 0,
-    condition.ids ? pool.refs(condition.ids) : 0,
-    condition.tags ? pool.refs(condition.tags) : 0,
-    condition.attrs ? pool.refs(condition.attrs) : 0,
+    condition.classes
+      ? pool.refs(condition.classes)
+      : 0,
+    condition.ids
+      ? pool.refs(condition.ids)
+      : 0,
+    condition.tags
+      ? pool.refs(condition.tags)
+      : 0,
+    condition.attrs
+      ? pool.refs(condition.attrs)
+      : 0,
   ]
 }
 
 function deriveCondition(marker: typeof M_CLASS | typeof M_ID | typeof M_TAG, selector: string): TokenCondition | undefined {
   if (marker === M_TAG) {
-    return { tags: [selector.toLowerCase()] }
+    return {
+      tags: [
+        selector.toLowerCase(),
+      ],
+    }
   }
-  const expectedPrefix = marker === M_CLASS ? '.' : '#'
+  const expectedPrefix = marker === M_CLASS
+    ? '.'
+    : '#'
   if (selector[0] !== expectedPrefix) {
     return undefined
   }
   const value = selector.slice(1)
-  return marker === M_CLASS ? { classes: [value] } : { ids: [value] }
+  return marker === M_CLASS
+    ? {
+        classes: [value],
+      }
+    : {
+        ids: [value],
+      }
 }
 
 function sameCondition(a: TokenCondition, b: TokenCondition): boolean {
@@ -267,14 +298,22 @@ function encodeProgram(program: StructuralProgram, pool: StringPool): CompactPro
         return pool.ref(compound.classes![0]!)
       }
       return [
-        compound.tag === undefined ? 0 : pool.ref(compound.tag),
-        compound.classes ? pool.refs(compound.classes) : 0,
-        compound.ids ? pool.refs(compound.ids) : 0,
+        compound.tag === undefined
+          ? 0
+          : pool.ref(compound.tag),
+        compound.classes
+          ? pool.refs(compound.classes)
+          : 0,
+        compound.ids
+          ? pool.refs(compound.ids)
+          : 0,
         compound.attrs
           ? compound.attrs.map((attr): CompactAttr => [
               pool.ref(attr.name),
               ATTR_ACTIONS.indexOf(attr.action),
-              attr.value === undefined ? 0 : pool.ref(attr.value),
+              attr.value === undefined
+                ? 0
+                : pool.ref(attr.value),
               attr.ignoreCase ? 1 : 0,
             ])
           : 0,

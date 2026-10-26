@@ -5,7 +5,13 @@
  * quoting, escaping or case.
  */
 
-const CSS_WIDE_KEYWORDS = new Set(['inherit', 'initial', 'unset', 'revert', 'revert-layer'])
+const CSS_WIDE_KEYWORDS = new Set([
+  'inherit',
+  'initial',
+  'unset',
+  'revert',
+  'revert-layer',
+])
 const HEX_ESCAPE_RE = /\\([0-9a-f]{1,6})[\t\n\f\r ]?/gi
 const CHAR_ESCAPE_RE = /\\(.)/g
 const WHITESPACE_RE = /\s+/g
@@ -13,7 +19,18 @@ const WHITESPACE_RE = /\s+/g
 // a `/line-height`. A size is a length or percentage, an absolute/relative size
 // keyword, or a function; unitless numbers before it are weights, not sizes.
 const FONT_SIZE_RE = /^(?:[+-]?(?:\d+|\d*\.\d+)(?:[a-z]+|%)|calc\(|var\()/i
-const FONT_SIZE_KEYWORDS = new Set(['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large', 'xxx-large', 'smaller', 'larger'])
+const FONT_SIZE_KEYWORDS = new Set([
+  'xx-small',
+  'x-small',
+  'small',
+  'medium',
+  'large',
+  'x-large',
+  'xx-large',
+  'xxx-large',
+  'smaller',
+  'larger',
+])
 
 const UNICODE_RANGE_RE = /^u\+([0-9a-f]{1,6})(?:-([0-9a-f]{1,6}))?$/i
 const UNICODE_WILDCARD_RE = /^u\+([0-9a-f]{0,5})(\?{1,6})$/i
@@ -48,13 +65,17 @@ export function parseUnicodeRanges(value: string): number[] | undefined {
       return undefined
     }
     const start = Number.parseInt(range[1]!, 16)
-    const end = range[2] === undefined ? start : Number.parseInt(range[2], 16)
+    const end = range[2] === undefined
+      ? start
+      : Number.parseInt(range[2], 16)
     if (end < start) {
       return undefined
     }
     ranges.push(start, end)
   }
-  return ranges.length > 0 ? ranges : undefined
+  return ranges.length > 0
+    ? ranges
+    : undefined
 }
 
 /**
@@ -79,7 +100,19 @@ export function unicodeRangeUsed(ranges: number[] | undefined, chars: Set<number
 const ENTITY_RE = /&(#x[0-9a-f]+|#\d+|[a-z][a-z0-9]*);/iy
 const REFERENCE_RE = /&(?:#x([0-9a-f]+);?|#(\d+);?|([a-z0-9]+)(;?))/gi
 // `apos;` and the references HTML allows without a semicolon: these, then the names of U+00A0 to U+00FF in order
-const ATTRIBUTE_ENTITIES = new Map(Object.entries({ 'AMP': '&', 'amp': '&', 'apos;': '\'', 'COPY': '\u00A9', 'GT': '>', 'gt': '>', 'LT': '<', 'lt': '<', 'QUOT': '"', 'quot': '"', 'REG': '\u00AE' }))
+const ATTRIBUTE_ENTITIES = new Map(Object.entries({
+  'AMP': '&',
+  'amp': '&',
+  'apos;': '\'',
+  'COPY': '\u00A9',
+  'GT': '>',
+  'gt': '>',
+  'LT': '<',
+  'lt': '<',
+  'QUOT': '"',
+  'quot': '"',
+  'REG': '\u00AE',
+}))
 for (const [index, name] of 'nbsp iexcl cent pound curren yen brvbar sect uml copy ordf laquo not shy reg macr deg plusmn sup2 sup3 acute micro para middot cedil sup1 ordm raquo frac14 frac12 frac34 iquest Agrave Aacute Acirc Atilde Auml Aring AElig Ccedil Egrave Eacute Ecirc Euml Igrave Iacute Icirc Iuml ETH Ntilde Ograve Oacute Ocirc Otilde Ouml times Oslash Ugrave Uacute Ucirc Uuml Yacute THORN szlig agrave aacute acirc atilde auml aring aelig ccedil egrave eacute ecirc euml igrave iacute icirc iuml eth ntilde ograve oacute ocirc otilde ouml divide oslash ugrave uacute ucirc uuml yacute thorn yuml'.split(' ').entries()) {
   ATTRIBUTE_ENTITIES.set(name, String.fromCharCode(0xA0 + index))
 }
@@ -107,7 +140,11 @@ export interface TextCodepoints {
 }
 
 export function createTextCodepoints(): TextCodepoints {
-  return { bmp: new Uint8Array(0x10000), astral: new Set(), complete: true }
+  return {
+    bmp: new Uint8Array(0x10000),
+    astral: new Set(),
+    complete: true,
+  }
 }
 
 /** Materialize collected codepoints, or `undefined` if some text was undecodable */
@@ -186,9 +223,13 @@ export function decodeEntities(text: string): string {
     if (name) {
       const char = ATTRIBUTE_ENTITIES.get(name) ?? ATTRIBUTE_ENTITIES.get(name + semicolon)
       // without its semicolon, a reference followed by `=` is left as written
-      return char && (semicolon || text[offset + reference.length] !== '=') ? char : reference
+      return char && (semicolon || text[offset + reference.length] !== '=')
+        ? char
+        : reference
     }
-    const codepoint = hex ? Number.parseInt(hex, 16) : Number(decimal)
+    const codepoint = hex
+      ? Number.parseInt(hex, 16)
+      : Number(decimal)
     if (!codepoint || codepoint > 0x10FFFF || (codepoint >= 0xD800 && codepoint <= 0xDFFF))
       return '\uFFFD'
     return C1_REPLACEMENTS[codepoint - 0x80] ?? String.fromCodePoint(codepoint)

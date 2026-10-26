@@ -34,8 +34,21 @@ import { createDeduplicatingLogger, createLogger, isSubpath } from './util'
 const LEADING_SLASH_OR_QUERY_RE = /^\/(?!\/)|[?#].*$/g
 const PUBLIC_PATH_RE = /(^\/(?!\/)|\/$)/g
 const FONT_PROP_RE = /^font(?:-family)?$/i
-const NON_RENDERED_ELEMENTS = new Set(['script', 'style', 'template', 'noscript', 'head', 'title'])
-const RENDERED_ATTRS = ['alt', 'label', 'placeholder', 'title', 'value']
+const NON_RENDERED_ELEMENTS = new Set([
+  'script',
+  'style',
+  'template',
+  'noscript',
+  'head',
+  'title',
+])
+const RENDERED_ATTRS = [
+  'alt',
+  'label',
+  'placeholder',
+  'title',
+  'value',
+]
 const LEADING_SLASH_RE = /^\//
 // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
 const URL_RE = /url\s*\(\s*(['"]?)(.+?)\1\s*\)/
@@ -73,7 +86,9 @@ export default class Beasties {
 
     this.logger = createDeduplicatingLogger(
       this.options.logger || createLogger(this.options.logLevel),
-      this.options.dedupeWarnings === true ? 'process' : this.options.dedupeWarnings,
+      this.options.dedupeWarnings === true
+        ? 'process'
+        : this.options.dedupeWarnings,
     )
   }
 
@@ -133,7 +148,9 @@ export default class Beasties {
 
     // `external:false` skips processing of external sheets
     if (this.options.external !== false) {
-      const externalSheets = [...document.querySelectorAll('link[rel="stylesheet"]')] as ChildNode[]
+      const externalSheets = [
+        ...document.querySelectorAll('link[rel="stylesheet"]'),
+      ] as ChildNode[]
 
       const hasCustomEmbed = this.embedLinkedStylesheet !== Beasties.prototype.embedLinkedStylesheet
 
@@ -184,7 +201,9 @@ export default class Beasties {
    * Get the style tags that need processing
    */
   getAffectedStyleTags(document: HTMLDocument): Node[] {
-    const styles = [...document.querySelectorAll('style')]
+    const styles = [
+      ...document.querySelectorAll('style'),
+    ]
 
     // `inline:false` skips processing of inline stylesheets
     if (this.options.reduceInlineStyles === false) {
@@ -215,7 +234,9 @@ export default class Beasties {
     if (!this.#nonces.has(document)) {
       this.#nonces.set(
         document,
-        typeof this.options.nonce === 'function' ? this.options.nonce(document) : this.options.nonce,
+        typeof this.options.nonce === 'function'
+          ? this.options.nonce(document)
+          : this.options.nonce,
       )
     }
 
@@ -269,7 +290,9 @@ export default class Beasties {
       if (this.options.remote === true) {
         try {
           // Normalize protocol-relative URLs
-          const absoluteUrl = href.startsWith('//') ? `https:${href}` : href
+          const absoluteUrl = href.startsWith('//')
+            ? `https:${href}`
+            : href
 
           const response = await fetch(absoluteUrl)
 
@@ -552,7 +575,9 @@ export default class Beasties {
       return
     }
 
-    const name = style.$$name ? style.$$name.replace(LEADING_SLASH_RE, '') : 'inline CSS'
+    const name = style.$$name
+      ? style.$$name.replace(LEADING_SLASH_RE, '')
+      : 'inline CSS'
     const options = this.options
     const beastiesContainers = document.beastiesContainers!
     let keyframesMode = options.keyframes ?? 'critical'
@@ -572,7 +597,9 @@ export default class Beasties {
       return
 
     const ast = parseStylesheet(sheet, { safeParser: this.options.safeParser !== false })
-    const astInverse = options.pruneSource ? parseStylesheet(sheet, { safeParser: this.options.safeParser !== false }) : null
+    const astInverse = options.pruneSource
+      ? parseStylesheet(sheet, { safeParser: this.options.safeParser !== false })
+      : null
 
     const criticalFonts = new Set<string>()
 
@@ -733,7 +760,9 @@ export default class Beasties {
     if (unparseableSelectors.length !== 0) {
       const single = unparseableSelectors.length === 1
       this.logger.warn?.(
-        `Could not parse ${single ? '1 selector' : `${unparseableSelectors.length} selectors`} in ${style.$$name || 'inline styles'}; ${single ? 'its rule was' : 'their rules were'} left out of the critical CSS but still ${single ? 'applies' : 'apply'} once the full stylesheet loads:\n  ${unparseableSelectors.join('\n  ')}`,
+        `Could not parse ${single
+          ? '1 selector'
+          : `${unparseableSelectors.length} selectors`} in ${style.$$name || 'inline styles'}; ${single ? 'its rule was' : 'their rules were'} left out of the critical CSS but still ${single ? 'applies' : 'apply'} once the full stylesheet loads:\n  ${unparseableSelectors.join('\n  ')}`,
       )
     }
 
@@ -784,7 +813,9 @@ export default class Beasties {
             && (!ranges || unicodeRangeUsed(ranges, this.getDocumentChars(document)))
 
           if (used && src && shouldPreloadFonts) {
-            const href = style.$$name ? resolveCssUrl(src.trim(), style.$$name) : src.trim()
+            const href = style.$$name
+              ? resolveCssUrl(src.trim(), style.$$name)
+              : src.trim()
             if (!preloadedFonts.has(href)) {
               preloadedFonts.add(href)
               const preload = document.createElement('link')
@@ -829,7 +860,9 @@ export default class Beasties {
         compress: this.options.compress !== false,
       })
 
-      styleInlinedCompletely = this.pruneSource(style, style.$$name ? rewriteCssUrls(before, style.$$name) : before, sheetInverse)
+      styleInlinedCompletely = this.pruneSource(style, style.$$name
+        ? rewriteCssUrls(before, style.$$name)
+        : before, sheetInverse)
 
       if (styleInlinedCompletely) {
         const percent = (sheetInverse.length / before.length) * 100
@@ -936,7 +969,9 @@ function formatSize(size: number) {
   const index = Math.floor(Math.log(size) / Math.log(1024))
   const roundedSize = size / 1024 ** index
   // bytes don't have a fraction
-  const fractionDigits = index === 0 ? 0 : 2
+  const fractionDigits = index === 0
+    ? 0
+    : 2
 
   return `${roundedSize.toFixed(fractionDigits)} ${abbreviations[index]}`
 }

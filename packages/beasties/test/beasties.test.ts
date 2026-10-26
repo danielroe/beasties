@@ -1195,7 +1195,13 @@ describe('beasties', () => {
     }
 
     function makeBeasties(opts = {}) {
-      const b = new Beasties({ reduceInlineStyles: false, path: '/', inlineFonts: true, preloadFonts: true, ...opts })
+      const b = new Beasties({
+        reduceInlineStyles: false,
+        path: '/',
+        inlineFonts: true,
+        preloadFonts: true,
+        ...opts,
+      })
       b.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
       return b
     }
@@ -1299,7 +1305,12 @@ describe('beasties', () => {
     }
 
     function makeBeasties(opts = {}) {
-      const b = new Beasties({ reduceInlineStyles: false, path: '/', preloadFonts: true, ...opts })
+      const b = new Beasties({
+        reduceInlineStyles: false,
+        path: '/',
+        preloadFonts: true,
+        ...opts,
+      })
       b.readFile = filename => assets[filename.replace(/^\w:/, '').replace(/\\/g, '/')]!
       return b
     }

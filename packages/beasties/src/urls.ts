@@ -19,8 +19,12 @@ export function resolveCssUrl(url: string, baseHref: string): string {
 
   if (REMOTE_URL_RE.test(base) || base.startsWith('//')) {
     try {
-      const resolved = new URL(url, base.startsWith('//') ? `https:${base}` : base)
-      return base.startsWith('//') ? resolved.href.replace(REMOTE_URL_RE, '//') : resolved.href
+      const resolved = new URL(url, base.startsWith('//')
+        ? `https:${base}`
+        : base)
+      return base.startsWith('//')
+        ? resolved.href.replace(REMOTE_URL_RE, '//')
+        : resolved.href
     }
     catch {
       return url
@@ -38,9 +42,15 @@ export function resolveCssUrl(url: string, baseHref: string): string {
 
 export function rewriteCssUrls(css: string, baseHref: string): string {
   return css.replace(URL_RE_G, (match, singleQuoted?: string, doubleQuoted?: string, bare?: string) => {
-    const quote = singleQuoted !== undefined ? '\'' : doubleQuoted !== undefined ? '"' : ''
+    const quote = singleQuoted !== undefined
+      ? '\''
+      : doubleQuoted !== undefined
+        ? '"'
+        : ''
     const url = singleQuoted ?? doubleQuoted ?? bare?.trim() ?? ''
     const resolved = resolveCssUrl(url, baseHref)
-    return resolved === url ? match : `url(${quote}${resolved}${quote})`
+    return resolved === url
+      ? match
+      : `url(${quote}${resolved}${quote})`
   })
 }

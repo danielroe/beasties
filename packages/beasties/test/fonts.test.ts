@@ -63,8 +63,23 @@ describe('@font-face inlining', () => {
   it('should parse family, src and unicode-range for @nuxt/fonts-shaped faces', () => {
     const faces = compileSheet(NUXT_FONTS_CSS, {}).rules.filter(rule => rule.fontFace).map(rule => rule.fontFace)
     expect(faces.slice(0, 3)).toEqual([
-      { family: 'Barlow', src: '/_fonts/latin.woff2', ranges: [0x0, 0xFF, 0x131, 0x131, 0x2000, 0x206F] },
-      { family: 'Barlow', src: '/_fonts/vietnamese.woff2', ranges: [0x102, 0x103, 0x1EA0, 0x1EF9] },
+      {
+        family: 'Barlow',
+        src: '/_fonts/latin.woff2',
+        ranges: [
+          0x0,
+          0xFF,
+          0x131,
+          0x131,
+          0x2000,
+          0x206F,
+        ],
+      },
+      {
+        family: 'Barlow',
+        src: '/_fonts/vietnamese.woff2',
+        ranges: [0x102, 0x103, 0x1EA0, 0x1EF9],
+      },
       { family: 'Barlow Fallback\\: BlinkMacSystemFont', src: undefined, ranges: undefined },
     ])
   })
@@ -145,7 +160,14 @@ describe('font preloading via process()', () => {
   ].join('\n')
 
   async function process(body: string) {
-    const beasties = new Beasties({ reduceInlineStyles: false, path: '/', logLevel: 'silent', preload: false, preloadFonts: true, inlineFonts: true })
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+      logLevel: 'silent',
+      preload: false,
+      preloadFonts: true,
+      inlineFonts: true,
+    })
     beasties.readFile = () => CSS
     return beasties.process(`<html><head><link rel="stylesheet" href="/style.css"></head><body>${body}</body></html>`)
   }
@@ -172,7 +194,14 @@ describe('unicode-range filtering via process()', () => {
   ].join('\n')
 
   async function process(html: string) {
-    const beasties = new Beasties({ reduceInlineStyles: false, path: '/', logLevel: 'silent', preload: false, inlineFonts: true, preloadFonts: false })
+    const beasties = new Beasties({
+      reduceInlineStyles: false,
+      path: '/',
+      logLevel: 'silent',
+      preload: false,
+      inlineFonts: true,
+      preloadFonts: false,
+    })
     beasties.readFile = () => CSS
     return beasties.process(html)
   }

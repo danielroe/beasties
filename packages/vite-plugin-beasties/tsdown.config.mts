@@ -4,5 +4,7 @@ export default defineConfig({
   entry: ['src/index.ts'],
   format: ['esm'],
   dts: true,
-  deps: { neverBundle: ['vite'] },
+  deps: {
+    neverBundle: ['vite'],
+  },
 }) as ReturnType<typeof defineConfig>

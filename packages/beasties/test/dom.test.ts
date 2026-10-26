@@ -24,7 +24,9 @@ describe('dom', () => {
 
     it('reuses the existing patch instead of throwing', async () => {
       const createDocumentAgain = await loadSecondCopy()
-      const logger = { warn: vi.fn() }
+      const logger = {
+        warn: vi.fn(),
+      }
 
       const doc = createDocumentAgain(HTML, logger)
 
@@ -34,7 +36,9 @@ describe('dom', () => {
 
     it('warns when the copies are different versions', async () => {
       const createDocumentAgain = await loadSecondCopy('99.0.0')
-      const logger = { warn: vi.fn() }
+      const logger = {
+        warn: vi.fn(),
+      }
 
       createDocumentAgain(HTML, logger)
 

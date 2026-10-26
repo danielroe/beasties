@@ -71,7 +71,9 @@ export default class BeastiesWebpackPlugin extends Beasties {
       this.options.publicPath
         // from html-webpack-plugin
         = compiler.options.output.publicPath || typeof compiler.options.output.publicPath === 'function'
-          ? compilation.getAssetPath(compiler.options.output.publicPath!, compilation.hash ? { hash: compilation.hash } : {})
+          ? compilation.getAssetPath(compiler.options.output.publicPath!, compilation.hash
+              ? { hash: compilation.hash }
+              : {})
           : compiler.options.output.publicPath!
 
       const htmlPluginHooks = getHtmlPluginHooks(compilation)
@@ -109,7 +111,9 @@ export default class BeastiesWebpackPlugin extends Beasties {
         // If an html plugin isn't used, process the first HTML asset as an optimize step
         tap(
           compilation,
-          hasHook(compilation, 'optimizeAssets') || !hasHook(compilation, 'processAssets') ? 'optimize-assets' : 'process-assets',
+          hasHook(compilation, 'optimizeAssets') || !hasHook(compilation, 'processAssets')
+            ? 'optimize-assets'
+            : 'process-assets',
           PLUGIN_NAME,
           true,
           (assets: /* CompilationAssets */{ [id: string]: sources.Source }, callback: (err?: null | Error) => void) => {

@@ -23,7 +23,14 @@ const DIRECTIVE_RE = /^(beasties|critters):(.*)$/
  */
 const DIRECTIVE_LOOKALIKE_RE = /^([\w-]+):(include|exclude)(?: (start|end))?$/
 
-const COMMANDS = new Set<string>(['include', 'exclude', 'include start', 'include end', 'exclude start', 'exclude end'])
+const COMMANDS = new Set<string>([
+  'include',
+  'exclude',
+  'include start',
+  'include end',
+  'exclude start',
+  'exclude end',
+])
 
 const SUPPORTED_DIRECTIVES = [...COMMANDS].map(command => `beasties:${command}`).join(', ')
 
@@ -54,7 +61,9 @@ export function parseDirective(text: string): DirectiveResult {
 
   const lookalike = text.match(DIRECTIVE_LOOKALIKE_RE)
   if (lookalike) {
-    const command = lookalike[3] ? `${lookalike[2]} ${lookalike[3]}` : lookalike[2]
+    const command = lookalike[3]
+      ? `${lookalike[2]} ${lookalike[3]}`
+      : lookalike[2]
     return { warning: `Ignoring unrecognised comment directive "${text}". Did you mean "beasties:${command}"?` }
   }
 

@@ -50,13 +50,25 @@ const VOID_ELEMENTS = new Set([
   'wbr',
 ])
 
-const RAW_TEXT_ELEMENTS = new Set(['script', 'style', 'textarea', 'title', 'xmp'])
+const RAW_TEXT_ELEMENTS = new Set([
+  'script',
+  'style',
+  'textarea',
+  'title',
+  'xmp',
+])
 
 /** Raw text elements whose contents are still rendered as page text */
 const RENDERED_RAW_TEXT_ELEMENTS = new Set(['textarea', 'xmp'])
 
 /** Attributes whose value can be rendered as text */
-const RENDERED_ATTRS = new Set(['alt', 'label', 'placeholder', 'title', 'value'])
+const RENDERED_ATTRS = new Set([
+  'alt',
+  'label',
+  'placeholder',
+  'title',
+  'value',
+])
 
 const TAG_START_RE = /[a-z]/
 const TAG_NAME_END_RE = /[\s/>]/
@@ -248,7 +260,13 @@ interface ScanFrame {
 }
 
 function createFrame(container: boolean, descLength: number, child: number[]): ScanFrame {
-  return { container, descLength, child, adjacent: [], sibling: null }
+  return {
+    container,
+    descLength,
+    child,
+    adjacent: [],
+    sibling: null,
+  }
 }
 
 /**
@@ -280,19 +298,29 @@ export function scanHtml(html: string, programs?: StructuralProgram[], options: 
     ? (run: string) => addTextCodepoints(run, text)
     : () => {}
 
-  const prepared = programs && programs.length > 0 ? preparePrograms(programs) : undefined
-  const matchedAll = prepared ? Array.from<boolean>({ length: prepared.programs.length }).fill(false) : []
-  const matchedContained = prepared ? Array.from<boolean>({ length: prepared.programs.length }).fill(false) : []
+  const prepared = programs && programs.length > 0
+    ? preparePrograms(programs)
+    : undefined
+  const matchedAll = prepared
+    ? Array.from<boolean>({ length: prepared.programs.length }).fill(false)
+    : []
+  const matchedContained = prepared
+    ? Array.from<boolean>({ length: prepared.programs.length }).fill(false)
+    : []
   const candidateSet = new Set<number>()
   // descendant positions reachable by the open frames, held once and without
   // duplicates: appended as the stack deepens, dropped again as it unwinds
   const descStack: number[] = []
   // encoded positions stay below `2 * flat.length`, so membership is a flag
   // per position rather than a set lookup on every push and pop
-  const descMembers = new Uint8Array(prepared ? prepared.flat.length * 2 : 0)
+  const descMembers = new Uint8Array(prepared
+    ? prepared.flat.length * 2
+    : 0)
 
   let containerFound = false
-  const frames: ScanFrame[] = [createFrame(false, 0, [])]
+  const frames: ScanFrame[] = [
+    createFrame(false, 0, []),
+  ]
 
   let i = 0
   const length = html.length
@@ -329,18 +357,24 @@ export function scanHtml(html: string, programs?: StructuralProgram[], options: 
     if (next === '!') {
       if (lower.startsWith('<!--', i)) {
         const end = lower.indexOf('-->', i + 4)
-        i = end === -1 ? length : end + 3
+        i = end === -1
+          ? length
+          : end + 3
       }
       else {
         const end = lower.indexOf('>', i)
-        i = end === -1 ? length : end + 1
+        i = end === -1
+          ? length
+          : end + 1
       }
       continue
     }
 
     if (next === '?') {
       const end = lower.indexOf('>', i)
-      i = end === -1 ? length : end + 1
+      i = end === -1
+        ? length
+        : end + 1
       continue
     }
 
@@ -356,7 +390,12 @@ export function scanHtml(html: string, programs?: StructuralProgram[], options: 
     }
     const tagName = lower.slice(i + 1, pos)
 
-    const element: ScannedElement = { tag: tagName, id: null, classes: [], attrs: [] }
+    const element: ScannedElement = {
+      tag: tagName,
+      id: null,
+      classes: [],
+      attrs: [],
+    }
     let isContainer = false
     let selfClosing = false
 
@@ -393,8 +432,12 @@ export function scanHtml(html: string, programs?: StructuralProgram[], options: 
         const quote = lower[pos]
         if (quote === '"' || quote === '\'') {
           const valueEnd = lower.indexOf(quote, pos + 1)
-          value = html.slice(pos + 1, valueEnd === -1 ? length : valueEnd)
-          pos = valueEnd === -1 ? length : valueEnd + 1
+          value = html.slice(pos + 1, valueEnd === -1
+            ? length
+            : valueEnd)
+          pos = valueEnd === -1
+            ? length
+            : valueEnd + 1
         }
         else {
           const valueStart = pos
@@ -531,7 +574,9 @@ export function scanHtml(html: string, programs?: StructuralProgram[], options: 
       frames.push(createFrame(insideContainer, descStack.length, childOut ?? []))
     }
 
-    i = lower[pos] === '>' ? pos + 1 : pos
+    i = lower[pos] === '>'
+      ? pos + 1
+      : pos
 
     if (!isVoid && isRawText) {
       const close = lower.indexOf(`</${tagName}`, i)
@@ -542,7 +587,9 @@ export function scanHtml(html: string, programs?: StructuralProgram[], options: 
         collectChars(html.slice(i, close))
       }
       const end = lower.indexOf('>', close)
-      i = end === -1 ? length : end + 1
+      i = end === -1
+        ? length
+        : end + 1
     }
   }
 
@@ -792,7 +839,10 @@ export function renderCriticalCss(sheet: CompiledSheet, tokens: DocumentTokens, 
     }
   }
 
-  const result: CriticalResult = { css: assemble(texts, rules), fontPreloads }
+  const result: CriticalResult = {
+    css: assemble(texts, rules),
+    fontPreloads,
+  }
   if (inverseTexts) {
     result.inverseCss = assemble(inverseTexts, rules)
   }
@@ -808,7 +858,9 @@ function wholeRuleText(rule: CompiledRule): string {
   if (rule.css !== undefined) {
     return rule.css
   }
-  return rule.selectors ? rule.selectors.join(',') + rule.body! : ''
+  return rule.selectors
+    ? rule.selectors.join(',') + rule.body!
+    : ''
 }
 
 /** Join rule texts, opening and closing at-rule wrappers as needed */
@@ -846,10 +898,14 @@ function assemble(texts: (string | null)[], rules: CompiledRule[]): string {
  */
 function ruleText(rule: CompiledRule, tokens: DocumentTokens, invert = false): string | null {
   if (rule.always) {
-    return invert ? null : wholeRuleText(rule)
+    return invert
+      ? null
+      : wholeRuleText(rule)
   }
   if (!rule.match) {
-    return invert ? null : rule.css ?? null
+    return invert
+      ? null
+      : rule.css ?? null
   }
   const body = rule.body
   if (rule.selectors && body !== undefined) {
@@ -921,7 +977,12 @@ const DEFAULT_CACHE_SIZE = 100
  */
 function fingerprintTokens(tokens: DocumentTokens): string {
   const parts: string[] = []
-  for (const set of [tokens.tags, tokens.classes, tokens.ids, tokens.attrs]) {
+  for (const set of [
+    tokens.tags,
+    tokens.classes,
+    tokens.ids,
+    tokens.attrs,
+  ]) {
     for (const token of set) {
       parts.push(token)
     }
@@ -977,7 +1038,9 @@ function getAttr(tag: string, name: string): string | null {
     }
     return raw
   }
-  return attrNameRegex(name).test(tag) ? '' : null
+  return attrNameRegex(name).test(tag)
+    ? ''
+    : null
 }
 
 /** Set an attribute in a tag string, replacing in place or appending before `>` */
@@ -1085,14 +1148,22 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
   process: (html: string, processOptions?: ProcessOptions) => string
   extract: (html: string) => CriticalResult
 } {
-  const sheets = plans.map(plan => (isCompactPlan(plan) ? decodePlan(plan) : plan))
+  const sheets = plans.map(plan => (isCompactPlan(plan)
+    ? decodePlan(plan)
+    : plan))
   const programs = collectPrograms(sheets)
   const scanOptions: ScanOptions = {
     chars: sheets.some(sheet => sheet.rules.some(rule => rule.fontFace?.ranges)),
   }
 
-  const cacheSize = options.cache === false ? 0 : (typeof options.cache === 'object' ? options.cache.maxSize ?? DEFAULT_CACHE_SIZE : DEFAULT_CACHE_SIZE)
-  const cache = cacheSize > 0 ? new Map<string, Map<CompiledSheet, CriticalResult>>() : undefined
+  const cacheSize = options.cache === false
+    ? 0
+    : (typeof options.cache === 'object'
+        ? options.cache.maxSize ?? DEFAULT_CACHE_SIZE
+        : DEFAULT_CACHE_SIZE)
+  const cache = cacheSize > 0
+    ? new Map<string, Map<CompiledSheet, CriticalResult>>()
+    : undefined
 
   // the inverse is only needed to compare against `minimumExternalSize`
   const renderOptions = { ...options, inverse: !!options.minimumExternalSize }
@@ -1155,7 +1226,9 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
         continue
       }
       const href = getAttr(tag, 'href')
-      const sheet = href ? sheetForHref(sheets, href) : undefined
+      const sheet = href
+        ? sheetForHref(sheets, href)
+        : undefined
       if (sheet) {
         (skipped ??= new Set()).add(sheet)
       }
@@ -1165,7 +1238,9 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
 
   function extract(html: string): CriticalResult {
     const tokens = scanHtml(html, programs, scanOptions)
-    const key = cache ? fingerprintTokens(tokens) : undefined
+    const key = cache
+      ? fingerprintTokens(tokens)
+      : undefined
     const skipped = skippedSheets(html)
     const css: string[] = []
     const fontPreloads: string[] = []
@@ -1174,18 +1249,27 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
         continue
       }
       const result = renderSheet(sheet, tokens, key)
-      css.push(inlineInFull(sheet, result) ? fullCss(sheet) : result.css)
+      css.push(inlineInFull(sheet, result)
+        ? fullCss(sheet)
+        : result.css)
       fontPreloads.push(...result.fontPreloads)
     }
-    return { css: css.join(''), fontPreloads }
+    return {
+      css: css.join(''),
+      fontPreloads,
+    }
   }
 
   function process(html: string, processOptions?: ProcessOptions): string {
     const tokens = scanHtml(html, programs, scanOptions)
-    const key = cache ? fingerprintTokens(tokens) : undefined
+    const key = cache
+      ? fingerprintTokens(tokens)
+      : undefined
     const strategy = options.preload
     const nonce = processOptions?.nonce ?? options.nonce
-    const nonceAttr = nonce ? ` nonce="${escapeAttr(nonce)}"` : ''
+    const nonceAttr = nonce
+      ? ` nonce="${escapeAttr(nonce)}"`
+      : ''
 
     let firstLinkIndex = -1
     const edits: Edit[] = []
@@ -1224,7 +1308,9 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
 
       const result = renderSheet(sheet, tokens, key)
       const wholeSheet = inlineInFull(sheet, result)
-      criticalParts.push(wholeSheet ? fullCss(sheet) : result.css)
+      criticalParts.push(wholeSheet
+        ? fullCss(sheet)
+        : result.css)
       for (const preload of result.fontPreloads) {
         fontPreloads.add(preload)
       }
@@ -1246,7 +1332,9 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
       }
 
       const rawMedia = getAttr(tag, 'media')
-      const media = rawMedia && isSafeMediaValue(rawMedia) ? rawMedia : undefined
+      const media = rawMedia && isSafeMediaValue(rawMedia)
+        ? rawMedia
+        : undefined
       let newTag = tag
       let noscriptFallback = false
       let scriptAfter: string | undefined
@@ -1277,7 +1365,11 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
         noscriptFallback = true
       }
       else if (strategy === 'js' || strategy === 'js-lazy') {
-        const preamble = isFirstSheet ? (strategy === 'js-lazy' ? CSS_LOADER_LAZY_PREAMBLE : CSS_LOADER_PREAMBLE) : ''
+        const preamble = isFirstSheet
+          ? (strategy === 'js-lazy'
+              ? CSS_LOADER_LAZY_PREAMBLE
+              : CSS_LOADER_PREAMBLE)
+          : ''
         scriptAfter = `<script${nonceAttr} data-href="${escapeAttr(href)}" data-media="${escapeAttr(media || 'all')}">${preamble}${CSS_LOADER_INVOKE}</script>`
         newTag = toPreload(tag)
         noscriptFallback = true
@@ -1335,13 +1427,23 @@ export function createProcessor(plans: Array<CompiledSheet | CompactPlan>, optio
         const headClose = html.match(/<\/head\s*>/i)
         insertAt = headClose?.index ?? 0
       }
-      edits.push({ start: insertAt, end: insertAt, text: headInsertions.join('') })
+      edits.push({
+        start: insertAt,
+        end: insertAt,
+        text: headInsertions.join(''),
+      })
     }
 
     if (bodyAppends.length > 0) {
       const bodyClose = lastIndexOfRe(html, /<\/body\s*>/gi)
-      const insertAt = bodyClose === -1 ? html.length : bodyClose
-      edits.push({ start: insertAt, end: insertAt, text: bodyAppends.join('') })
+      const insertAt = bodyClose === -1
+        ? html.length
+        : bodyClose
+      edits.push({
+        start: insertAt,
+        end: insertAt,
+        text: bodyAppends.join(''),
+      })
     }
 
     return applyEdits(html, edits)

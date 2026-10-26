@@ -20,7 +20,9 @@ describe('dom', () => {
       const { createDocument: createDocumentAgain } = await import('../src/dom')
       vi.doUnmock('domhandler')
 
-      const logger = { warn: vi.fn() }
+      const logger = {
+        warn: vi.fn(),
+      }
       const doc = createDocumentAgain(HTML, logger)
 
       expect(doc.beastiesContainers[0]!.exists('.hero')).toBe(true)

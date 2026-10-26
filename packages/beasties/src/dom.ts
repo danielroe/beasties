@@ -136,7 +136,9 @@ function extendElement(element: typeof Element.prototype, logger?: Logger) {
   // the same `domhandler`, and the descriptors below are non-configurable, so a
   // second copy must not reapply them.
   const appliedVersion = (element as unknown as Record<symbol, unknown>)[extendedMarker]
-    ?? (Object.hasOwn(element, 'nodeName') ? 'an older version' : undefined)
+    ?? (Object.hasOwn(element, 'nodeName')
+      ? 'an older version'
+      : undefined)
 
   if (typeof appliedVersion === 'string') {
     if (appliedVersion !== version) {
@@ -428,5 +430,7 @@ function parseRelevantSelectors(sel: string): AttributeSelector[] | null {
     }
   }
 
-  return relevantTokens.length > 0 ? relevantTokens : null
+  return relevantTokens.length > 0
+    ? relevantTokens
+    : null
 }
