@@ -63,7 +63,7 @@
   },
   "dependencies": {
     "beasties": "workspace:*",
-    "minimatch": "^10.0.1"
+    "minimatch": "^11.0.0"
   },
   "devDependencies": {
     "@rspack/core": "2.2.9",
