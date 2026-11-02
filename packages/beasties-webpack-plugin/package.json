@@ -66,7 +66,7 @@
     "minimatch": "^10.0.1"
   },
   "devDependencies": {
-    "@rspack/core": "2.2.9",
+    "@rspack/core": "2.3.0",
     "@types/jsdom": "30.0.0",
     "css-loader": "7.1.5",
     "documentation": "14.0.3",
@@ -74,7 +74,7 @@
     "html-rspack-plugin": "6.1.11",
     "html-webpack-plugin": "5.6.8",
     "mini-css-extract-plugin": "2.10.2",
-    "tsdown": "0.23.2",
+    "tsdown": "0.23.4",
     "webpack": "5.112.2"
   }
 }
