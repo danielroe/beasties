@@ -22,10 +22,10 @@ import type { Logger, Options } from './types'
 import { readFile, writeFile } from 'node:fs'
 import path from 'node:path'
 
-import { applyMarkedSelectors, markOnly, parseAnimationNames, parseStylesheet, serializeStylesheet, validateMediaQuery, walkStyleRules, walkStyleRulesWithReverseMirror } from './css'
+import { applyMarkedSelectors, markOnly, parseAnimationNames, parseStylesheet, resolveFontFamilies, serializeStylesheet, validateMediaQuery, walkStyleRules, walkStyleRulesWithReverseMirror } from './css'
 import { CRITTERS_DEPRECATION_WARNING, parseDirective } from './directives'
 import { createDocument, serializeDocument } from './dom'
-import { addTextCodepoints, createTextCodepoints, normalizeFontFamily, parseFontFamilies, parseUnicodeRanges, toCodepointSet, unicodeRangeUsed } from './fonts'
+import { addTextCodepoints, createTextCodepoints, normalizeFontFamily, parseUnicodeRanges, toCodepointSet, unicodeRangeUsed } from './fonts'
 import { isSafeMediaValue } from './media'
 import { isAlwaysCriticalSelector, isUnevaluableSelectorError, normalizeCssSelector } from './selectors'
 import { REMOTE_URL_RE, resolveCssUrl, rewriteCssUrls } from './urls'
@@ -702,7 +702,7 @@ export default class Beasties {
               }
               // detect used fonts
               if ((shouldInlineFonts || shouldPreloadFonts) && FONT_PROP_RE.test(decl.prop)) {
-                for (const family of parseFontFamilies(decl.prop, decl.value)) {
+                for (const family of resolveFontFamilies(decl.prop, decl.value, ast)) {
                   criticalFonts.add(family)
                 }
               }
