@@ -4,6 +4,7 @@ on:
   pull_request_target:
     types:
       - closed
+      - labeled
 
 permissions:
   pull-requests: write
@@ -11,8 +12,10 @@ permissions:
 jobs:
   rename:
     if: >-
-      !github.event.pull_request.merged
+      github.event.pull_request.state == 'closed'
+      && !github.event.pull_request.merged
       && contains(github.event.pull_request.labels.*.name, 'possible bot')
+      && (github.event.action == 'closed' || github.event.label.name == 'possible bot')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0

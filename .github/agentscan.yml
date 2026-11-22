@@ -11,6 +11,7 @@ trusted-author-associations:
   - owner
   - member
   - collaborator
+  - contributor
 
 labels:
   automation: possible bot
@@ -45,3 +46,10 @@ messages:
     Please review these AI-assisted contribution guidelines and update this contribution if needed.
 
     If this was flagged in error, we apologise! 😳 Just let us know. 🙏
+  insufficient-data: |
+    Looks like you're new to GitHub - we're delighted you'd like to contribute! 💚
+
+    We welcome the thoughtful use of AI tools when contributing, but ask all contributors to follow [two core principles](https://roe.dev/blog/using-ai-in-open-source):
+
+    1. **Never let an LLM speak for you** - all comments, issues, and PR descriptions should be written in your own words, reflecting your own understanding.
+    2. **Never let an LLM think for you** - only submit contributions you fully understand and can explain.
