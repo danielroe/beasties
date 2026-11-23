@@ -54,8 +54,8 @@
     "installed-check": "11.0.0",
     "jsdom": "30.1.3",
     "knip": "6.45.1",
-    "lint-staged": "17.6.0",
-    "pkg-pr-new": "0.0.93",
+    "lint-staged": "17.6.1",
+    "pkg-pr-new": "0.0.94",
     "simple-git-hooks": "2.14.0",
     "typescript": "6.0.3",
     "vitest": "4.1.12"
