@@ -34,17 +34,15 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs",
-      "default": "./dist/index.mjs"
+      "require": "./dist/index.cjs"
     },
     "./compiler": "./dist/compiler.mjs",
     "./runtime": "./dist/runtime.mjs"
   },
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/index.d.cts",
   "files": [
     "dist"
   ],

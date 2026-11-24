@@ -5,7 +5,10 @@ export default defineConfig([
     entry: ['src/index.ts'],
     format: ['esm', 'cjs'],
     dts: false,
-    copy: [{ from: 'src/index.d.ts', to: 'dist' }],
+    copy: [
+      { from: 'src/index.d.mts', to: 'dist' },
+      { from: 'src/index.d.cts', to: 'dist' },
+    ],
   },
   {
     entry: ['src/compiler.ts', 'src/runtime.ts'],

@@ -9,7 +9,7 @@
     "module": "preserve",
     "paths": {
       "beasties": [
-        "./packages/beasties/src/index.d.ts"
+        "./packages/beasties/src/index.d.mts"
       ]
     },
     "resolveJsonModule": true,
