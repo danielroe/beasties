@@ -21,5 +21,9 @@ export default defineConfig({
   format: ['esm', 'cjs'],
   dts: true,
   deps: { neverBundle: ['webpack'] },
+  checks: { legacyCjs: false },
+  failOnWarn: true,
+  publint: true,
+  attw: { profile: 'strict', level: 'error' },
   banner: { js: license, dts: license },
 }) as ReturnType<typeof defineConfig>
