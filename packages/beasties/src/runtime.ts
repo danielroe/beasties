@@ -681,14 +681,15 @@ export interface RuntimeOptions {
    */
   inlineFonts?: boolean
   /**
-   * Preload critical fonts _(default: `true` when `fonts` is set)_
+   * Preload critical fonts _(default: `false`; `true` when `fonts` is `true`)_
    *
    * Only faces whose family is declared by the critical CSS are preloaded, and
    * a face with a `unicode-range` only when the document's text needs it.
    */
   preloadFonts?: boolean
   /**
-   * Shorthand for setting `inlineFonts` + `preloadFonts`
+   * Shorthand for setting `inlineFonts` + `preloadFonts`. Explicit `inlineFonts`
+   * and `preloadFonts` options take precedence over `fonts`.
    */
   fonts?: boolean
 }
@@ -716,8 +717,8 @@ export function renderCriticalCss(sheet: CompiledSheet, tokens: DocumentTokens, 
   if (keyframesMode === false) {
     keyframesMode = 'none'
   }
-  const shouldPreloadFonts = options.fonts === true || options.preloadFonts === true
-  const shouldInlineFonts = options.fonts !== false && options.inlineFonts === true
+  const shouldPreloadFonts = options.preloadFonts ?? options.fonts
+  const shouldInlineFonts = options.inlineFonts ?? options.fonts
 
   const rules = sheet.rules
   const texts: (string | null)[] = Array.from<string | null>({ length: rules.length }).fill(null)

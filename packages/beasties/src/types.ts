@@ -83,7 +83,7 @@ export interface Options {
    */
   inlineFonts?: boolean
   /**
-   * Preloads critical fonts _(default: `true`)_
+   * Preload critical fonts _(default: `false`; `true` when `fonts` is `true`)_
    *
    * Only faces whose family is declared by the critical CSS are preloaded, and
    * a face with a `unicode-range` only when the document's text needs it.
@@ -95,10 +95,11 @@ export interface Options {
    */
   allowRules?: Array<string | RegExp>
   /**
-   * Shorthand for setting `inlineFonts` + `preloadFonts`
+   * Shorthand for setting `inlineFonts` + `preloadFonts`. Explicit `inlineFonts`
+   * and `preloadFonts` options take precedence over `fonts`.
    * - Values:
    * - `true` to inline critical font-face rules and preload the fonts
-   * - `false` to don't inline any font-face rules and don't preload fonts
+   * - `false` to not inline any font-face rules and not preload fonts
    */
   fonts?: boolean
   /**

@@ -586,8 +586,8 @@ export default class Beasties {
     let excludeAll = false
     let warnedCritters = false
 
-    const shouldPreloadFonts = options.fonts === true || options.preloadFonts === true
-    const shouldInlineFonts = options.fonts !== false && options.inlineFonts === true
+    const shouldPreloadFonts = options.preloadFonts ?? options.fonts
+    const shouldInlineFonts = options.inlineFonts ?? options.fonts
 
     // Walk all CSS rules, marking unused rules with `.$$remove=true` for removal in the second pass.
     // This first pass is also used to collect font and keyframe usage used in the second pass.

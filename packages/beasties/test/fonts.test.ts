@@ -188,3 +188,50 @@ describe('unicode-range filtering via process()', () => {
     expect(result).toContain('url(/fonts/greek.woff2)')
   })
 })
+
+describe('fonts option shorthand', () => {
+  interface FontOptions {
+    fonts?: boolean
+    inlineFonts?: boolean
+    preloadFonts?: boolean
+  }
+
+  const CSS = [
+    'h1 { font-family: Barlow; }',
+    '@font-face { font-family: Barlow; src: url(/fonts/barlow.woff2); unicode-range: U+0000-00FF; }',
+  ].join('\n')
+  const HTML = '<html><head><link rel="stylesheet" href="/style.css"></head><body><h1>Hello</h1></body></html>'
+
+  function runtime(options: FontOptions) {
+    const sheet = compileSheet(CSS, { href: '/style.css' })
+    return renderCriticalCss(sheet, scanHtml(HTML, collectPrograms([sheet])), options)
+  }
+
+  async function classic(options: FontOptions) {
+    const beasties = new Beasties({ reduceInlineStyles: false, path: '/', logLevel: 'silent', preload: false, ...options })
+    beasties.readFile = () => CSS
+    return beasties.process(HTML)
+  }
+
+  const cases: Array<{ options: FontOptions, inline: boolean, preload: boolean }> = [
+    { options: { fonts: true }, inline: true, preload: true },
+    { options: { inlineFonts: true }, inline: true, preload: false },
+    { options: { preloadFonts: true }, inline: false, preload: true },
+    { options: { fonts: true, inlineFonts: false }, inline: false, preload: true },
+    { options: { fonts: true, preloadFonts: false }, inline: true, preload: false },
+    { options: { fonts: false }, inline: false, preload: false },
+    { options: { fonts: false, inlineFonts: true }, inline: true, preload: false },
+  ]
+
+  for (const { options, inline, preload } of cases) {
+    it(`should ${inline ? 'inline' : 'not inline'} and ${preload ? 'preload' : 'not preload'} critical fonts with ${JSON.stringify(options)}`, async () => {
+      const result = await classic(options)
+      expect(result.includes('@font-face')).toBe(inline)
+      expect(result.includes('<link rel="preload" as="font"')).toBe(preload)
+
+      const { css, fontPreloads } = runtime(options)
+      expect(css.includes('@font-face')).toBe(inline)
+      expect(fontPreloads).toEqual(preload ? ['/fonts/barlow.woff2'] : [])
+    })
+  }
+})
