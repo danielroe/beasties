@@ -33,6 +33,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write # required for OIDC authentication with CodSpeed
     env:
       CI: true
 
