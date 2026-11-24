@@ -184,6 +184,7 @@ settings:
 overrides:
   beasties: workspace:*
   vite-plugin-beasties: link:.
+  '@arethetypeswrong/core>validate-npm-package-name': 8.0.0
 
 importers:
 
@@ -4713,10 +4714,6 @@ packages:
   validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
 
-  validate-npm-package-name@5.0.1:
-    resolution: {integrity: sha512-OljLrQ9SQdOUqTaQxqL5dEfZWrXExyyWsozYlAWFawPVNuD83igl7uJD2RTkNMbniIYgt8l81eCJGIdQF7avLQ==}
-    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
-
   validate-npm-package-name@8.0.0:
     resolution: {integrity: sha512-SCv6OOV6Xj2/3cXy3dGmADluJTNcL3o7hZAglNPTe+WYuEuvxgJzxPrSDLZhF+CwyQOubqgecjMmTJGMVLWjYQ==}
     engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
@@ -5089,7 +5086,7 @@ snapshots:
       lru-cache: 11.5.3
       semver: 7.8.5
       typescript: 5.6.1-rc
-      validate-npm-package-name: 5.0.1
+      validate-npm-package-name: 8.0.0
 
   '@asamuzakjp/css-color@7.1.3':
     dependencies:
@@ -9573,8 +9570,6 @@ snapshots:
     dependencies:
       spdx-correct: 3.2.0
       spdx-expression-parse: 3.0.1
-
-  validate-npm-package-name@5.0.1: {}
 
   validate-npm-package-name@8.0.0: {}
 

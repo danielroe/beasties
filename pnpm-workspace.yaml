@@ -6,6 +6,7 @@ packages:
 overrides:
   beasties: 'workspace:*'
   vite-plugin-beasties: 'link:.'
+  '@arethetypeswrong/core>validate-npm-package-name': '8.0.0'
 
 allowBuilds:
   esbuild: false
