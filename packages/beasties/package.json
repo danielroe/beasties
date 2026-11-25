@@ -34,17 +34,15 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs",
-      "default": "./dist/index.mjs"
+      "require": "./dist/index.cjs"
     },
     "./compiler": "./dist/compiler.mjs",
     "./runtime": "./dist/runtime.mjs"
   },
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/index.d.cts",
   "files": [
     "dist"
   ],
@@ -68,8 +66,10 @@
     "postcss-safe-parser": "^7.0.1"
   },
   "devDependencies": {
+    "@arethetypeswrong/core": "^0.18.1",
     "@types/postcss-media-query-parser": "0.2.5",
     "documentation": "14.0.3",
+    "publint": "^0.3.8",
     "tsdown": "0.23.7"
   }
 }

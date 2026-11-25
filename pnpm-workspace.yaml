@@ -4,6 +4,8 @@ packages:
   - packages/*
 
 overrides:
+  '@arethetypeswrong/core>validate-npm-package-name': 8.0.0
+
   beasties: 'workspace:*'
   vite-plugin-beasties: 'link:.'
 

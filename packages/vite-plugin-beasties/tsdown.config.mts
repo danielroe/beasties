@@ -5,4 +5,7 @@ export default defineConfig({
   format: ['esm'],
   dts: true,
   deps: { neverBundle: ['vite'] },
+  failOnWarn: true,
+  publint: true,
+  attw: { profile: 'esm-only', level: 'error' },
 }) as ReturnType<typeof defineConfig>
