@@ -79,7 +79,7 @@ export interface Options {
    */
   nonce?: string | ((document: HTMLDocument) => string | undefined)
   /**
-   * Inline critical font-face rules _(default: `false`)_
+   * Inline critical font-face rules _(default: `false`; `true` when `fonts` is `true`)_
    */
   inlineFonts?: boolean
   /**
@@ -95,10 +95,9 @@ export interface Options {
    */
   allowRules?: Array<string | RegExp>
   /**
-   * Shorthand for setting `inlineFonts` + `preloadFonts`. Explicit `inlineFonts`
-   * and `preloadFonts` options take precedence over `fonts`.
+   * Shorthand for setting `inlineFonts` + `preloadFonts`.
    * - Values:
-   * - `true` to inline critical font-face rules and preload the fonts
+   * - `true` to inline critical font-face rules and preload the fonts, unless `inlineFonts` or `preloadFonts` is `false`
    * - `false` to not inline any font-face rules and not preload fonts
    */
   fonts?: boolean

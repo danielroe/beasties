@@ -214,13 +214,15 @@ describe('fonts option shorthand', () => {
   }
 
   const cases: Array<{ options: FontOptions, inline: boolean, preload: boolean }> = [
+    { options: {}, inline: false, preload: false },
     { options: { fonts: true }, inline: true, preload: true },
     { options: { inlineFonts: true }, inline: true, preload: false },
     { options: { preloadFonts: true }, inline: false, preload: true },
     { options: { fonts: true, inlineFonts: false }, inline: false, preload: true },
     { options: { fonts: true, preloadFonts: false }, inline: true, preload: false },
     { options: { fonts: false }, inline: false, preload: false },
-    { options: { fonts: false, inlineFonts: true }, inline: true, preload: false },
+    { options: { fonts: false, inlineFonts: true }, inline: false, preload: false },
+    { options: { fonts: false, preloadFonts: true }, inline: false, preload: false },
   ]
 
   for (const { options, inline, preload } of cases) {

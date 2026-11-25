@@ -131,12 +131,12 @@ All optional. Pass them to `new Beasties({ ... })`.
 - `preload` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Which [preload strategy](#preloadstrategy) to use
 - `noscriptFallback` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Add `<noscript>` fallback to JS-based strategies
 - `nonce` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String) | [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Function)** CSP nonce to set on every `<style>` and `<script>` element beasties injects, or a function called once per document to derive it
-- `inlineFonts` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Inline critical font-face rules _(default: `false`)_
+- `inlineFonts` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Inline critical font-face rules _(default: `false`; `true` when `fonts` is `true`)_
 - `preloadFonts` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Preload critical fonts _(default: `false`; `true` when `fonts` is `true`)_
 
   A font is critical when the critical CSS declares its family, and, for a face with a `unicode-range`, when the document's text contains a character that face covers. Faces of unused families and unused subsets are neither inlined nor preloaded; they still load with the deferred stylesheet.
-- `fonts` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Shorthand for setting `inlineFonts` + `preloadFonts`. Explicit `inlineFonts` and `preloadFonts` options take precedence over `fonts`.\* Values:
-  - `true` to inline critical font-face rules and preload the fonts
+- `fonts` **[Boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Shorthand for setting `inlineFonts` + `preloadFonts`.\* Values:
+  - `true` to inline critical font-face rules and preload the fonts, unless `inlineFonts` or `preloadFonts` is `false`
   - `false` to not inline any font-face rules and not preload fonts
 - `keyframes` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Controls which keyframes rules are inlined.\* Values:
   - `"critical"`: _(default)_ inline keyframes rules used by the critical CSS

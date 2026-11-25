@@ -677,7 +677,7 @@ export interface RuntimeOptions {
    */
   keyframes?: 'critical' | 'all' | 'none' | boolean
   /**
-   * Inline critical font-face rules _(default: `false`)_
+   * Inline critical font-face rules _(default: `false`; `true` when `fonts` is `true`)_
    */
   inlineFonts?: boolean
   /**
@@ -688,8 +688,8 @@ export interface RuntimeOptions {
    */
   preloadFonts?: boolean
   /**
-   * Shorthand for setting `inlineFonts` + `preloadFonts`. Explicit `inlineFonts`
-   * and `preloadFonts` options take precedence over `fonts`.
+   * Shorthand for setting `inlineFonts` + `preloadFonts`. `true` enables both,
+   * unless `inlineFonts` or `preloadFonts` is `false`; `false` disables both.
    */
   fonts?: boolean
 }
@@ -717,8 +717,8 @@ export function renderCriticalCss(sheet: CompiledSheet, tokens: DocumentTokens, 
   if (keyframesMode === false) {
     keyframesMode = 'none'
   }
-  const shouldPreloadFonts = options.preloadFonts ?? options.fonts
-  const shouldInlineFonts = options.inlineFonts ?? options.fonts
+  const shouldPreloadFonts = options.fonts !== false && (options.preloadFonts ?? options.fonts) === true
+  const shouldInlineFonts = options.fonts !== false && (options.inlineFonts ?? options.fonts) === true
 
   const rules = sheet.rules
   const texts: (string | null)[] = Array.from<string | null>({ length: rules.length }).fill(null)
