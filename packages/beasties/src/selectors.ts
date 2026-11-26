@@ -1,6 +1,7 @@
 const removePseudoClassesAndElementsPattern = /(?<!\\)::?[a-z-]+(?:\(.+\))?/gi
 const implicitUniversalPattern = /([>+~])\s*(?!\1)([>+~])/g
 const emptyCombinatorPattern = /([>+~])\s*(?=\1|$)/g
+const leadingCombinatorPattern = /^\s*(?=[>+~])/
 const removeTrailingCommasPattern = /\(\s*,|,\s*\)/g
 const BEFORE_AFTER_PSEUDO_RE = /^::?(?:before|after)$/
 const LEADING_MATCHES_ANY_RE = /^:(?:is|where)\(/i
@@ -83,5 +84,6 @@ export function normalizeCssSelector(sel: string): string {
     .replace(removeTrailingCommasPattern, match => (match.includes('(') ? '(' : ')'))
     .replace(implicitUniversalPattern, '$1 * $2')
     .replace(emptyCombinatorPattern, '$1 *')
+    .replace(leadingCombinatorPattern, '* ')
     .trim()
 }

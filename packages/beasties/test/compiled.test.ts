@@ -362,6 +362,28 @@ describe('compiled beasties (compiler + runtime)', () => {
         ':where(:root){color-scheme:dark}',
       ].join(''))
     })
+
+    it('matches for selectors starting with a pseudo-class before a combinator', async () => {
+      const html = trim`
+        <html><head><link rel="stylesheet" href="/style.css"></head><body>
+          <ul class="list"><li>one</li><li>two</li></ul>
+        </body></html>
+      `
+      const css = trim`
+        :is(.list, .other) > li { color: red; }
+        :first-child + li { color: blue; }
+        :where(:hover > li) { color: green; }
+        :is(.list, .other) > .missing { color: purple; }
+      `
+      const classic = await classicCritical(html, css)
+      const compiled = compiledCritical(html, css)
+      expect(compiled).toBe(classic)
+      expect(compiled).toBe([
+        ':is(.list, .other) > li{color:red}',
+        ':first-child + li{color:blue}',
+        ':where(:hover > li){color:green}',
+      ].join(''))
+    })
   })
 
   describe('structural matching', () => {
