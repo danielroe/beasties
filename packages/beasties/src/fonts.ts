@@ -11,8 +11,10 @@ const CHAR_ESCAPE_RE = /\\(.)/g
 const WHITESPACE_RE = /\s+/g
 // a `font` shorthand's family list starts after the font-size, which may carry
 // a `/line-height`. A size is a length or percentage, an absolute/relative size
-// keyword, or a function; unitless numbers before it are weights, not sizes.
-const FONT_SIZE_RE = /^(?:[+-]?(?:\d+|\d*\.\d+)(?:[a-z]+|%)|calc\(|var\()/i
+// keyword, or a math function; unitless numbers before it are weights, not sizes.
+// If there is none, the last `var()` before the family is taken as the size.
+const FONT_SIZE_RE = /^(?:[+-]?(?:\d+|\d*\.\d+)(?:[a-z]+|%)|(?:calc|clamp|min|max)\()/i
+const VAR_FUNCTION_RE = /^var\(/i
 const FONT_SIZE_KEYWORDS = new Set(['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large', 'xxx-large', 'smaller', 'larger'])
 const VAR_RE = /^var\(\s*(--[^\s,)]+)\s*(?:,([\s\S]*))?\)$/i
 const COMMA_RE = /,/
@@ -273,14 +275,15 @@ function resolveVarReference(value: string, prop: string, lookup: FontFamilyLook
  * (`font: inherit`, `font: menu`).
  */
 function shorthandFamily(segment: string): string | undefined {
-  const tokens = segment.trim().replace(/\s*\/\s*/g, '/').split(/\s+/)
-  for (let i = 0; i < tokens.length; i++) {
-    const size = tokens[i]!.split('/')[0]!
-    if (FONT_SIZE_RE.test(size) || FONT_SIZE_KEYWORDS.has(size.toLowerCase())) {
-      return tokens.slice(i + 1).join(' ')
+  const tokens = splitTopLevel(segment.trim().replace(/\s*\/\s*/g, '/'), SPACE_RE).filter(Boolean)
+  const sizes = tokens.map(token => token.split('/')[0]!)
+  let index = sizes.findIndex(size => FONT_SIZE_RE.test(size) || FONT_SIZE_KEYWORDS.has(size.toLowerCase()))
+  for (let i = sizes.length - 2; index === -1 && i >= 0; i--) {
+    if (VAR_FUNCTION_RE.test(sizes[i]!)) {
+      index = i
     }
   }
-  return undefined
+  return index === -1 ? undefined : tokens.slice(index + 1).join(' ')
 }
 
 /** Split a value on top-level separators, ignoring those inside quotes or parens */

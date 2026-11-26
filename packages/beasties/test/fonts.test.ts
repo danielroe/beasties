@@ -57,6 +57,15 @@ describe('parseFontFamilies', () => {
     expect(parseFontFamilies('font', 'var(--body), serif', lookup)).toEqual(['barlow', 'serif'])
     expect(parseFontFamilies('font', 'var(--missing, bold 16px Inter)', lookup)).toEqual(['inter'])
   })
+
+  it('should find the family after a `font` shorthand size given through functions', () => {
+    const lookup = (name: string) => name === '--sans' ? ['barlow'] : []
+    expect(parseFontFamilies('font', 'var(--weight) 16px var(--sans)', lookup)).toEqual(['barlow'])
+    expect(parseFontFamilies('font', 'var(--size, 16px) var(--sans)', lookup)).toEqual(['barlow'])
+    expect(parseFontFamilies('font', 'italic var(--size)/1.5 Inter', lookup)).toEqual(['inter'])
+    expect(parseFontFamilies('font', 'var(--weight) var(--size) var(--sans)', lookup)).toEqual(['barlow'])
+    expect(parseFontFamilies('font', '700 clamp(1rem, 2vw, 2rem)/1.2 Inter, serif')).toEqual(['inter', 'serif'])
+  })
 })
 
 describe('parseUnicodeRanges', () => {
