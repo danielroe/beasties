@@ -332,6 +332,36 @@ describe('compiled beasties (compiler + runtime)', () => {
       const compiled = compiledCritical(BASIC_HTML, css)
       expect(compiled).toBe(classic)
     })
+
+    it('matches for selectors wrapped in :is() and :where()', async () => {
+      const html = trim`
+        <html><head><link rel="stylesheet" href="/style.css"></head><body>
+          <div class="space-y-1.5"><p data-label="a,b)">one</p><p>two</p></div>
+          <div class="empty">text</div>
+        </body></html>
+      `
+      const css = trim`
+        :where(.space-y-1\\.5 > :not(:last-child)) { margin-block-end: 6px; }
+        :where(.space-y-2 > :not(:last-child)) { margin-block-end: 8px; }
+        :where(.empty > :not(:last-child)) { margin-block-end: 10px; }
+        :is(.space-y-1\\.5 > *) { color: red; }
+        :where(:is(.space-y-1\\.5) > p):hover { color: blue; }
+        :where(.space-y-1\\.5 > p).missing { color: green; }
+        :where([data-label="a,b)"]) { color: orange; }
+        :is(.space-y-1\\.5, .other) .missing { color: purple; }
+        :where(:root) { color-scheme: dark; }
+      `
+      const classic = await classicCritical(html, css)
+      const compiled = compiledCritical(html, css)
+      expect(compiled).toBe(classic)
+      expect(compiled).toBe([
+        ':where(.space-y-1\\.5 > :not(:last-child)){margin-block-end:6px}',
+        ':is(.space-y-1\\.5 > *){color:red}',
+        ':where(:is(.space-y-1\\.5) > p):hover{color:blue}',
+        ':where([data-label="a,b)"]){color:orange}',
+        ':where(:root){color-scheme:dark}',
+      ].join(''))
+    })
   })
 
   describe('structural matching', () => {

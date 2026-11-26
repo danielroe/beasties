@@ -3,6 +3,7 @@ const implicitUniversalPattern = /([>+~])\s*(?!\1)([>+~])/g
 const emptyCombinatorPattern = /([>+~])\s*(?=\1|$)/g
 const removeTrailingCommasPattern = /\(\s*,|,\s*\)/g
 const BEFORE_AFTER_PSEUDO_RE = /^::?(?:before|after)$/
+const LEADING_MATCHES_ANY_RE = /^:(?:is|where)\(/i
 const UNEVALUABLE_SELECTOR_ERROR_RE = /^(?:unknown pseudo-class|pseudo-elements are not supported)/i
 
 /**
@@ -17,6 +18,7 @@ export function isUnevaluableSelectorError(message: string): boolean {
  * Selectors that are considered critical regardless of whether they match an element in the document.
  */
 export function isAlwaysCriticalSelector(sel: string): boolean {
+  sel = unwrapLeadingMatchesAny(sel)
   return (
     sel === ':root'
     || sel === 'html'
@@ -25,13 +27,58 @@ export function isAlwaysCriticalSelector(sel: string): boolean {
   )
 }
 
+function singleSelectorArgumentEnd(sel: string, start: number): number {
+  let depth = 1
+  let quote = ''
+  for (let i = start; i < sel.length; i++) {
+    const char = sel[i]!
+    if (char === '\\') {
+      i++
+    }
+    else if (quote) {
+      if (char === quote) {
+        quote = ''
+      }
+    }
+    else if (char === '"' || char === '\'') {
+      quote = char
+    }
+    else if (char === '(') {
+      depth++
+    }
+    else if (char === ')' && --depth === 0) {
+      return i
+    }
+    else if (char === ',' && depth === 1) {
+      return -1
+    }
+  }
+  return -1
+}
+
+/**
+ * Replace a leading `:is()` or `:where()` holding a single selector with that
+ * selector, which matches the same elements.
+ */
+function unwrapLeadingMatchesAny(sel: string): string {
+  for (let match = LEADING_MATCHES_ANY_RE.exec(sel); match; match = LEADING_MATCHES_ANY_RE.exec(sel)) {
+    const start = match[0].length
+    const end = singleSelectorArgumentEnd(sel, start)
+    if (end === -1) {
+      break
+    }
+    sel = sel.slice(start, end).trim() + sel.slice(end + 1)
+  }
+  return sel
+}
+
 /**
  * Strip pseudo-classes and pseudo-elements from a selector so it can be
  * matched against the document, since we only care that the associated
  * elements exist.
  */
 export function normalizeCssSelector(sel: string): string {
-  return sel
+  return unwrapLeadingMatchesAny(sel)
     .replace(removePseudoClassesAndElementsPattern, '')
     .replace(removeTrailingCommasPattern, match => (match.includes('(') ? '(' : ')'))
     .replace(implicitUniversalPattern, '$1 * $2')
