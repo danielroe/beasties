@@ -14,8 +14,9 @@ const WHITESPACE_RE = /\s+/g
 // keyword, or a function; unitless numbers before it are weights, not sizes.
 const FONT_SIZE_RE = /^(?:[+-]?(?:\d+|\d*\.\d+)(?:[a-z]+|%)|calc\(|var\()/i
 const FONT_SIZE_KEYWORDS = new Set(['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large', 'xxx-large', 'smaller', 'larger'])
-// a family list segment that is a single `var(--name)` or `var(--name, fallback)`
-const VAR_RE = /^var\(\s*(?<name>--[^\s,)]+)\s*(?:,(?<fallback>[\s\S]*))?\)$/i
+const VAR_RE = /^var\(\s*(--[^\s,)]+)\s*(?:,([\s\S]*))?\)$/i
+const COMMA_RE = /,/
+const SPACE_RE = /\s/
 
 const UNICODE_RANGE_RE = /^u\+([0-9a-f]{1,6})(?:-([0-9a-f]{1,6}))?$/i
 const UNICODE_WILDCARD_RE = /^u\+([0-9a-f]{0,5})(\?{1,6})$/i
@@ -212,51 +213,42 @@ export function normalizeFontFamily(family: string): string {
   return value.toLowerCase()
 }
 
-/**
- * Find the font names a custom property like `--font-sans` may have.
- * `prop` says how to read its values: as `font-family` or as `font`.
- */
 type FontFamilyLookup = (name: string, prop: string) => string[]
 
 /**
  * Extract normalized family names from the value of a `font-family` or `font`
  * declaration. CSS-wide keywords and system font shorthands yield no families.
- * Each `var()` is looked up with `lookup` and its fallback is read too; without
- * a `lookup`, only the fallback gives names.
+ * `lookup` resolves the custom property of a `var()` as a value of `prop`.
  */
 export function parseFontFamilies(prop: string, value: string, lookup: FontFamilyLookup = () => []): string[] {
   const isShorthand = prop.toLowerCase() === 'font'
   const segments = splitTopLevel(value)
+  const families: string[] = []
   if (isShorthand) {
-    const first = segments[0]
-    if (first === undefined) {
-      return []
+    const referenced = resolveVarReference(segments[0]!, 'font', lookup)
+    if (referenced) {
+      families.push(...referenced)
+      segments.shift()
     }
-    const tail = shorthandFamily(first)
-    if (tail === undefined) {
-      return []
+    else {
+      const tail = shorthandFamily(segments[0]!)
+      if (tail === undefined) {
+        return []
+      }
+      segments[0] = tail
     }
-    segments[0] = tail
   }
 
-  const families: string[] = []
   for (const segment of segments) {
     families.push(...parseFamilySegment(segment, lookup))
   }
   return families
 }
 
-/**
- * Find the font names in one comma-separated part of a font list.
- * e.g. `"Open Sans"` gives `['open sans']`, `inherit` gives `[]`, and
- * `var(--font-sans, Arial)` gives the names of `--font-sans`, then `arial`.
- */
 function parseFamilySegment(segment: string, lookup: FontFamilyLookup): string[] {
-  const reference = VAR_RE.exec(segment.trim())?.groups
-  if (reference) {
-    const variableFamilies = lookup(reference.name!, 'font-family')
-    const fallbackFamilies = parseFontFamilies('font-family', reference.fallback ?? '', lookup)
-    return [...variableFamilies, ...fallbackFamilies]
+  const referenced = resolveVarReference(segment, 'font-family', lookup)
+  if (referenced) {
+    return referenced
   }
 
   const family = normalizeFontFamily(segment)
@@ -264,6 +256,15 @@ function parseFamilySegment(segment: string, lookup: FontFamilyLookup): string[]
     return []
   }
   return [family]
+}
+
+/** The families of `value` if it is a single `var()`, read as a value of `prop` */
+function resolveVarReference(value: string, prop: string, lookup: FontFamilyLookup): string[] | undefined {
+  const tokens = splitTopLevel(value.trim(), SPACE_RE)
+  const match = tokens.length === 1 ? VAR_RE.exec(tokens[0]!) : null
+  if (match) {
+    return [...lookup(match[1]!, prop), ...parseFontFamilies(prop, match[2] ?? '', lookup)]
+  }
 }
 
 /**
@@ -282,8 +283,8 @@ function shorthandFamily(segment: string): string | undefined {
   return undefined
 }
 
-/** Split a family list on top-level commas, ignoring those inside quotes or parens */
-function splitTopLevel(value: string): string[] {
+/** Split a value on top-level separators, ignoring those inside quotes or parens */
+function splitTopLevel(value: string, separator: RegExp = COMMA_RE): string[] {
   const segments: string[] = []
   let start = 0
   let depth = 0
@@ -308,7 +309,7 @@ function splitTopLevel(value: string): string[] {
     else if (char === ')') {
       depth = Math.max(0, depth - 1)
     }
-    else if (char === ',' && depth === 0) {
+    else if (depth === 0 && separator.test(char)) {
       segments.push(value.slice(start, i))
       start = i + 1
     }
