@@ -71,6 +71,9 @@ function escapeEnd(sel: string, start: number): number {
   if (end === start + 1) {
     return start + 2
   }
+  if (sel[end] === '\r' && sel[end + 1] === '\n') {
+    return end + 2
+  }
   return end < sel.length && isCssWhitespace(sel[end]!) ? end + 1 : end
 }
 

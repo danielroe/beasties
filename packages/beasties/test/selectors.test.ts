@@ -79,6 +79,8 @@ describe('normalizeCssSelector', () => {
     expect(normalizeCssSelector(String.raw`.\31 :hover > p`)).toBe(String.raw`.\31  > p`)
     expect(normalizeCssSelector(String.raw`.\31  :hover > p`)).toBe(String.raw`.\31  * > p`)
     expect(normalizeCssSelector(String.raw`.\000031 :hover > p`)).toBe(String.raw`.\000031  > p`)
+    expect(normalizeCssSelector('.\\31\r\n:hover > p')).toBe('.\\31\r\n > p')
+    expect(normalizeCssSelector('.\\31\r\n :hover > p')).toBe('.\\31\r * > p')
   })
 
   it('keeps quoted attribute values intact', () => {
