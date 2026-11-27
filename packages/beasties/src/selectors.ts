@@ -4,6 +4,7 @@ const PSEUDO_RE = /::?[a-z-]+/iy
 const PSEUDO_OR_COMBINATOR_RE = /[:>+~]/
 const ESCAPE_AT_END_RE = /(?<!\\)(?:\\\\)*\\[0-9a-f]{0,6}$/i
 const HEX_ESCAPE_AT_END_RE = /(?<!\\)(?:\\\\)*\\[0-9a-f]{1,6}$/i
+const HEX_DIGIT_RE = /[0-9a-f]/i
 const UNEVALUABLE_SELECTOR_ERROR_RE = /^(?:unknown pseudo-class|pseudo-elements are not supported)/i
 
 /**
@@ -56,6 +57,21 @@ function trimCssWhitespace(sel: string): string {
  */
 function endHexEscape(sel: string): string {
   return HEX_ESCAPE_AT_END_RE.test(sel) ? `${sel} ` : sel
+}
+
+/**
+ * Index after the escape starting at `start`, including the whitespace
+ * character that ends a hex escape.
+ */
+function escapeEnd(sel: string, start: number): number {
+  let end = start + 1
+  while (end < sel.length && end < start + 7 && HEX_DIGIT_RE.test(sel[end]!)) {
+    end++
+  }
+  if (end === start + 1) {
+    return start + 2
+  }
+  return end < sel.length && isCssWhitespace(sel[end]!) ? end + 1 : end
 }
 
 function startsQuotedOrComment(sel: string, index: number): boolean {
@@ -191,7 +207,7 @@ export function normalizeCssSelector(sel: string): string {
     if (char === '\\') {
       empty = false
       hasEscape = true
-      i++
+      i = escapeEnd(sel, i) - 1
     }
     else if (startsQuotedOrComment(sel, i)) {
       const end = quotedOrCommentEnd(sel, i)
