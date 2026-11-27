@@ -2,11 +2,25 @@ import { describe, expect, it } from 'vitest'
 
 import { isAlwaysCriticalSelector, normalizeCssSelector } from '../src/selectors'
 
+describe('isAlwaysCriticalSelector', () => {
+  it('looks inside a leading :is() or :where() holding a single selector', () => {
+    for (const sel of [':where(:root)', ':is(html)', ':where(:is(body))', ':is(::before)']) {
+      expect(isAlwaysCriticalSelector(sel)).toBe(true)
+    }
+    for (const sel of [':is(body, .other)', ':where(body).foo', 'div:where(:root)']) {
+      expect(isAlwaysCriticalSelector(sel)).toBe(false)
+    }
+  })
+})
+
 describe('normalizeCssSelector', () => {
   it('strips each functional pseudo-class up to its own closing parenthesis', () => {
     expect(normalizeCssSelector(':is(.list, .other) > li:not(:last-child)')).toBe('* > li')
     expect(normalizeCssSelector('.group:not(.a) > .item:nth-child(2n + 1) .b')).toBe('.group > .item .b')
     expect(normalizeCssSelector(String.raw`div:not(.a) .w-\[calc\(100\%\+1rem\)\]`)).toBe(String.raw`div .w-\[calc\(100\%\+1rem\)\]`)
+    expect(normalizeCssSelector(String.raw`:where(.w-\[calc\(100\%\+1rem\)\]):hover`)).toBe(String.raw`.w-\[calc\(100\%\+1rem\)\]`)
+    expect(normalizeCssSelector(String.raw`:where(.a\,b):hover`)).toBe(String.raw`.a\,b`)
+    expect(normalizeCssSelector(':where(.a > :is(.b, .c))')).toBe('.a > *')
     expect(normalizeCssSelector(':where(.space-y > :not(\n:last-child\n))')).toBe('.space-y > *')
     expect(normalizeCssSelector(':is(\n  .list,\n  .other\n) > li')).toBe('* > li')
   })
