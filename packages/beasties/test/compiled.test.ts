@@ -332,6 +332,109 @@ describe('compiled beasties (compiler + runtime)', () => {
       const compiled = compiledCritical(BASIC_HTML, css)
       expect(compiled).toBe(classic)
     })
+
+    it('matches for selectors wrapped in :is() and :where()', async () => {
+      const html = trim`
+        <html><head><link rel="stylesheet" href="/style.css"></head><body>
+          <div class="space-y-1.5"><p data-label="a,b)">one</p><p data-state="open:active">two</p></div>
+          <div class="empty">text</div>
+        </body></html>
+      `
+      const css = trim`
+        :where(.space-y-1\\.5 > :not(:last-child)) { margin-block-end: 6px; }
+        :where(.space-y-2 > :not(:last-child)) { margin-block-end: 8px; }
+        :where(.empty > :not(:last-child)) { margin-block-end: 10px; }
+        :is(.space-y-1\\.5 > *) { color: red; }
+        :where(:is(.space-y-1\\.5) > p):hover { color: blue; }
+        :where(.space-y-1\\.5 > p).missing { color: green; }
+        :where([data-label="a,b)"]) { color: orange; }
+        :where([data-state="open:active"]) { color: teal; }
+        :is(.space-y-1\\.5, .other) .missing { color: purple; }
+        :where(:root) { color-scheme: dark; }
+      `
+      const classic = await classicCritical(html, css)
+      const compiled = compiledCritical(html, css)
+      expect(compiled).toBe(classic)
+      expect(compiled).toBe([
+        ':where(.space-y-1\\.5 > :not(:last-child)){margin-block-end:6px}',
+        ':is(.space-y-1\\.5 > *){color:red}',
+        ':where(:is(.space-y-1\\.5) > p):hover{color:blue}',
+        ':where([data-label="a,b)"]){color:orange}',
+        ':where([data-state="open:active"]){color:teal}',
+        ':where(:root){color-scheme:dark}',
+      ].join(''))
+    })
+
+    it('matches for selectors starting with a pseudo-class before a combinator', async () => {
+      const html = trim`
+        <html><head><link rel="stylesheet" href="/style.css"></head><body>
+          <ul class="list"><li>one</li><li>two</li></ul>
+        </body></html>
+      `
+      const css = trim`
+        :is(.list, .other) > li { color: red; }
+        :first-child + li { color: blue; }
+        :where(:hover > li) { color: green; }
+        :first-child ~ li { color: orange; }
+        :is(.list, .other) > .missing { color: purple; }
+        :first-child + ul { color: grey; }
+        :first-child ~ ul { color: brown; }
+        :is(.list, .other) > html { color: black; }
+      `
+      const classic = await classicCritical(html, css)
+      const compiled = compiledCritical(html, css)
+      expect(compiled).toBe(classic)
+      expect(compiled).toBe([
+        ':is(.list, .other) > li{color:red}',
+        ':first-child + li{color:blue}',
+        ':where(:hover > li){color:green}',
+        ':first-child ~ li{color:orange}',
+      ].join(''))
+    })
+
+    it('matches for a pseudo-only compound between a descendant and another combinator', async () => {
+      const html = trim`
+        <html><head><link rel="stylesheet" href="/style.css"></head><body>
+          <form class="validated"><div><input><p class="feedback">ok</p></div></form>
+        </body></html>
+      `
+      const css = trim`
+        .validated :valid ~ .feedback { color: red; }
+        .validated > :first-child p { color: blue; }
+        :where(.validated :first-child > p).feedback { color: green; }
+        .validated :first-child > div { color: purple; }
+        .validated > :first-child form { color: grey; }
+      `
+      const classic = await classicCritical(html, css)
+      const compiled = compiledCritical(html, css)
+      expect(compiled).toBe(classic)
+      expect(compiled).toBe([
+        '.validated :valid ~ .feedback{color:red}',
+        '.validated > :first-child p{color:blue}',
+        ':where(.validated :first-child > p).feedback{color:green}',
+      ].join(''))
+    })
+
+    it('matches for a leading combinator inside data-beasties-container', async () => {
+      const html = trim`
+        <html><head><link rel="stylesheet" href="/style.css"></head><body>
+          <p>outside</p>
+          <main data-beasties-container>
+            <ul><li>one</li><li>two</li></ul>
+          </main>
+        </body></html>
+      `
+      const css = trim`
+        :hover > li { color: red; }
+        :first-child + li { color: blue; }
+        :hover > ul { color: green; }
+        :hover > p { color: purple; }
+      `
+      const classic = await classicCritical(html, css)
+      const compiled = compiledCritical(html, css)
+      expect(compiled).toBe(classic)
+      expect(compiled).toBe(':hover > li{color:red}:first-child + li{color:blue}')
+    })
   })
 
   describe('structural matching', () => {
