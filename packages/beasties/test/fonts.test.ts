@@ -43,6 +43,38 @@ describe('parseFontFamilies', () => {
     expect(parseFontFamilies('font', 'caption')).toEqual([])
     expect(parseFontFamilies('font-family', 'inherit')).toEqual([])
   })
+
+  it('should collect `var()` families through the lookup, along with their fallbacks', () => {
+    const lookup = (name: string, prop: string) => `${prop}:${name}` === 'font-family:--sans' ? ['barlow'] : []
+    expect(parseFontFamilies('font-family', 'var(--sans, "Open Sans"), serif', lookup))
+      .toEqual(['barlow', 'open sans', 'serif'])
+    expect(parseFontFamilies('font', 'bold 16px var(--sans)', lookup)).toEqual(['barlow'])
+    expect(parseFontFamilies('font-family', 'var(--sans)')).toEqual([])
+  })
+
+  it('should look up a `font` shorthand made of a single `var()` as a `font` value', () => {
+    const lookup = (name: string, prop: string) => `${prop}:${name}` === 'font:--body' ? ['barlow'] : []
+    expect(parseFontFamilies('font', 'var(--body), serif', lookup)).toEqual(['barlow', 'serif'])
+    expect(parseFontFamilies('font', 'var(--missing, bold 16px Inter)', lookup)).toEqual(['inter'])
+  })
+
+  it('should find the family after a `font` shorthand size given through functions', () => {
+    const lookup = (name: string) => name === '--sans' ? ['barlow'] : []
+    expect(parseFontFamilies('font', 'var(--weight) 16px var(--sans)', lookup)).toEqual(['barlow'])
+    expect(parseFontFamilies('font', 'var(--size, 16px) var(--sans)', lookup)).toEqual(['barlow'])
+    expect(parseFontFamilies('font', 'italic var(--size)/1.5 Inter', lookup)).toEqual(['inter'])
+    expect(parseFontFamilies('font', 'var(--weight) var(--size) var(--sans)', lookup)).toEqual(['barlow'])
+    expect(parseFontFamilies('font', '700 clamp(1rem, 2vw, 2rem)/1.2 Inter, serif')).toEqual(['inter', 'serif'])
+    expect(parseFontFamilies('font', 'calc(400) 16px Barlow')).toEqual(['barlow'])
+    expect(parseFontFamilies('font', 'bold calc(var(--size) * 1.2) Barlow')).toEqual(['barlow'])
+    expect(parseFontFamilies('font', 'calc(1 / 2 * 16px)/1.5 Barlow')).toEqual(['barlow'])
+    expect(parseFontFamilies('font', 'calc(\n  16px\n) Barlow')).toEqual(['barlow'])
+    expect(parseFontFamilies('font', 'var(--weight) 0/0 Barlow', lookup)).toEqual(['barlow'])
+    expect(parseFontFamilies('font', 'oblique 10deg 16px Barlow')).toEqual(['barlow'])
+    expect(parseFontFamilies('font', 'oblique min(10deg, 0.1turn) 16px Barlow')).toEqual(['barlow'])
+    expect(parseFontFamilies('font', '16px / 1.5 "AC / DC"')).toEqual(['ac / dc'])
+    expect(parseFontFamilies('font', '16px var(--missing, "AC / DC")')).toEqual(['ac / dc'])
+  })
 })
 
 describe('parseUnicodeRanges', () => {
@@ -91,6 +123,62 @@ describe('@font-face inlining', () => {
   it('should not match a family as a substring of a used family', () => {
     const { css } = render('@font-face{font-family:Sans;src:url(/sans.woff2)}.a{font-family:"Open Sans"}', '<html><body><p class="a">hi</p></body></html>', { inlineFonts: true })
     expect(css).not.toContain('@font-face')
+  })
+
+  it('should resolve cyclic custom properties', () => {
+    const CSS = [
+      ':root { --a: var(--b), Barlow; --b: var(--a); }',
+      '.font-sans { font-family: var(--a); }',
+      '@font-face { font-family: Barlow; src: url(/barlow.woff2); }',
+    ].join('\n')
+    const { css } = render(CSS, page('hi'), { inlineFonts: true })
+    expect(css).toContain('/barlow.woff2')
+  })
+
+  it('should keep fonts from every place a custom property is set', () => {
+    const CSS = [
+      ':root { --font-body: LightFont; }',
+      '.dark { --font-body: DarkFont; }',
+      '.font-sans { font-family: var(--font-body); }',
+      '@font-face { font-family: LightFont; src: url(/light.woff2); }',
+      '@font-face { font-family: DarkFont; src: url(/dark.woff2); }',
+    ].join('\n')
+    const { css } = render(CSS, page('hi'), { inlineFonts: true })
+    expect(css).toContain('/light.woff2')
+    expect(css).toContain('/dark.woff2')
+  })
+
+  it('should resolve custom properties regardless of the order they are referenced in', () => {
+    const CSS = [
+      ':root { --a: Barlow; --b: var(--a); }',
+      '.theme { --a: var(--b), Inter; }',
+      '.unused { font-family: var(--a); }',
+      '.font-sans { font-family: var(--b); }',
+      '@font-face { font-family: Barlow; src: url(/barlow.woff2); }',
+    ].join('\n')
+    const { css } = render(CSS, page('hi'), { inlineFonts: true })
+    expect(css).toContain('/barlow.woff2')
+  })
+
+  it('should resolve a `font` shorthand set entirely through a custom property', () => {
+    const CSS = [
+      ':root { --body: bold 16px/1.5 Barlow; }',
+      '.font-sans { font: var(--body); }',
+      '@font-face { font-family: Barlow; src: url(/barlow.woff2); }',
+    ].join('\n')
+    const { css } = render(CSS, page('hi'), { inlineFonts: true })
+    expect(css).toContain('/barlow.woff2')
+  })
+
+  it('should resolve repeated custom property references without exponential growth', () => {
+    const levels = Array.from({ length: 30 }, (_, i) => `--f${i + 1}: var(--f${i}), var(--f${i});`)
+    const CSS = [
+      `:root { --f0: Barlow; ${levels.join(' ')} }`,
+      '.font-sans { font-family: var(--f30); }',
+      '@font-face { font-family: Barlow; src: url(/barlow.woff2); }',
+    ].join('\n')
+    const { css } = render(CSS, page('hi'), { inlineFonts: true })
+    expect(css).toContain('/barlow.woff2')
   })
 })
 

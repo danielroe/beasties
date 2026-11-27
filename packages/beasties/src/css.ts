@@ -20,11 +20,13 @@ import type Root_ from 'postcss/lib/root'
 import { parse, stringify } from 'postcss'
 import mediaParser from 'postcss-media-query-parser'
 import safeParser from 'postcss-safe-parser'
+import { parseFontFamilies } from './fonts'
 
 // commas and parentheses separate names from `var()` references and their fallbacks
 const ANIMATION_SPLIT_RE = /[\s,()]+/
 const CUSTOM_PROPERTY_RE = /^--/
 const customPropertiesCache = new WeakMap<Root_, Map<string, string[]>>()
+const fontFamiliesCache = new WeakMap<Root_, Map<string, string[]>>()
 
 /**
  * Parse a textual CSS Stylesheet into a Stylesheet instance.
@@ -217,11 +219,50 @@ export function parseAnimationNames(value: string, root: Root_): Set<string> {
   const names = new Set(value.split(ANIMATION_SPLIT_RE))
   for (const name of names) {
     if (CUSTOM_PROPERTY_RE.test(name)) {
-      for (const part of customProperties(root).get(name) ?? [])
-        names.add(part)
+      for (const declared of customProperties(root).get(name) ?? []) {
+        for (const part of declared.split(ANIMATION_SPLIT_RE))
+          names.add(part)
+      }
     }
   }
   return names
+}
+
+/**
+ * Extract the family names from a `font-family` or `font` value, following
+ * `var()` references to the custom properties declared in `root`.
+ */
+export function resolveFontFamilies(prop: string, value: string, root: Root_): string[] {
+  return parseFontFamilies(prop, value, (name, as) => customPropertyFamilies(root, name, as))
+}
+
+function customPropertyFamilies(root: Root_, name: string, prop: string): string[] {
+  let cache = fontFamiliesCache.get(root)
+  if (!cache) {
+    cache = new Map()
+    fontFamiliesCache.set(root, cache)
+  }
+  const key = `${prop}:${name}`
+  const cached = cache.get(key)
+  if (cached)
+    return cached
+  const families = new Set<string>()
+  const visited = new Set<string>()
+  const visit = (property: string, as: string): string[] => {
+    const reference = `${as}:${property}`
+    if (visited.has(reference))
+      return []
+    visited.add(reference)
+    for (const declared of customProperties(root).get(property) ?? []) {
+      for (const family of parseFontFamilies(as, declared, visit))
+        families.add(family)
+    }
+    return []
+  }
+  visit(name, prop)
+  const result = [...families]
+  cache.set(key, result)
+  return result
 }
 
 function customProperties(root: Root_): Map<string, string[]> {
@@ -230,12 +271,11 @@ function customProperties(root: Root_): Map<string, string[]> {
     return cached
   const properties = new Map<string, string[]>()
   root.walkDecls(CUSTOM_PROPERTY_RE, (decl) => {
-    const parts = decl.value.split(ANIMATION_SPLIT_RE)
     const existing = properties.get(decl.prop)
     if (existing)
-      existing.push(...parts)
+      existing.push(decl.value)
     else
-      properties.set(decl.prop, parts)
+      properties.set(decl.prop, [decl.value])
   })
   customPropertiesCache.set(root, properties)
   return properties
