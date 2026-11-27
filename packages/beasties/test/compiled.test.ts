@@ -375,7 +375,11 @@ describe('compiled beasties (compiler + runtime)', () => {
         :is(.list, .other) > li { color: red; }
         :first-child + li { color: blue; }
         :where(:hover > li) { color: green; }
+        :first-child ~ li { color: orange; }
         :is(.list, .other) > .missing { color: purple; }
+        :first-child + ul { color: grey; }
+        :first-child ~ ul { color: brown; }
+        :is(.list, .other) > html { color: black; }
       `
       const classic = await classicCritical(html, css)
       const compiled = compiledCritical(html, css)
@@ -384,7 +388,29 @@ describe('compiled beasties (compiler + runtime)', () => {
         ':is(.list, .other) > li{color:red}',
         ':first-child + li{color:blue}',
         ':where(:hover > li){color:green}',
+        ':first-child ~ li{color:orange}',
       ].join(''))
+    })
+
+    it('matches for a leading combinator inside data-beasties-container', async () => {
+      const html = trim`
+        <html><head><link rel="stylesheet" href="/style.css"></head><body>
+          <p>outside</p>
+          <main data-beasties-container>
+            <ul><li>one</li><li>two</li></ul>
+          </main>
+        </body></html>
+      `
+      const css = trim`
+        :hover > li { color: red; }
+        :first-child + li { color: blue; }
+        :hover > ul { color: green; }
+        :hover > p { color: purple; }
+      `
+      const classic = await classicCritical(html, css)
+      const compiled = compiledCritical(html, css)
+      expect(compiled).toBe(classic)
+      expect(compiled).toBe(':hover > li{color:red}:first-child + li{color:blue}')
     })
   })
 
