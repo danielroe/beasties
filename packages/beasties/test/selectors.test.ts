@@ -32,6 +32,21 @@ describe('normalizeCssSelector', () => {
     expect(normalizeCssSelector('[class~="a"]:hover')).toBe('[class~="a"]')
   })
 
+  it('keeps the descendant boundary of a compound left empty beside a combinator', () => {
+    expect(normalizeCssSelector('.a :first-child > p')).toBe('.a * > p')
+    expect(normalizeCssSelector(':where(.a :first-child > p).present')).toBe('.a * > p.present')
+    expect(normalizeCssSelector('.a > :hover .b')).toBe('.a > * .b')
+    expect(normalizeCssSelector('.a :hover + :focus .b')).toBe('.a * + * .b')
+    expect(normalizeCssSelector('.a /* c */ :hover\n  ~ .b')).toBe('.a * ~ .b')
+  })
+
+  it('drops a compound left empty between descendant combinators or at either end', () => {
+    expect(normalizeCssSelector('.a :hover .b')).toBe('.a  .b')
+    expect(normalizeCssSelector('.a :hover')).toBe('.a')
+    expect(normalizeCssSelector(':hover .a')).toBe('.a')
+    expect(normalizeCssSelector('.a /* c */ > .b:hover')).toBe('.a  > .b')
+  })
+
   it('matches nothing for an empty leading :is() or :where()', () => {
     for (const sel of [':where() > li', ':where( ) > li', ':is().foo', ':where(:is()).foo', ':where()body']) {
       expect(normalizeCssSelector(sel)).toBe('')

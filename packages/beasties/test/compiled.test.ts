@@ -392,6 +392,29 @@ describe('compiled beasties (compiler + runtime)', () => {
       ].join(''))
     })
 
+    it('matches for a pseudo-only compound between a descendant and another combinator', async () => {
+      const html = trim`
+        <html><head><link rel="stylesheet" href="/style.css"></head><body>
+          <form class="validated"><div><input><p class="feedback">ok</p></div></form>
+        </body></html>
+      `
+      const css = trim`
+        .validated :valid ~ .feedback { color: red; }
+        .validated > :first-child p { color: blue; }
+        :where(.validated :first-child > p).feedback { color: green; }
+        .validated :first-child > div { color: purple; }
+        .validated > :first-child form { color: grey; }
+      `
+      const classic = await classicCritical(html, css)
+      const compiled = compiledCritical(html, css)
+      expect(compiled).toBe(classic)
+      expect(compiled).toBe([
+        '.validated :valid ~ .feedback{color:red}',
+        '.validated > :first-child p{color:blue}',
+        ':where(.validated :first-child > p).feedback{color:green}',
+      ].join(''))
+    })
+
     it('matches for a leading combinator inside data-beasties-container', async () => {
       const html = trim`
         <html><head><link rel="stylesheet" href="/style.css"></head><body>

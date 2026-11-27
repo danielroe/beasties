@@ -79,6 +79,22 @@ function quotedOrCommentEnd(sel: string, start: number): number {
   return sel.length
 }
 
+function whitespaceOrCommentEnd(sel: string, start: number): number {
+  let i = start
+  while (i < sel.length) {
+    if (isCssWhitespace(sel[i]!)) {
+      i++
+    }
+    else if (sel[i] === '/' && sel[i + 1] === '*') {
+      i = quotedOrCommentEnd(sel, i)
+    }
+    else {
+      break
+    }
+  }
+  return i
+}
+
 function closingParenIndex(sel: string, start: number, singleSelector: boolean): number {
   let depth = 1
   for (let i = start; i < sel.length; i++) {
@@ -153,8 +169,8 @@ function withUniversal(sel: string): string {
 /**
  * Strip pseudo-classes and pseudo-elements from a selector so it can be
  * matched against the document, since we only care that the associated
- * elements exist. A compound left empty next to a `>`, `+` or `~` combinator
- * becomes `*`.
+ * elements exist. A compound left empty becomes `*` when it is next to a `>`,
+ * `+` or `~` combinator, and is dropped otherwise.
  */
 export function normalizeCssSelector(sel: string): string {
   sel = unwrapLeadingMatchesAny(sel)
@@ -165,7 +181,9 @@ export function normalizeCssSelector(sel: string): string {
   let out = ''
   let copied = 0
   let empty = true
-  let hasCombinator = false
+  let stripped = false
+  let afterCombinator = false
+  let peeked = 0
   let inAttribute = false
   let hasEscape = false
   for (let i = 0; i < sel.length; i++) {
@@ -205,6 +223,7 @@ export function normalizeCssSelector(sel: string): string {
         }
         copied = end
         i = end - 1
+        stripped = true
       }
     }
     else if (char === '>' || char === '+' || char === '~') {
@@ -213,15 +232,29 @@ export function normalizeCssSelector(sel: string): string {
         copied = i
       }
       empty = true
-      hasCombinator = true
+      stripped = false
+      afterCombinator = true
     }
     else if (!isCssWhitespace(char)) {
       empty = false
     }
+    else if ((!empty || stripped) && i >= peeked) {
+      peeked = whitespaceOrCommentEnd(sel, i)
+      const next = sel[peeked]
+      if (next !== undefined && next !== '>' && next !== '+' && next !== '~') {
+        if (empty && afterCombinator) {
+          out = withUniversal(out + sel.slice(copied, i))
+          copied = i
+        }
+        empty = true
+        stripped = false
+        afterCombinator = false
+      }
+    }
   }
   out += sel.slice(copied)
 
-  if (empty && hasCombinator) {
+  if (empty && afterCombinator) {
     out = withUniversal(out)
   }
   return trimCssWhitespace(out)
