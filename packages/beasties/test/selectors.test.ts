@@ -30,6 +30,14 @@ describe('normalizeCssSelector', () => {
     expect(normalizeCssSelector(':is(\n\t.a > p\f\r):hover')).toBe('.a > p')
   })
 
+  it('keeps whitespace that belongs to an escape', () => {
+    expect(normalizeCssSelector(String.raw`:where(.a\ ).b`)).toBe(String.raw`.a\ .b`)
+    expect(normalizeCssSelector(String.raw`:where(.\31 ) a`)).toBe(String.raw`.\31  a`)
+    expect(normalizeCssSelector(String.raw`:where(.\31 ).b`)).toBe(String.raw`.\31 .b`)
+    expect(normalizeCssSelector(String.raw`:where(.a\\ ).b`)).toBe(String.raw`.a\\.b`)
+    expect(normalizeCssSelector(String.raw`.a\ :hover`)).toBe(String.raw`.a\ `)
+  })
+
   it('keeps quoted attribute values intact', () => {
     expect(normalizeCssSelector('a[title="x:y"]:hover')).toBe('a[title="x:y"]')
     expect(normalizeCssSelector('a[title=\'x::y(z)\']::before')).toBe('a[title=\'x::y(z)\']')

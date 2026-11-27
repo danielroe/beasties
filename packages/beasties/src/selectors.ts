@@ -2,7 +2,7 @@ const BEFORE_AFTER_PSEUDO_RE = /^::?(?:before|after)$/
 const LEADING_MATCHES_ANY_RE = /^:(?:is|where)\(/i
 const PSEUDO_RE = /::?[a-z-]+/iy
 const PSEUDO_OR_COMBINATOR_RE = /[:>+~]/
-const CSS_WHITESPACE_EDGES_RE = /^[ \t\n\f\r]+|[ \t\n\f\r]+$/g
+const ESCAPE_AT_END_RE = /(?<!\\)(?:\\\\)*\\[0-9a-f]{0,6}$/i
 const UNEVALUABLE_SELECTOR_ERROR_RE = /^(?:unknown pseudo-class|pseudo-elements are not supported)/i
 
 /**
@@ -28,6 +28,25 @@ export function isAlwaysCriticalSelector(sel: string): boolean {
 
 function isCssWhitespace(char: string): boolean {
   return char === ' ' || char === '\t' || char === '\n' || char === '\f' || char === '\r'
+}
+
+/**
+ * Trim CSS whitespace, keeping a trailing whitespace character that is escaped
+ * or that ends a hex escape.
+ */
+function trimCssWhitespace(sel: string): string {
+  let start = 0
+  let end = sel.length
+  while (start < end && isCssWhitespace(sel[start]!)) {
+    start++
+  }
+  while (end > start && isCssWhitespace(sel[end - 1]!)) {
+    end--
+  }
+  const trimmed = sel.slice(start, end)
+  return end < sel.length && trimmed.includes('\\') && ESCAPE_AT_END_RE.test(trimmed)
+    ? sel.slice(start, end + 1)
+    : trimmed
 }
 
 function startsQuotedOrComment(sel: string, index: number): boolean {
@@ -92,7 +111,7 @@ function unwrapLeadingMatchesAny(sel: string): string {
     if (end === -1) {
       break
     }
-    const inner = sel.slice(start, end).replace(CSS_WHITESPACE_EDGES_RE, '')
+    const inner = trimCssWhitespace(sel.slice(start, end))
     if (!inner) {
       return ''
     }
@@ -188,5 +207,5 @@ export function normalizeCssSelector(sel: string): string {
   if (empty && hasCombinator) {
     out = withUniversal(out)
   }
-  return out.replace(CSS_WHITESPACE_EDGES_RE, '')
+  return trimCssWhitespace(out)
 }
