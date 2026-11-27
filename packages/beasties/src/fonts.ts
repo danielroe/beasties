@@ -20,6 +20,7 @@ const FONT_SIZE_KEYWORDS = new Set(['xx-small', 'x-small', 'small', 'medium', 'l
 const VAR_RE = /^var\(\s*(--[^\s,)]+)\s*(?:,([\s\S]*))?\)$/i
 const COMMA_RE = /,/
 const SPACE_RE = /\s/
+const SLASH_RE = /\//
 
 const UNICODE_RANGE_RE = /^u\+([0-9a-f]{1,6})(?:-([0-9a-f]{1,6}))?$/i
 const UNICODE_WILDCARD_RE = /^u\+([0-9a-f]{0,5})(\?{1,6})$/i
@@ -277,7 +278,7 @@ function resolveVarReference(value: string, prop: string, lookup: FontFamilyLook
  */
 function shorthandFamily(segment: string): string | undefined {
   const tokens = splitTopLevel(segment.trim().replace(/\s*\/\s*/g, '/'), SPACE_RE).filter(Boolean)
-  const sizes = tokens.map(token => token.split('/')[0]!)
+  const sizes = tokens.map(token => splitTopLevel(token, SLASH_RE)[0]!)
   let index = sizes.findIndex(size => FONT_SIZE_RE.test(size) || FONT_SIZE_KEYWORDS.has(size.toLowerCase()))
   for (let i = sizes.length - 2; index === -1 && i >= 0; i--) {
     if (VAR_FUNCTION_RE.test(sizes[i]!)) {
