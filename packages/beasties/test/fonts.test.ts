@@ -68,6 +68,7 @@ describe('parseFontFamilies', () => {
     expect(parseFontFamilies('font', 'calc(400) 16px Barlow')).toEqual(['barlow'])
     expect(parseFontFamilies('font', 'bold calc(var(--size) * 1.2) Barlow')).toEqual(['barlow'])
     expect(parseFontFamilies('font', 'calc(1 / 2 * 16px)/1.5 Barlow')).toEqual(['barlow'])
+    expect(parseFontFamilies('font', 'calc(\n  16px\n) Barlow')).toEqual(['barlow'])
     expect(parseFontFamilies('font', 'var(--weight) 0/0 Barlow', lookup)).toEqual(['barlow'])
   })
 })

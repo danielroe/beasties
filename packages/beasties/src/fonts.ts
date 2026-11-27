@@ -15,7 +15,7 @@ const WHITESPACE_RE = /\s+/g
 // percentage or `var()`; other unitless numbers and math functions before it
 // are weights, not sizes.
 // If there is none, the last `var()` before the family is taken as the size.
-const FONT_SIZE_RE = /^(?:[+-]?(?:\d+|\d*\.\d+)(?:[a-z]+|%)|0$|(?:calc|clamp|min|max)\(.*(?:\d(?:[a-z]+|%)|var\())/i
+const FONT_SIZE_RE = /^(?:[+-]?(?:\d+|\d*\.\d+)(?:[a-z]+|%)|0$|(?:calc|clamp|min|max)\([\s\S]*(?:\d(?:[a-z]+|%)|var\())/i
 const VAR_FUNCTION_RE = /^var\(/i
 const FONT_SIZE_KEYWORDS = new Set(['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large', 'xxx-large', 'smaller', 'larger'])
 const VAR_RE = /^var\(\s*(--[^\s,)]+)\s*(?:,([\s\S]*))?\)$/i
