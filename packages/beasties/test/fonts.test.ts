@@ -65,6 +65,8 @@ describe('parseFontFamilies', () => {
     expect(parseFontFamilies('font', 'italic var(--size)/1.5 Inter', lookup)).toEqual(['inter'])
     expect(parseFontFamilies('font', 'var(--weight) var(--size) var(--sans)', lookup)).toEqual(['barlow'])
     expect(parseFontFamilies('font', '700 clamp(1rem, 2vw, 2rem)/1.2 Inter, serif')).toEqual(['inter', 'serif'])
+    expect(parseFontFamilies('font', 'calc(400) 16px Barlow')).toEqual(['barlow'])
+    expect(parseFontFamilies('font', 'bold calc(var(--size) * 1.2) Barlow')).toEqual(['barlow'])
   })
 })
 

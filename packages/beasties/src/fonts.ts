@@ -11,9 +11,10 @@ const CHAR_ESCAPE_RE = /\\(.)/g
 const WHITESPACE_RE = /\s+/g
 // a `font` shorthand's family list starts after the font-size, which may carry
 // a `/line-height`. A size is a length or percentage, an absolute/relative size
-// keyword, or a math function; unitless numbers before it are weights, not sizes.
+// keyword, or a math function containing a length, percentage or `var()`;
+// unitless numbers and math functions before it are weights, not sizes.
 // If there is none, the last `var()` before the family is taken as the size.
-const FONT_SIZE_RE = /^(?:[+-]?(?:\d+|\d*\.\d+)(?:[a-z]+|%)|(?:calc|clamp|min|max)\()/i
+const FONT_SIZE_RE = /^(?:[+-]?(?:\d+|\d*\.\d+)(?:[a-z]+|%)|(?:calc|clamp|min|max)\(.*(?:\d(?:[a-z]+|%)|var\())/i
 const VAR_FUNCTION_RE = /^var\(/i
 const FONT_SIZE_KEYWORDS = new Set(['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large', 'xxx-large', 'smaller', 'larger'])
 const VAR_RE = /^var\(\s*(--[^\s,)]+)\s*(?:,([\s\S]*))?\)$/i
