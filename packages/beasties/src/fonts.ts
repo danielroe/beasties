@@ -278,7 +278,8 @@ function resolveVarReference(value: string, prop: string, lookup: FontFamilyLook
  * (`font: inherit`, `font: menu`).
  */
 function shorthandFamily(segment: string): string | undefined {
-  const tokens = splitTopLevel(segment.trim().replace(/\s*\/\s*/g, '/'), SPACE_RE).filter(Boolean)
+  const joined = splitTopLevel(segment, SLASH_RE).map(part => part.trim()).join('/')
+  const tokens = splitTopLevel(joined, SPACE_RE).filter(Boolean)
   const sizes = tokens.map(token => splitTopLevel(token, SLASH_RE)[0]!)
   let index = sizes.findIndex(size => FONT_SIZE_RE.test(size) || FONT_SIZE_KEYWORDS.has(size.toLowerCase()))
   for (let i = sizes.length - 2; index === -1 && i >= 0; i--) {

@@ -72,6 +72,8 @@ describe('parseFontFamilies', () => {
     expect(parseFontFamilies('font', 'var(--weight) 0/0 Barlow', lookup)).toEqual(['barlow'])
     expect(parseFontFamilies('font', 'oblique 10deg 16px Barlow')).toEqual(['barlow'])
     expect(parseFontFamilies('font', 'oblique min(10deg, 0.1turn) 16px Barlow')).toEqual(['barlow'])
+    expect(parseFontFamilies('font', '16px / 1.5 "AC / DC"')).toEqual(['ac / dc'])
+    expect(parseFontFamilies('font', '16px var(--missing, "AC / DC")')).toEqual(['ac / dc'])
   })
 })
 
