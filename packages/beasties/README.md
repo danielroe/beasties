@@ -445,5 +445,5 @@ There are a number of other libraries that can inline Critical CSS, each with a 
 
 This is not an official Google product.
 
-[beasties-webpack-plugin]: https://github.com/danielroe/beasties/tree/main/packages/beasties-webpack-plugin
+[beasties-webpack-plugin]: https://github.com/made-in-common/beasties/tree/main/packages/beasties-webpack-plugin
 [critical css]: https://www.smashingmagazine.com/2015/08/understanding-critical-css/

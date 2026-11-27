@@ -887,7 +887,7 @@ describe('beasties', () => {
   })
 
   it('works with pruneSource and additionalStylesheets together', async () => {
-    // Regression test for https://github.com/danielroe/beasties/issues/177
+    // Regression test for https://github.com/made-in-common/beasties/issues/177
     // Ensure $$name is set on style elements for additionalStylesheets
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beasties-test-'))
     fs.writeFileSync(path.join(tmpDir, 'reset.css'), 'h1 { margin: 0; } h2.unused { padding: 0; }')
@@ -931,7 +931,7 @@ describe('beasties', () => {
   })
 
   it('removes empty @media blocks when pruneSource is enabled', async () => {
-    // Regression test for https://github.com/danielroe/beasties/issues/172
+    // Regression test for https://github.com/made-in-common/beasties/issues/172
     // Empty @media blocks should be removed after pruning, not left behind
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beasties-test-'))
     fs.writeFileSync(path.join(tmpDir, 'style.css'), trim`
@@ -987,7 +987,7 @@ describe('beasties', () => {
   })
 
   it('removes empty @media blocks from critical CSS when rules go to pruned source', async () => {
-    // Regression test for https://github.com/danielroe/beasties/issues/172
+    // Regression test for https://github.com/made-in-common/beasties/issues/172
     // Test the inverse case: empty @media in critical CSS
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beasties-test-'))
     fs.writeFileSync(path.join(tmpDir, 'style.css'), trim`

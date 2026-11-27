@@ -1,6 +1,6 @@
 # vite-plugin-beasties
 
-A Vite plugin that uses [beasties](https://github.com/danielroe/beasties) to embed critical CSS in your HTML pages.
+A Vite plugin that uses [beasties](https://github.com/made-in-common/beasties) to embed critical CSS in your HTML pages.
 
 ## Features
 
@@ -59,7 +59,7 @@ export default defineConfig({
 
 ### Beasties Options
 
-See the [beasties documentation](https://github.com/danielroe/beasties) for all available options.
+See the [beasties documentation](https://github.com/made-in-common/beasties) for all available options.
 
 Common options include:
 

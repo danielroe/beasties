@@ -32,7 +32,7 @@ const DOT_SLASH_RE = /^\.\//
 /**
  * Create a Beasties plugin instance with the given options.
  * @public
- * @param {Options} options Options to control how Beasties inlines CSS. See https://github.com/danielroe/beasties#usage
+ * @param {Options} options Options to control how Beasties inlines CSS. See https://github.com/made-in-common/beasties#usage
  * @example
  * // webpack.config.js
  * module.exports = {

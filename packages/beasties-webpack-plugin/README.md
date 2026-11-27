@@ -62,7 +62,7 @@ Create a Beasties plugin instance with the given options.
 
 #### Parameters
 
-*   `options` **Options** Options to control how Beasties inlines CSS. See <https://github.com/danielroe/beasties#usage>
+*   `options` **Options** Options to control how Beasties inlines CSS. See <https://github.com/made-in-common/beasties#usage>
 
 #### Examples
 

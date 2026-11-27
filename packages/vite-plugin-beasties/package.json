@@ -8,7 +8,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/danielroe/beasties.git",
+    "url": "git+https://github.com/made-in-common/beasties.git",
     "directory": "packages/vite-plugin-beasties"
   },
   "sideEffects": false,

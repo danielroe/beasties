@@ -21,7 +21,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/danielroe/beasties",
+    "url": "https://github.com/made-in-common/beasties",
     "directory": "packages/beasties"
   },
   "keywords": [
