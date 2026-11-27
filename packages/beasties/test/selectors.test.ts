@@ -7,4 +7,11 @@ describe('normalizeCssSelector', () => {
     expect(normalizeCssSelector(':where( #target\uFEFF ).present')).toBe('#target\uFEFF.present')
     expect(normalizeCssSelector(':is(\n\t.a > p\f\r):hover')).toBe('.a > p')
   })
+
+  it('keeps quoted attribute values intact', () => {
+    expect(normalizeCssSelector('a[title="x:y"]:hover')).toBe('a[title="x:y"]')
+    expect(normalizeCssSelector('a[title=\'x::y(z)\']::before')).toBe('a[title=\'x::y(z)\']')
+    expect(normalizeCssSelector(String.raw`a[title="x\":y"]:hover`)).toBe(String.raw`a[title="x\":y"]`)
+    expect(normalizeCssSelector(String.raw`.a\"b:hover [title="x"]`)).toBe(String.raw`.a\"b [title="x"]`)
+  })
 })

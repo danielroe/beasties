@@ -336,7 +336,7 @@ describe('compiled beasties (compiler + runtime)', () => {
     it('matches for selectors wrapped in :is() and :where()', async () => {
       const html = trim`
         <html><head><link rel="stylesheet" href="/style.css"></head><body>
-          <div class="space-y-1.5"><p data-label="a,b)">one</p><p>two</p></div>
+          <div class="space-y-1.5"><p data-label="a,b)">one</p><p data-state="open:active">two</p></div>
           <div class="empty">text</div>
         </body></html>
       `
@@ -348,6 +348,7 @@ describe('compiled beasties (compiler + runtime)', () => {
         :where(:is(.space-y-1\\.5) > p):hover { color: blue; }
         :where(.space-y-1\\.5 > p).missing { color: green; }
         :where([data-label="a,b)"]) { color: orange; }
+        :where([data-state="open:active"]) { color: teal; }
         :is(.space-y-1\\.5, .other) .missing { color: purple; }
         :where(:root) { color-scheme: dark; }
       `
@@ -359,6 +360,7 @@ describe('compiled beasties (compiler + runtime)', () => {
         ':is(.space-y-1\\.5 > *){color:red}',
         ':where(:is(.space-y-1\\.5) > p):hover{color:blue}',
         ':where([data-label="a,b)"]){color:orange}',
+        ':where([data-state="open:active"]){color:teal}',
         ':where(:root){color-scheme:dark}',
       ].join(''))
     })

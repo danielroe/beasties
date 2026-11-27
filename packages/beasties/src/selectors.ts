@@ -1,4 +1,4 @@
-const removePseudoClassesAndElementsPattern = /(?<!\\)::?[a-z-]+(?:\(.+\))?/gi
+const quotedOrPseudoPattern = /(?<!\\)("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|(?<!\\)::?[a-z-]+(?:\(.+\))?/gi
 const implicitUniversalPattern = /([>+~])\s*(?!\1)([>+~])/g
 const emptyCombinatorPattern = /([>+~])\s*(?=\1|$)/g
 const leadingCombinatorPattern = /^\s*(?=[>+~])/
@@ -81,7 +81,7 @@ function unwrapLeadingMatchesAny(sel: string): string {
  */
 export function normalizeCssSelector(sel: string): string {
   return unwrapLeadingMatchesAny(sel)
-    .replace(removePseudoClassesAndElementsPattern, '')
+    .replace(quotedOrPseudoPattern, (_, quoted?: string) => quoted ?? '')
     .replace(removeTrailingCommasPattern, match => (match.includes('(') ? '(' : ')'))
     .replace(implicitUniversalPattern, '$1 * $2')
     .replace(emptyCombinatorPattern, '$1 *')
