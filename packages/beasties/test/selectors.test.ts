@@ -52,6 +52,14 @@ describe('normalizeCssSelector', () => {
     expect(normalizeCssSelector(String.raw`.a\ :hover`)).toBe(String.raw`.a\ `)
   })
 
+  it('ends a hex escape before whatever follows it', () => {
+    expect(normalizeCssSelector(String.raw`:where(.\31) a`)).toBe(String.raw`.\31  a`)
+    expect(normalizeCssSelector(String.raw`:where(.\31).b`)).toBe(String.raw`.\31 .b`)
+    expect(normalizeCssSelector(String.raw`.\31:hover a`)).toBe(String.raw`.\31  a`)
+    expect(normalizeCssSelector(String.raw`.\31/**/ > a`)).toBe(String.raw`.\31  > a`)
+    expect(normalizeCssSelector(String.raw`:where(.a\\31) a`)).toBe(String.raw`.a\\31 a`)
+  })
+
   it('keeps quoted attribute values intact', () => {
     expect(normalizeCssSelector('a[title="x:y"]:hover')).toBe('a[title="x:y"]')
     expect(normalizeCssSelector('a[title=\'x::y(z)\']::before')).toBe('a[title=\'x::y(z)\']')

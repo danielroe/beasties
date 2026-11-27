@@ -3,6 +3,7 @@ const LEADING_MATCHES_ANY_RE = /^:(?:is|where)\(/i
 const PSEUDO_RE = /::?[a-z-]+/iy
 const PSEUDO_OR_COMBINATOR_RE = /[:>+~]/
 const ESCAPE_AT_END_RE = /(?<!\\)(?:\\\\)*\\[0-9a-f]{0,6}$/i
+const HEX_ESCAPE_AT_END_RE = /(?<!\\)(?:\\\\)*\\[0-9a-f]{1,6}$/i
 const UNEVALUABLE_SELECTOR_ERROR_RE = /^(?:unknown pseudo-class|pseudo-elements are not supported)/i
 
 /**
@@ -47,6 +48,14 @@ function trimCssWhitespace(sel: string): string {
   return end < sel.length && trimmed.includes('\\') && ESCAPE_AT_END_RE.test(trimmed)
     ? sel.slice(start, end + 1)
     : trimmed
+}
+
+/**
+ * End a trailing hex escape with a space, so that it does not run on into
+ * whatever is appended next.
+ */
+function endHexEscape(sel: string): string {
+  return HEX_ESCAPE_AT_END_RE.test(sel) ? `${sel} ` : sel
 }
 
 function startsQuotedOrComment(sel: string, index: number): boolean {
@@ -115,7 +124,7 @@ function unwrapLeadingMatchesAny(sel: string): string {
     if (!inner) {
       return ''
     }
-    sel = inner + sel.slice(end + 1)
+    sel = (inner.includes('\\') ? endHexEscape(inner) : inner) + sel.slice(end + 1)
   }
   return sel
 }
@@ -158,16 +167,21 @@ export function normalizeCssSelector(sel: string): string {
   let empty = true
   let hasCombinator = false
   let inAttribute = false
+  let hasEscape = false
   for (let i = 0; i < sel.length; i++) {
     const char = sel[i]!
     if (char === '\\') {
       empty = false
+      hasEscape = true
       i++
     }
     else if (startsQuotedOrComment(sel, i)) {
       const end = quotedOrCommentEnd(sel, i)
       if (char === '/') {
         out += sel.slice(copied, i)
+        if (hasEscape) {
+          out = endHexEscape(out)
+        }
         copied = end
       }
       i = end - 1
@@ -186,6 +200,9 @@ export function normalizeCssSelector(sel: string): string {
       }
       else {
         out += sel.slice(copied, i)
+        if (hasEscape) {
+          out = endHexEscape(out)
+        }
         copied = end
         i = end - 1
       }
