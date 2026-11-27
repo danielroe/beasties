@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { normalizeCssSelector } from '../src/selectors'
+import { isAlwaysCriticalSelector, normalizeCssSelector } from '../src/selectors'
 
 describe('normalizeCssSelector', () => {
   it('strips each functional pseudo-class up to its own closing parenthesis', () => {
@@ -16,6 +16,13 @@ describe('normalizeCssSelector', () => {
     expect(normalizeCssSelector('.a ~ :focus > :hover')).toBe('.a ~ * > *')
     expect(normalizeCssSelector(String.raw`.c\+\+`)).toBe(String.raw`.c\+\+`)
     expect(normalizeCssSelector('[class~="a"]:hover')).toBe('[class~="a"]')
+  })
+
+  it('matches nothing for an empty leading :is() or :where()', () => {
+    for (const sel of [':where() > li', ':where( ) > li', ':is().foo', ':where(:is()).foo', ':where()body']) {
+      expect(normalizeCssSelector(sel)).toBe('')
+      expect(isAlwaysCriticalSelector(sel)).toBe(false)
+    }
   })
 
   it('only trims css whitespace from an unwrapped :is() or :where() argument', () => {

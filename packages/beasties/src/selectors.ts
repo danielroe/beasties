@@ -78,7 +78,8 @@ function closingParenIndex(sel: string, start: number, singleSelector: boolean):
 
 /**
  * Replace a leading `:is()` or `:where()` holding a single selector with that
- * selector, which matches the same elements.
+ * selector, which matches the same elements. An empty argument matches
+ * nothing, so the result is an empty selector.
  */
 function unwrapLeadingMatchesAny(sel: string): string {
   while (sel[0] === ':') {
@@ -91,7 +92,11 @@ function unwrapLeadingMatchesAny(sel: string): string {
     if (end === -1) {
       break
     }
-    sel = sel.slice(start, end).replace(CSS_WHITESPACE_EDGES_RE, '') + sel.slice(end + 1)
+    const inner = sel.slice(start, end).replace(CSS_WHITESPACE_EDGES_RE, '')
+    if (!inner) {
+      return ''
+    }
+    sel = inner + sel.slice(end + 1)
   }
   return sel
 }
