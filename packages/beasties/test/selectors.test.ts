@@ -38,6 +38,9 @@ describe('normalizeCssSelector', () => {
     expect(normalizeCssSelector('.a > :hover .b')).toBe('.a > * .b')
     expect(normalizeCssSelector('.a :hover + :focus .b')).toBe('.a * + * .b')
     expect(normalizeCssSelector('.a /* c */ :hover\n  ~ .b')).toBe('.a * ~ .b')
+    expect(normalizeCssSelector(String.raw`:where(.\31  :first-child > p).present`)).toBe(String.raw`.\31  * > p.present`)
+    expect(normalizeCssSelector(String.raw`.a\  :hover > p`)).toBe(String.raw`.a\  * > p`)
+    expect(normalizeCssSelector('.a\uFEFF :hover > p')).toBe('.a\uFEFF * > p')
   })
 
   it('drops a compound left empty between descendant combinators or at either end', () => {

@@ -162,7 +162,7 @@ function pseudoEnd(sel: string, start: number): number {
 }
 
 function withUniversal(sel: string): string {
-  sel = sel.trimEnd()
+  sel = trimCssWhitespace(sel)
   return sel ? `${sel} *` : '*'
 }
 
