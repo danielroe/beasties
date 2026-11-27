@@ -3,6 +3,21 @@ import { describe, expect, it } from 'vitest'
 import { normalizeCssSelector } from '../src/selectors'
 
 describe('normalizeCssSelector', () => {
+  it('strips each functional pseudo-class up to its own closing parenthesis', () => {
+    expect(normalizeCssSelector(':is(.list, .other) > li:not(:last-child)')).toBe('* > li')
+    expect(normalizeCssSelector('.group:not(.a) > .item:nth-child(2n + 1) .b')).toBe('.group > .item .b')
+    expect(normalizeCssSelector(String.raw`div:not(.a) .w-\[calc\(100\%\+1rem\)\]`)).toBe(String.raw`div .w-\[calc\(100\%\+1rem\)\]`)
+    expect(normalizeCssSelector(':where(.space-y > :not(\n:last-child\n))')).toBe('.space-y > *')
+    expect(normalizeCssSelector(':is(\n  .list,\n  .other\n) > li')).toBe('* > li')
+  })
+
+  it('adds a universal selector for each compound left empty beside a combinator', () => {
+    expect(normalizeCssSelector(':hover > :focus + :active > .a')).toBe('* > * + * > .a')
+    expect(normalizeCssSelector('.a ~ :focus > :hover')).toBe('.a ~ * > *')
+    expect(normalizeCssSelector(String.raw`.c\+\+`)).toBe(String.raw`.c\+\+`)
+    expect(normalizeCssSelector('[class~="a"]:hover')).toBe('[class~="a"]')
+  })
+
   it('only trims css whitespace from an unwrapped :is() or :where() argument', () => {
     expect(normalizeCssSelector(':where( #target\uFEFF ).present')).toBe('#target\uFEFF.present')
     expect(normalizeCssSelector(':is(\n\t.a > p\f\r):hover')).toBe('.a > p')
@@ -18,8 +33,8 @@ describe('normalizeCssSelector', () => {
     expect(normalizeCssSelector('[title="f(,)"][lang="0"]')).toBe('[title="f(,)"][lang="0"]')
   })
 
-  it('removes comments', () => {
-    expect(normalizeCssSelector(':where(.a/*)*/).present')).toBe('.a.present')
+  it('ignores pseudo-classes and delimiters inside comments', () => {
+    expect(normalizeCssSelector(':where(.a/*)*/).present')).toBe('.a/*)*/.present')
     expect(normalizeCssSelector(':is(.a/*,*/ > p)/*"*/:hover')).toBe('.a > p')
     expect(normalizeCssSelector('[title="/*x*/"]/*:hover*/.present')).toBe('[title="/*x*/"].present')
   })
