@@ -13,5 +13,8 @@ describe('normalizeCssSelector', () => {
     expect(normalizeCssSelector('a[title=\'x::y(z)\']::before')).toBe('a[title=\'x::y(z)\']')
     expect(normalizeCssSelector(String.raw`a[title="x\":y"]:hover`)).toBe(String.raw`a[title="x\":y"]`)
     expect(normalizeCssSelector(String.raw`.a\"b:hover [title="x"]`)).toBe(String.raw`.a\"b [title="x"]`)
+    expect(normalizeCssSelector(':where([title="a>+b"]).present')).toBe('[title="a>+b"].present')
+    expect(normalizeCssSelector('[title=">>"] > :hover')).toBe('[title=">>"] > *')
+    expect(normalizeCssSelector('[title="f(,)"][lang="0"]')).toBe('[title="f(,)"][lang="0"]')
   })
 })
