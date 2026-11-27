@@ -1,4 +1,4 @@
-const quotedPattern = /(?<!\\)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/g
+const quotedOrCommentPattern = /(?<!\\)("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|\/\*[\s\S]*?\*\//g
 const quotedPlaceholderPattern = /"(\d+)"/g
 const removePseudoClassesAndElementsPattern = /(?<!\\)::?[a-z-]+(?:\(.+\))?/gi
 const implicitUniversalPattern = /([>+~])\s*(?!\1)([>+~])/g
@@ -79,11 +79,11 @@ function unwrapLeadingMatchesAny(sel: string): string {
 /**
  * Strip pseudo-classes and pseudo-elements from a selector so it can be
  * matched against the document, since we only care that the associated
- * elements exist. Quoted strings are kept as written.
+ * elements exist. Quoted strings are kept as written and comments are removed.
  */
 export function normalizeCssSelector(sel: string): string {
   const quoted: string[] = []
-  return unwrapLeadingMatchesAny(sel.replace(quotedPattern, match => `"${quoted.push(match) - 1}"`))
+  return unwrapLeadingMatchesAny(sel.replace(quotedOrCommentPattern, (_, string?: string) => string ? `"${quoted.push(string) - 1}"` : ''))
     .replace(removePseudoClassesAndElementsPattern, '')
     .replace(removeTrailingCommasPattern, match => (match.includes('(') ? '(' : ')'))
     .replace(implicitUniversalPattern, '$1 * $2')

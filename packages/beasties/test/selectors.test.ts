@@ -17,4 +17,10 @@ describe('normalizeCssSelector', () => {
     expect(normalizeCssSelector('[title=">>"] > :hover')).toBe('[title=">>"] > *')
     expect(normalizeCssSelector('[title="f(,)"][lang="0"]')).toBe('[title="f(,)"][lang="0"]')
   })
+
+  it('removes comments', () => {
+    expect(normalizeCssSelector(':where(.a/*)*/).present')).toBe('.a.present')
+    expect(normalizeCssSelector(':is(.a/*,*/ > p)/*"*/:hover')).toBe('.a > p')
+    expect(normalizeCssSelector('[title="/*x*/"]/*:hover*/.present')).toBe('[title="/*x*/"].present')
+  })
 })
