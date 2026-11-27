@@ -12,10 +12,10 @@ const WHITESPACE_RE = /\s+/g
 // a `font` shorthand's family list starts after the font-size, which may carry
 // a `/line-height`. A size is a length (including `0`) or percentage, an
 // absolute/relative size keyword, or a math function containing a length,
-// percentage or `var()`; other unitless numbers and math functions before it
-// are weights, not sizes.
+// percentage or `var()`; unitless numbers and angles before it are weights and
+// `oblique` angles, not sizes.
 // If there is none, the last `var()` before the family is taken as the size.
-const FONT_SIZE_RE = /^(?:[+-]?(?:\d+|\d*\.\d+)(?:[a-z]+|%)|0$|(?:calc|clamp|min|max)\([\s\S]*(?:\d(?:[a-z]+|%)|var\())/i
+const FONT_SIZE_RE = /^(?:[+-]?(?:\d+|\d*\.\d+)(?:(?!deg|g?rad|turn)[a-z]+|%)|0$|(?:calc|clamp|min|max)\([\s\S]*(?:\d(?:(?!deg|g?rad|turn)[a-z]+|%)|var\())/i
 const VAR_FUNCTION_RE = /^var\(/i
 const FONT_SIZE_KEYWORDS = new Set(['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large', 'xxx-large', 'smaller', 'larger'])
 const VAR_RE = /^var\(\s*(--[^\s,)]+)\s*(?:,([\s\S]*))?\)$/i
