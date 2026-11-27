@@ -5,6 +5,7 @@ const leadingCombinatorPattern = /^\s*(?=[>+~])/
 const removeTrailingCommasPattern = /\(\s*,|,\s*\)/g
 const BEFORE_AFTER_PSEUDO_RE = /^::?(?:before|after)$/
 const LEADING_MATCHES_ANY_RE = /^:(?:is|where)\(/i
+const CSS_WHITESPACE_EDGES_RE = /^[ \t\n\f\r]+|[ \t\n\f\r]+$/g
 const UNEVALUABLE_SELECTOR_ERROR_RE = /^(?:unknown pseudo-class|pseudo-elements are not supported)/i
 
 /**
@@ -68,7 +69,7 @@ function unwrapLeadingMatchesAny(sel: string): string {
     if (end === -1) {
       break
     }
-    sel = sel.slice(start, end).trim() + sel.slice(end + 1)
+    sel = sel.slice(start, end).replace(CSS_WHITESPACE_EDGES_RE, '') + sel.slice(end + 1)
   }
   return sel
 }
