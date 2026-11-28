@@ -1,5 +1,6 @@
-const BEFORE_AFTER_PSEUDO_RE = /^::?(?:before|after)$/
 const LEADING_MATCHES_ANY_RE = /^:(?:is|where)\(/i
+// `:not` is deliberately absent: a missing argument selector makes it match more, not less.
+const NESTED_SELECTOR_PSEUDO_RE = /^::?(?:is|where|has|matches|-webkit-any|-moz-any)$/i
 const PSEUDO_RE = /::?[a-z-]+/iy
 const PSEUDO_OR_COMBINATOR_RE = /[:>+~]/
 const ESCAPE_AT_END_RE = /(?<!\\)(?:\\\\)*\\[0-9a-f]{0,6}$/i
@@ -24,8 +25,74 @@ export function isAlwaysCriticalSelector(sel: string): boolean {
     sel === ':root'
     || sel === 'html'
     || sel === 'body'
-    || (sel[0] === ':' && BEFORE_AFTER_PSEUDO_RE.test(sel))
+    || isPseudoOnlySelector(sel)
   )
+}
+
+/**
+ * Whether a selector is built only from pseudo-classes and pseudo-elements.
+ * Those describe a browser state or generated box that a document scan cannot
+ * observe, so finding no matching element says nothing about their use.
+ */
+function isPseudoOnlySelector(sel: string): boolean {
+  let i = 0
+  let tokens = 0
+  while (i < sel.length) {
+    if (isCssWhitespace(sel[i]!)) {
+      i++
+    }
+    else if (sel[i] === '/' && sel[i + 1] === '*') {
+      i = quotedOrCommentEnd(sel, i)
+    }
+    else if (sel[i] === ':') {
+      PSEUDO_RE.lastIndex = i
+      const match = PSEUDO_RE.exec(sel)
+      if (!match) {
+        return false
+      }
+      const end = pseudoEnd(sel, i)
+      const argsStart = i + match[0].length
+      if (sel[argsStart] === '(' && NESTED_SELECTOR_PSEUDO_RE.test(match[0])) {
+        if (!isPseudoOnlyList(sel.slice(argsStart + 1, end - 1))) {
+          return false
+        }
+      }
+      tokens++
+      i = end
+    }
+    else {
+      return false
+    }
+  }
+  return tokens > 0
+}
+
+/** Whether every selector in a comma-separated argument list is pseudo-only. */
+function isPseudoOnlyList(sel: string): boolean {
+  let start = 0
+  let depth = 0
+  for (let i = 0; i < sel.length; i++) {
+    const char = sel[i]!
+    if (char === '\\') {
+      i = escapeEnd(sel, i) - 1
+    }
+    else if (startsQuotedOrComment(sel, i)) {
+      i = quotedOrCommentEnd(sel, i) - 1
+    }
+    else if (char === '(') {
+      depth++
+    }
+    else if (char === ')') {
+      depth--
+    }
+    else if (char === ',' && depth === 0) {
+      if (!isPseudoOnlySelector(trimCssWhitespace(sel.slice(start, i)))) {
+        return false
+      }
+      start = i + 1
+    }
+  }
+  return isPseudoOnlySelector(trimCssWhitespace(sel.slice(start)))
 }
 
 function isCssWhitespace(char: string): boolean {

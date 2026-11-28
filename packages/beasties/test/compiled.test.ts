@@ -333,6 +333,52 @@ describe('compiled beasties (compiler + runtime)', () => {
       expect(compiled).toBe(classic)
     })
 
+    it('keeps selectors made only of pseudo-classes and pseudo-elements', async () => {
+      const html = trim`
+        <html><head><link rel="stylesheet" href="/style.css"></head><body>
+          <p class="x">hi</p>
+        </body></html>
+      `
+      const css = trim`
+        ::selection { background: red; }
+        :focus-visible { outline: 3px solid red; }
+        ::view-transition-new(root) { animation: fade .3s; }
+        .x:focus-visible { color: blue; }
+        .unused { color: red; }
+      `
+      const expected = [
+        '::selection{background:red}',
+        ':focus-visible{outline:3px solid red}',
+        '::view-transition-new(root){animation:fade .3s}',
+        '.x:focus-visible{color:blue}',
+      ].join('')
+      const classic = await classicCritical(html, css)
+      const compiled = compiledCritical(html, css)
+      expect(compiled).toBe(expected)
+      expect(classic).toBe(expected)
+    })
+
+    it('keeps pseudo-only selector lists inside :is() and :has()', async () => {
+      const html = trim`
+        <html><head><link rel="stylesheet" href="/style.css"></head><body>
+          <p>hi</p>
+        </body></html>
+      `
+      const css = trim`
+        :is(:hover, :focus) { color: red; }
+        :has(:hover, :focus) { color: blue; }
+        :is(:hover, .unused) { color: green; }
+      `
+      const expected = [
+        ':is(:hover, :focus){color:red}',
+        ':has(:hover, :focus){color:blue}',
+      ].join('')
+      const classic = await classicCritical(html, css)
+      const compiled = compiledCritical(html, css)
+      expect(compiled).toBe(expected)
+      expect(classic).toBe(expected)
+    })
+
     it('matches for selectors wrapped in :is() and :where()', async () => {
       const html = trim`
         <html><head><link rel="stylesheet" href="/style.css"></head><body>

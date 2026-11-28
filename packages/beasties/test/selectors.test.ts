@@ -11,6 +11,15 @@ describe('isAlwaysCriticalSelector', () => {
       expect(isAlwaysCriticalSelector(sel)).toBe(false)
     }
   })
+
+  it('keeps selectors made only of pseudo-classes and pseudo-elements', () => {
+    for (const sel of ['::selection', ':focus-visible', '::view-transition-new(root)', '::backdrop', ':hover:focus', ':not(.unused)', ':is(:hover, :focus)', ':has(:hover, :focus)']) {
+      expect(isAlwaysCriticalSelector(sel)).toBe(true)
+    }
+    for (const sel of ['.unused', '.x:focus-visible', ':hover > li', ':where(:hover > li)', '::before span', ':is(.unused)', ':is(.unused, .other-unused)', ':is(:hover, .unused)']) {
+      expect(isAlwaysCriticalSelector(sel)).toBe(false)
+    }
+  })
 })
 
 describe('normalizeCssSelector', () => {
