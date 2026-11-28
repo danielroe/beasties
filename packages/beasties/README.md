@@ -226,6 +226,8 @@ const beasties = new Beasties({
 
 With this configuration, any CSS rules with selectors that match `.always-include` exactly or start with `.modal-` will be included in the critical CSS, even if no matching elements exist in the document.
 
+Selectors that only target a browser state or pseudo-element are always critical, so `allowRules` is not needed for `::selection`, `:focus-visible` or `::view-transition-new(root)`. A document scan cannot observe what they target, so finding no matching element does not mean the rule is unused.
+
 ### Beasties container
 
 By default Beasties evaluates the CSS against the entire input HTML. Beasties evaluates the Critical CSS by reconstructing the entire DOM and evaluating the CSS selectors to find matching nodes. Usually this works well as Beasties is lightweight and fast.

@@ -91,6 +91,8 @@ export interface Options {
   preloadFonts?: boolean
   /**
    * Always include rules matching these selectors or patterns in the critical CSS, regardless of whether they match elements in the document.
+   *
+   * Selectors that only target a browser state or pseudo-element, such as `::selection`, `:focus-visible` or `::view-transition-new(root)`, are always included without this option, since a document scan cannot observe what they target.
    * @default []
    */
   allowRules?: Array<string | RegExp>
