@@ -70,18 +70,29 @@ function isPseudoOnlySelector(sel: string): boolean {
 /** Whether every selector in a comma-separated argument list is pseudo-only. */
 function isPseudoOnlyList(sel: string): boolean {
   let start = 0
-  while (start <= sel.length) {
-    const comma = closingParenIndex(sel, start, true)
-    const arg = comma === -1 ? sel.slice(start) : sel.slice(start, comma)
-    if (!isPseudoOnlySelector(trimCssWhitespace(arg))) {
-      return false
+  let depth = 0
+  for (let i = 0; i < sel.length; i++) {
+    const char = sel[i]!
+    if (char === '\\') {
+      i = escapeEnd(sel, i) - 1
     }
-    if (comma === -1) {
-      return true
+    else if (startsQuotedOrComment(sel, i)) {
+      i = quotedOrCommentEnd(sel, i) - 1
     }
-    start = comma + 1
+    else if (char === '(') {
+      depth++
+    }
+    else if (char === ')') {
+      depth--
+    }
+    else if (char === ',' && depth === 0) {
+      if (!isPseudoOnlySelector(trimCssWhitespace(sel.slice(start, i)))) {
+        return false
+      }
+      start = i + 1
+    }
   }
-  return true
+  return isPseudoOnlySelector(trimCssWhitespace(sel.slice(start)))
 }
 
 function isCssWhitespace(char: string): boolean {

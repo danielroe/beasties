@@ -358,6 +358,27 @@ describe('compiled beasties (compiler + runtime)', () => {
       expect(classic).toBe(expected)
     })
 
+    it('keeps pseudo-only selector lists inside :is() and :has()', async () => {
+      const html = trim`
+        <html><head><link rel="stylesheet" href="/style.css"></head><body>
+          <p>hi</p>
+        </body></html>
+      `
+      const css = trim`
+        :is(:hover, :focus) { color: red; }
+        :has(:hover, :focus) { color: blue; }
+        :is(:hover, .unused) { color: green; }
+      `
+      const expected = [
+        ':is(:hover, :focus){color:red}',
+        ':has(:hover, :focus){color:blue}',
+      ].join('')
+      const classic = await classicCritical(html, css)
+      const compiled = compiledCritical(html, css)
+      expect(compiled).toBe(expected)
+      expect(classic).toBe(expected)
+    })
+
     it('matches for selectors wrapped in :is() and :where()', async () => {
       const html = trim`
         <html><head><link rel="stylesheet" href="/style.css"></head><body>
